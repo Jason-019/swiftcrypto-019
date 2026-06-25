@@ -455,7 +455,8 @@ async function chatSend(){
     const pw=gp();if(!pw)return t('请先设置共享密码');
     try{
         const k=await dk(pw),n=crypto.getRandomValues(new Uint8Array(NS));
-        const c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(text));
+        const payload=`[${getDeviceName()}]${text}`;
+        const c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(payload));
         const m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);
         const b64=btoa(String.fromCharCode(...m));
         chatMsgs.push({role:'me',text,cipher:b64,time:Date.now(),device:getDeviceName()});
@@ -475,8 +476,12 @@ async function chatReceive(){
     try{
         const k=await dk(pw),r=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
         const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));
-        const text=new TextDecoder().decode(p);
-        chatMsgs.push({role:'them',text,cipher:b64,time:Date.now(),device:getDeviceName()});
+        const raw=new TextDecoder().decode(p);
+        // Parse sender device name from payload: "[设备名]消息内容"
+        const m2=raw.match(/^\[(.+?)\]/);
+        const senderDevice=m2?m2[1]:'未知';
+        const text=m2?raw.slice(m2[0].length):raw;
+        chatMsgs.push({role:'them',text,cipher:b64,time:Date.now(),device:senderDevice});
         saveChat();renderChat();document.getElementById('chatRecvInput').value='';
         t('✅ 解密成功！');
     }catch(e){t(e.name==='OperationError'?'❌ 密码错误，对方用的密码和你不同':'❌ '+e.message)}
