@@ -205,6 +205,10 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     </div>
     <div class="panel" id="panelDec">
         <textarea id="cipherInput" placeholder="粘贴密文…"></textarea>
+        <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-size:0.6rem;color:var(--dim)">🎨 或上传Era色块图:</span>
+            <input type="file" id="eraFileInput" accept="image/*" onchange="decodeEraGrid()" style="flex:1;font-size:0.6rem;color:var(--dim)">
+        </div>
         <div class="btn-row">
             <button class="btn btn-primary" onclick="doDecrypt()">🔓 解密</button>
             <button class="btn btn-outline" onclick="clearArea('cipherInput')">清空</button>
@@ -253,12 +257,15 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <h3>🔗 分享加密消息</h3>
         <label style="font-size:0.75rem;color:var(--dim)">密码提示（可选，不要直接填密码！）</label>
         <input type="text" id="shareHint" placeholder="例如：我们常用的那个密码…">
-        <label style="font-size:0.75rem;color:var(--dim)">📱 扫码或复制链接</label>
-        <div style="text-align:center"><img id="shareQR" src="" style="width:160px;height:160px;border-radius:8px;background:#fff;display:none" alt="QR"></div>
-        <div id="shareLink" style="word-break:break-all;font-size:0.7rem;color:var(--accent);background:rgba(0,0,0,0.3);padding:8px;border-radius:var(--rs);border:1px solid var(--border);max-height:60px;overflow-y:auto">生成中…</div>
-        <div class="modal-btns">
-            <button class="btn btn-outline" onclick="closeShareModal()">关闭</button>
-            <button class="btn btn-primary" onclick="copyShareLink()">📋 复制链接</button>
+        <label style="font-size:0.75rem;color:var(--dim)">🎨 Era 色块密码 — 截图发微信</label>
+        <div style="text-align:center"><canvas id="eraGridCanvas" style="width:100%;max-width:340px;border-radius:8px;image-rendering:pixelated"></canvas></div>
+        <div id="shareLink" style="word-break:break-all;font-size:0.65rem;color:var(--accent);background:rgba(0,0,0,0.3);padding:6px;border-radius:var(--rs);border:1px solid var(--border);max-height:36px;overflow-y:auto">生成中…</div>
+        <div class="modal-btns" style="flex-direction:column">
+            <button class="btn btn-copy" onclick="downloadEraGrid()" style="width:100%;justify-content:center">📥 保存色块图片</button>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-outline" onclick="closeShareModal()" style="flex:1;justify-content:center">关闭</button>
+                <button class="btn btn-primary" onclick="copyShareLink()" style="flex:1;justify-content:center">📋 复制链接</button>
+            </div>
         </div>
     </div>
 </div>
@@ -456,7 +463,7 @@ function openShareModal(){
     const hint=document.getElementById('shareHint').value.trim()||'';
     const url=location.origin+location.pathname+'#c='+encodeURIComponent(b64)+(hint?'&h='+encodeURIComponent(hint):'');
     document.getElementById('shareLink').textContent=url;
-    updateShareQR();
+    renderEraGrid();
     document.getElementById('shareModal').classList.add('show');
 }
 function closeShareModal(){document.getElementById('shareModal').classList.remove('show')}
@@ -595,12 +602,139 @@ async function copyChatCipher(){
 }
 document.getElementById('chatInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();chatSend()}});
 
-// ---- 🖼️ QR Code share ----
-function updateShareQR(){
+// ---- 🎨 Era Color Grid share ----
+const ERA_COLORS=['#FF3B30','#FF9500','#34C759','#007AFF','#AF52DE','#5AC8FA','#FF2D55','#8E8E93'];
+const ERA_NAMES=['Red','Fearless','Debut','1989','Speak Now','Evermore','Lover','Midnights'];
+function renderEraGrid(){
     const b64=document.getElementById('cipherOutput').value;
-    const img=document.getElementById('shareQR');
-    if(b64){img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(b64);img.style.display=''}
-    else{img.style.display='none'}
+    const cv=document.getElementById('eraGridCanvas');if(!cv||!b64)return;
+    const COLS=16,CELL=24,GAP=2,PAD=8,REF_H=CELL+8;
+    const cells=[];for(const c of b64){const i=B64.indexOf(c);if(i>=0){cells.push(i>>3,i&7)}}
+    const rows=Math.ceil(cells.length/COLS);
+    cv.width=COLS*(CELL+GAP)+GAP+PAD*2;
+    cv.height=rows*(CELL+GAP)+GAP+REF_H+PAD*2;
+    const ctx=cv.getContext('2d');
+    ctx.fillStyle='#111';ctx.fillRect(0,0,cv.width,cv.height);
+    // ---- Reference swatches (large enough to sample even after compression) ----
+    const refX=PAD,refY=PAD+4,refW=CELL,refH=CELL-4;
+    for(let i=0;i<8;i++){
+        ctx.fillStyle=ERA_COLORS[i];
+        ctx.fillRect(refX+i*(refW+GAP),refY,refW,refH);
+    }
+    // ---- Data cells ----
+    for(let i=0;i<cells.length;i++){
+        const col=i%COLS,row=Math.floor(i/COLS);
+        ctx.fillStyle=ERA_COLORS[cells[i]];
+        ctx.fillRect(PAD+col*(CELL+GAP)+GAP,REF_H+PAD+row*(CELL+GAP)+GAP,CELL,CELL);
+    }
+}
+function downloadEraGrid(){
+    const cv=document.getElementById('eraGridCanvas');
+    if(!cv)return;
+    const ts=new Date().toISOString().replace(/[-:]/g,'').slice(0,15);
+    const a=document.createElement('a');a.download='swiftcrypto-era-'+ts+'.png';
+    a.href=cv.toDataURL('image/png');a.click();t('✅ 图片已保存！发微信给朋友')
+}
+function decodeEraGrid(){
+    const file=document.getElementById('eraFileInput').files[0];
+    if(!file)return;
+    t('🔍 正在定位参考色块…');
+    const img=new Image();img.onload=()=>{
+        const cv=document.createElement('canvas');cv.width=img.width;cv.height=img.height;
+        const ctx=cv.getContext('2d');ctx.drawImage(img,0,0);
+        const W=img.width,H=img.height,COLS=16;
+        // ---- Step 1: Auto-detect reference swatch row ----
+        // Scan top 15% of image for 8 bright regions in a row
+        let refY=-1,refXs=[],swatchW=0,swatchGap=0,leftEdge=0;
+        for(let y=4;y<H*0.15&&refY<0;y++){
+            const bright=[]; // runs of bright pixels
+            let inBright=false,runStart=0;
+            for(let x=0;x<W;x++){
+                const px=ctx.getImageData(x,y,1,1).data;
+                const brightPx=px[0]+px[1]+px[2]>120;
+                if(brightPx&&!inBright){inBright=true;runStart=x;}
+                if(!brightPx&&inBright){inBright=false;if(x-runStart>=4)bright.push({s:runStart,e:x});}
+            }
+            if(bright.length>=8){
+                // Check if runs are equally spaced
+                const spacings=[];
+                for(let i=1;i<bright.length;i++)spacings.push(bright[i].s-bright[i-1].s);
+                const avgSp=spacings.reduce((a,b)=>a+b,0)/spacings.length;
+                const consistent=spacings.every(s=>Math.abs(s-avgSp)<avgSp*0.25);
+                if(consistent){
+                    refY=y;
+                    refXs=bright.slice(0,8).map(b=>Math.round((b.s+b.e)/2));
+                    swatchW=bright[0].e-bright[0].s;
+                    swatchGap=refXs[1]-refXs[0]-swatchW;
+                    leftEdge=bright[0].s;
+                }
+            }
+        }
+        if(refY<0){t('⚠️ 未找到参考色块，请确保图片完整');document.getElementById('eraFileInput').value='';return}
+        // Adjust refY from top-edge to center of swatch row
+        refY+=Math.floor(swatchW/2);
+        // ---- Step 2: Calibrate colors from detected swatches ----
+        const cellW=swatchW,cellGap=swatchGap,offsetX=leftEdge;
+        const calibratedRGB=[];
+        for(let i=0;i<8;i++){
+            const cx=refXs[i];let sr=0,sg=0,sb=0,n=0;
+            for(let dx=-2;dx<=2;dx++)for(let dy=-2;dy<=2;dy++){
+                const px=cx+dx,py=refY+dy;
+                if(px>=0&&py>=0&&px<W&&py<H){const d=ctx.getImageData(px,py,1,1).data;sr+=d[0];sg+=d[1];sb+=d[2];n++;}
+            }
+            calibratedRGB.push([Math.round(sr/n),Math.round(sg/n),Math.round(sb/n)]);
+        }
+        t('📐 已定位，正在计算容差…');
+        // ---- Compute adaptive thresholds from actual color distances ----
+        let minPairDist=Infinity;
+        for(let i=0;i<8;i++)for(let j=i+1;j<8;j++){
+            const d=(calibratedRGB[i][0]-calibratedRGB[j][0])**2+(calibratedRGB[i][1]-calibratedRGB[j][1])**2+(calibratedRGB[i][2]-calibratedRGB[j][2])**2;
+            if(d<minPairDist)minPairDist=d;
+        }
+        // Adaptive thresholds with safety floors
+        const maxDist=Math.max(minPairDist*0.45,5000);
+        const darkestBg=Math.min(...calibratedRGB.map(c=>c[0]+c[1]+c[2]))*0.15;
+        // ---- Step 3: Decode using calibrated positions & colors ----
+        const dataStartY=refY+swatchW+8; // center of first data row (= ref center + cell + padding)
+        const gridX=offsetX+cellGap;
+        const sampleCell=(col,row)=>{
+            const cx=gridX+col*(cellW+cellGap)+Math.floor(cellW/2);
+            const cy=dataStartY+row*(cellW+cellGap);
+            if(cx<2||cy<2||cx>=W-2||cy>=H-2)return -1;
+            let sr=0,sg=0,sb=0,n=0;
+            for(let dx=-3;dx<=3;dx++)for(let dy=-3;dy<=3;dy++){
+                const w=4-Math.abs(dx)-Math.abs(dy);if(w<=0)continue;
+                const px=cx+dx,py=cy+dy;
+                if(px>=0&&py>=0&&px<W&&py<H){const d=ctx.getImageData(px,py,1,1).data;sr+=d[0]*w;sg+=d[1]*w;sb+=d[2]*w;n+=w;}
+            }
+            if(n===0)return -1;
+            const r=Math.round(sr/n),g=Math.round(sg/n),b=Math.round(sb/n);
+            if(r+g+b<darkestBg)return -1;
+            let bestI=0,bestD=Infinity,secondD=Infinity;
+            for(let i=0;i<8;i++){
+                const d=(r-calibratedRGB[i][0])**2+(g-calibratedRGB[i][1])**2+(b-calibratedRGB[i][2])**2;
+                if(d<bestD){secondD=bestD;bestD=d;bestI=i}else if(d<secondD)secondD=d;
+            }
+            return (bestD<maxDist&&bestD*3<secondD)?bestI:-1;
+        };
+        let b64='';
+        for(let row=0;;row++){
+            let matchCount=0;
+            for(let col=0;col<COLS;col++){if(sampleCell(col,row)>=0)matchCount++;}
+            if(matchCount<2)break;
+            for(let col=0;col+1<COLS;col+=2){
+                const hi=sampleCell(col,row),lo=sampleCell(col+1,row);
+                if(hi>=0&&lo>=0)b64+=B64[(hi<<3)|lo];
+            }
+        }
+        if(b64){
+            document.getElementById('cipherInput').value=b64;uc();
+            document.getElementById('eraFileInput').value='';
+            t('✅ 解码成功！'+b64.length+' 字符');
+            const pw=gp();if(pw){doDecrypt()}
+        }else{t('⚠️ 未识别到数据色块');document.getElementById('eraFileInput').value=''}
+    };
+    img.src=URL.createObjectURL(file);
 }
 // ---- 👻 Incognito cleanup on exit ----
 window.addEventListener('beforeunload',function(){if(isIncog()){localStorage.clear()}});
