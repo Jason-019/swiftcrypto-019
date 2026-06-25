@@ -25,10 +25,12 @@ body{
 }
 .topbar .badge{font-size:0.65rem;color:var(--dim);border:1px solid var(--border);border-radius:6px;padding:2px 6px;}
 .icon-btn{
-    width:34px;height:34px;border-radius:var(--rs);border:1px solid var(--border);
-    background:rgba(255,255,255,0.04);color:var(--text);font-size:1rem;
+    width:34px;height:34px;border-radius:var(--rs);border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.08);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    color:var(--text);font-size:1rem;
     display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
 }
+.icon-btn:hover{background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.2)}
 .icon-btn:active{background:var(--accent2)}
 .pwd-row{display:flex;gap:6px;padding:10px 12px;align-items:center;}
 .pwd-row input{
@@ -59,8 +61,9 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 }
 .btn-primary{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;flex:1;justify-content:center}
 .btn-primary:active{opacity:.85}
-.btn-copy{background:rgba(16,185,129,0.18);color:#6ee7b7;border:1px solid rgba(16,185,129,0.25)}
-.btn-outline{background:transparent;color:var(--dim);border:1px solid var(--border)}
+.btn-copy{background:rgba(16,185,129,0.15);color:#6ee7b7;border:1px solid rgba(16,185,129,0.25);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.btn-outline{background:rgba(255,255,255,0.06);color:#aaa;border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.btn-outline:hover{background:rgba(255,255,255,0.1);color:#ccc;border-color:rgba(255,255,255,0.18)}
 .char-count{font-size:0.7rem;color:var(--dim);text-align:right}
 #lyricModal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);
     backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch}
@@ -125,23 +128,41 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 .chat-input-row textarea:focus{border-color:var(--accent)}
 .chat-actions{display:flex;gap:6px;padding:4px 0}
 .empty-chat{text-align:center;color:var(--dim);font-size:0.8rem;padding:30px 0}
+/* Password strength */
+.pwd-strength{height:3px;border-radius:2px;margin:0 12px;background:rgba(255,255,255,0.06);overflow:hidden;transition:all .3s}
+.pwd-strength div{height:100%;transition:width .4s,background .4s;width:0}
+.pwd-label{font-size:0.6rem;text-align:right;padding:2px 12px 0;min-height:14px}
+/* Incognito toggle */
+.incog-toggle{display:flex;align-items:center;gap:4px;cursor:pointer;font-size:0.65rem}
+.incog-toggle input{display:none}
+.incog-toggle .switch{width:32px;height:18px;border-radius:9px;background:rgba(255,255,255,0.15);position:relative;transition:background .3s}
+.incog-toggle .switch::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .3s}
+.incog-toggle input:checked+.switch{background:#ef4444}
+.incog-toggle input:checked+.switch::after{left:16px}
 </style>
 </head>
 <body>
 
 <div class="topbar">
     <h1>SwiftCrypto</h1>
+    <label class="incog-toggle" title="隐身模式：不保存任何记录">
+        <input type="checkbox" id="incogMode" onchange="toggleIncog()">
+        <span class="switch"></span>
+        <span style="color:var(--dim)">👻</span>
+    </label>
     <span class="badge">AES-256</span>
 </div>
 
 <div class="pwd-row">
-    <input type="password" id="password" placeholder="共享密码…" autocomplete="off" list="pwdHistoryList">
+    <input type="password" id="password" placeholder="共享密码…" autocomplete="off" list="pwdHistoryList" oninput="updatePwdStrength()">
     <datalist id="pwdHistoryList"></datalist>
     <button class="icon-btn" id="togglePwd" onclick="togglePwd()">👁</button>
     <button class="icon-btn" onclick="genPwd()" title="生成随机密码" style="color:#fbbf24;">🎲</button>
     <button class="icon-btn" onclick="openLyricPicker()" title="从歌词挑选" style="color:var(--accent)">📜</button>
     <button class="icon-btn" onclick="togglePwdHistory()" title="历史密码" style="color:var(--dim);font-size:0.8rem">🕐</button>
 </div>
+<div class="pwd-strength"><div id="pwdStrengthBar"></div></div>
+<div class="pwd-label" id="pwdStrengthLabel"></div>
 <div id="pwdHistory" style="display:none;margin:0 12px 4px;padding:6px 8px;border-radius:var(--rs);background:rgba(0,0,0,0.25);border:1px solid var(--border);max-height:120px;overflow-y:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
         <span style="font-size:0.65rem;color:var(--dim)">🕐 最近使用</span>
@@ -156,8 +177,8 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     <span id="themeName" style="min-width:90px;text-align:center;font-size:0.78rem;">1989</span>
     <button class="icon-btn" onclick="nextTheme()" style="width:28px;height:28px;font-size:0.7rem;">▶</button>
     <span style="margin-left:8px;">🌓</span>
-    <input type="range" id="bgOpacity" min="0" max="100" value="60" oninput="updateBgOpacity(this.value)" style="flex:1;max-width:80px;accent-color:var(--accent);">
-    <span id="bgOpacityVal" style="min-width:28px;">60%</span>
+    <input type="range" id="bgOpacity" min="0" max="100" value="100" oninput="updateBgOpacity(this.value)" style="flex:1;max-width:80px;accent-color:var(--accent);">
+    <span id="bgOpacityVal" style="min-width:28px;">100%</span>
 </div>
 
 <div class="tabs">
@@ -208,10 +229,11 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
             <button class="btn btn-primary" onclick="chatSend()" style="flex:none">🔒 发送</button>
         </div>
         <div id="chatCipherRow" style="display:none;margin-top:4px">
-            <div style="display:flex;gap:6px;align-items:center">
-                <span style="font-size:0.65rem;color:var(--dim);white-space:nowrap">📋 密文:</span>
+            <div style="display:flex;gap:4px;align-items:center">
+                <span style="font-size:0.65rem;color:var(--dim);white-space:nowrap">📋</span>
                 <code id="chatCipherText" style="flex:1;font-size:0.65rem;color:var(--accent);word-break:break-all;background:rgba(0,0,0,0.25);padding:6px 8px;border-radius:6px;max-height:36px;overflow:hidden"></code>
                 <button class="btn btn-copy" onclick="copyChatCipher()" style="flex:none;padding:6px 10px;font-size:0.7rem">📋</button>
+                <button class="btn btn-outline" id="chatEmojiToggle" onclick="toggleChatEmoji()" style="flex:none;padding:4px 7px;font-size:0.65rem">🎭</button>
             </div>
         </div>
         <div class="chat-input-row" style="margin-top:4px">
@@ -231,8 +253,9 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <h3>🔗 分享加密消息</h3>
         <label style="font-size:0.75rem;color:var(--dim)">密码提示（可选，不要直接填密码！）</label>
         <input type="text" id="shareHint" placeholder="例如：我们常用的那个密码…">
-        <label style="font-size:0.75rem;color:var(--dim)">分享链接</label>
-        <div id="shareLink">生成中…</div>
+        <label style="font-size:0.75rem;color:var(--dim)">📱 扫码或复制链接</label>
+        <div style="text-align:center"><img id="shareQR" src="" style="width:160px;height:160px;border-radius:8px;background:#fff;display:none" alt="QR"></div>
+        <div id="shareLink" style="word-break:break-all;font-size:0.7rem;color:var(--accent);background:rgba(0,0,0,0.3);padding:8px;border-radius:var(--rs);border:1px solid var(--border);max-height:60px;overflow-y:auto">生成中…</div>
         <div class="modal-btns">
             <button class="btn btn-outline" onclick="closeShareModal()">关闭</button>
             <button class="btn btn-primary" onclick="copyShareLink()">📋 复制链接</button>
@@ -274,13 +297,32 @@ async function doEncrypt(){
 }
 async function doDecrypt(){
     autoSavePwd();
-    const b=document.getElementById('cipherInput').value.trim();if(!b)return t('请输入密文');
+    let b=document.getElementById('cipherInput').value.trim();if(!b)return t('请输入密文');
+    if(isEmojiCipher(b)){b=emojiToCipher(b);document.getElementById('cipherInput').value=b;t('🎭 已识别Emoji密文')}
     try{const k=await dk(gp()),r=Uint8Array.from(atob(b),c=>c.charCodeAt(0)),p=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));document.getElementById('plainOutput').value=new TextDecoder().decode(p);uc();t('✅ 解密成功')}catch(e){t(e.name==='OperationError'?'❌ 密码错误':'❌ '+e.message)}
 }
 function gp(){return document.getElementById('password').value}
+// ---- 📊 Password strength meter ----
+function updatePwdStrength(){
+    const p=gp(),bar=document.getElementById('pwdStrengthBar'),lbl=document.getElementById('pwdStrengthLabel');
+    if(!p){bar.style.width='0';lbl.textContent='';return}
+    let score=0;if(p.length>=8)score++;if(p.length>=14)score++;if(/[A-Z]/.test(p))score++;if(/[a-z]/.test(p))score++;if(/[0-9]/.test(p))score++;if(/[^A-Za-z0-9]/.test(p))score+=2;
+    const levels=[{w:'15%',c:'#ef4444',t:'🔓 纸糊的锁'},{w:'35%',c:'#f97316',t:'🔐 聊胜于无'},{w:'55%',c:'#eab308',t:'🔑 还行'},{w:'75%',c:'#22c55e',t:'🔒 靠谱'},{w:'90%',c:'#10b981',t:'🛡️ 很强'},{w:'100%',c:'#a78bfa',t:'🔮 量子计算机也得算几年'}];
+    const lv=levels[Math.min(score,levels.length-1)];
+    bar.style.width=lv.w;bar.style.background=lv.c;lbl.textContent=lv.t;lbl.style.color=lv.c;
+}
+// ---- 👻 Incognito mode ----
+let incogMode=false;
+function toggleIncog(){
+    incogMode=document.getElementById('incogMode').checked;
+    if(incogMode){t('👻 隐身模式：关闭页面后不留痕迹');clearChat();clearPwdHistory()}
+    else t('📝 正常模式：记录已恢复保存');
+}
+function isIncog(){return incogMode}
+
 // Password history (last 10)
 function loadPwdHistory(){try{return JSON.parse(localStorage.getItem('swiftcrypto_pwds')||'[]')}catch{return[]}}
-function savePwdHistory(pwd){if(!pwd)return;let h=loadPwdHistory();h=h.filter(p=>p!==pwd);h.unshift(pwd);if(h.length>10)h.length=10;localStorage.setItem('swiftcrypto_pwds',JSON.stringify(h));renderPwdHistory()}
+function savePwdHistory(pwd){if(isIncog())return;if(!pwd)return;let h=loadPwdHistory();h=h.filter(p=>p!==pwd);h.unshift(pwd);if(h.length>10)h.length=10;localStorage.setItem('swiftcrypto_pwds',JSON.stringify(h));renderPwdHistory()}
 function clearPwdHistory(){localStorage.removeItem('swiftcrypto_pwds');renderPwdHistory();t('🗑 密码历史已清空')}
 function togglePwdHistory(){const el=document.getElementById('pwdHistory');el.style.display=el.style.display==='none'?'':'none';if(el.style.display!=='none')renderPwdHistory()}
 function renderPwdHistory(){
@@ -295,14 +337,14 @@ function togglePwd(){const e=document.getElementById('password'),b=document.getE
 function switchTab(tab){document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));if(tab==='enc'){document.querySelector('.tab:nth-child(1)').classList.add('active');document.getElementById('panelEnc').classList.add('active')}else if(tab==='dec'){document.querySelector('.tab:nth-child(2)').classList.add('active');document.getElementById('panelDec').classList.add('active')}else{document.querySelector('.tab:nth-child(3)').classList.add('active');document.getElementById('panelChat').classList.add('active');checkPwdChange();renderChat()}}
 function t(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
 function clearArea(id){document.getElementById(id).value='';uc()}
-async function copyText(id){const v=document.getElementById(id).value;if(!v)return t('⚠️ 无内容');try{await navigator.clipboard.writeText(v);t('✅ 已复制')}catch{document.getElementById(id).select();document.execCommand('copy');t('✅ 已复制')}}
+async function copyText(id){let v;if(id==='cipherOutput'&&emojiMode){v=document.getElementById('emojiCipher').textContent}else{v=document.getElementById(id).value}if(!v)return t('⚠️ 无内容');try{await navigator.clipboard.writeText(v);t('✅ 已复制')}catch{document.getElementById(id).select();document.execCommand('copy');t('✅ 已复制')}}
 function uc(){document.getElementById('cipherCount').textContent='密文: '+document.getElementById('cipherOutput').value.length+' 字';document.getElementById('plainCount').textContent='明文: '+document.getElementById('plainOutput').value.length+' 字'}
 function genPwd(){
     autoSavePwd();
     const w='starlight wonder midnight crystal velvet golden crimson silver whisper shadow dawn autumn winter summer thunder lightning rainbow phoenix dragon eagle ocean river mountain forest meadow garden castle bridge tower mirror'.split(' ');
     const p=w[Math.floor(Math.random()*w.length)]+'-'+Math.floor(Math.random()*900+100)+'-'+w[Math.floor(Math.random()*w.length)];
     document.getElementById('password').value=p;document.getElementById('password').type='text';
-    document.getElementById('togglePwd').textContent='🙈';t('🎲 '+p);
+    document.getElementById('togglePwd').textContent='🙈';t('🎲 '+p);updatePwdStrength();
 }
 // Theme gradients (inspired by album color palettes)
 const THEMES=[
@@ -374,7 +416,7 @@ function openLyricPicker(){document.getElementById('lyricModal').classList.add('
 function closeLyricPicker(){document.getElementById('lyricModal').classList.remove('show')}
 function useLyric(){
     const pw=document.getElementById('password');pw.value=_selectedLyric;pw.type='text';autoSavePwd();
-    document.getElementById('togglePwd').textContent='🙈';closeLyricPicker();t('✅ 歌词已填入')
+    document.getElementById('togglePwd').textContent='🙈';closeLyricPicker();t('✅ 歌词已填入');updatePwdStrength();
 }
 function eh(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 document.getElementById('lyricModal').addEventListener('click',function(e){if(e.target===this)closeLyricPicker()});
@@ -386,6 +428,8 @@ const REV_EMOJI={};for(let i=0;i<64;i++)REV_EMOJI[EMOJI_MAP[i]]=B64[i];
 let emojiMode=false;
 function cipherToEmoji(b64){let r='';for(const c of b64){const i=B64.indexOf(c);r+=i>=0?EMOJI_MAP[i]:c}return r}
 function emojiToCipher(emo){let r='';for(const c of emo){r+=REV_EMOJI[c]||c}return r}
+function isEmojiCipher(text){for(const c of text){if(REV_EMOJI[c])return true}return false}
+function autoConvertEmoji(text){return isEmojiCipher(text)?emojiToCipher(text):text}
 function toggleEmojiMode(){
     emojiMode=!emojiMode;
     const ta=document.getElementById('cipherOutput'),ec=document.getElementById('emojiCipher');
@@ -412,6 +456,7 @@ function openShareModal(){
     const hint=document.getElementById('shareHint').value.trim()||'';
     const url=location.origin+location.pathname+'#c='+encodeURIComponent(b64)+(hint?'&h='+encodeURIComponent(hint):'');
     document.getElementById('shareLink').textContent=url;
+    updateShareQR();
     document.getElementById('shareModal').classList.add('show');
 }
 function closeShareModal(){document.getElementById('shareModal').classList.remove('show')}
@@ -466,7 +511,7 @@ function loadChat(){
     const key=getChatKey();_lastPwdHash=key;
     try{const d=localStorage.getItem(key);if(d)chatMsgs=JSON.parse(d);else chatMsgs=[]}catch{chatMsgs=[]}
 }
-function saveChat(){try{localStorage.setItem(getChatKey(),JSON.stringify(chatMsgs))}catch{}}
+function saveChat(){if(isIncog())return;try{localStorage.setItem(getChatKey(),JSON.stringify(chatMsgs))}catch{}}
 function checkPwdChange(){
     const cur=getChatKey();
     if(cur!==_lastPwdHash){loadChat();renderChat();t('🔐 已切换到密码: '+gp().slice(0,8)+(gp().length>8?'…':''))}
@@ -485,7 +530,9 @@ function renderChat(){
             devLabel=` · ${getDeviceName()}`;
         }else{
             const nick=getDeviceNickname(m.device);
-            devLabel=nick?` · ${eh(nick)}`:` · <span onclick="promptNickname('${eh(m.device||'')}')" style="cursor:pointer;border-bottom:1px dashed var(--dim)" title="点击设置备注">${eh(m.device||'???')}</span>`;
+            const displayName=nick||m.senderName||m.device||'???';
+            const hasNick=!!nick;
+            devLabel=` · <span onclick="promptNickname('${eh(m.device||'')}')" style="cursor:pointer;border-bottom:1px dashed var(--dim)" title="${hasNick?'点击修改备注':'点击设置备注'}">${eh(displayName)}</span>`;
         }
         const cp=m.cipher?`<div class="cipher-preview">🔐 ${eh(m.cipher.slice(0,40))}…</div>`:'';
         return `<div class="chat-msg ${cls}"><div class="meta"><span>${label}${devLabel}</span><span>${time}</span></div><div>${eh(m.text)}</div>${cp}</div>`;
@@ -499,13 +546,14 @@ async function chatSend(){
     const pw=gp();if(!pw)return t('请先设置共享密码');
     try{
         const k=await dk(pw),n=crypto.getRandomValues(new Uint8Array(NS));
-        const payload=`[${getDeviceId()}]${text}`;
+        const payload=`[${getDeviceName()}|${getDeviceId()}]${text}`;
         const c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(payload));
         const m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);
         const b64=btoa(String.fromCharCode(...m));
         chatMsgs.push({role:'me',text,cipher:b64,time:Date.now(),device:getDeviceId()});
         saveChat();renderChat();input.value='';input.style.height='auto';
-        // Show cipher in chat panel for easy copy
+        // Show cipher in chat panel
+        _lastChatB64=b64;chatEmojiMode=false;document.getElementById('chatEmojiToggle').textContent='🎭';document.getElementById('chatEmojiToggle').style.color='';
         document.getElementById('chatCipherText').textContent=b64;
         document.getElementById('chatCipherRow').style.display='';
         document.getElementById('cipherOutput').value=b64;uc();updateEmojiDisplay();
@@ -514,23 +562,32 @@ async function chatSend(){
 }
 async function chatReceive(){
     checkPwdChange();autoSavePwd();
-    const b64=document.getElementById('chatRecvInput').value.trim();
+    let b64=document.getElementById('chatRecvInput').value.trim();
     if(!b64)return t('请先粘贴对方的密文');
+    if(isEmojiCipher(b64)){b64=emojiToCipher(b64);document.getElementById('chatRecvInput').value=b64;t('🎭 已识别Emoji密文')}
     const pw=gp();if(!pw)return t('请先设置共享密码');
     try{
         const k=await dk(pw),r=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
         const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));
         const raw=new TextDecoder().decode(p);
-        // Parse sender device name from payload: "[设备名]消息内容"
-        const m2=raw.match(/^\[(.+?)\]/);
-        const senderDevice=m2?m2[1]:'未知';
+        // Parse: "[发送方名字|设备ID]消息内容"
+        const m2=raw.match(/^\[(.+?)\|(.+?)\]/);
+        const senderName=m2?m2[1]:'';
+        const senderId=m2?m2[2]:'未知';
         const text=m2?raw.slice(m2[0].length):raw;
-        chatMsgs.push({role:'them',text,cipher:b64,time:Date.now(),device:senderDevice});
+        chatMsgs.push({role:'them',text,cipher:b64,time:Date.now(),device:senderId,senderName});
         saveChat();renderChat();document.getElementById('chatRecvInput').value='';
         t('✅ 解密成功！');
     }catch(e){t(e.name==='OperationError'?'❌ 密码错误，对方用的密码和你不同':'❌ '+e.message)}
 }
 function clearChat(){if(confirm('确定清除所有聊天记录？')){chatMsgs=[];saveChat();renderChat();t('🗑 聊天记录已清除')}}
+let _lastChatB64='',chatEmojiMode=false;
+function toggleChatEmoji(){
+    chatEmojiMode=!chatEmojiMode;
+    const el=document.getElementById('chatCipherText'),btn=document.getElementById('chatEmojiToggle');
+    if(chatEmojiMode){el.textContent=cipherToEmoji(_lastChatB64);btn.textContent='🔤';btn.style.color='#fbbf24'}
+    else{el.textContent=_lastChatB64;btn.textContent='🎭';btn.style.color=''}
+}
 async function copyChatCipher(){
     const v=document.getElementById('chatCipherText').textContent;
     if(!v)return t('⚠️ 无内容');
@@ -538,8 +595,18 @@ async function copyChatCipher(){
 }
 document.getElementById('chatInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();chatSend()}});
 
+// ---- 🖼️ QR Code share ----
+function updateShareQR(){
+    const b64=document.getElementById('cipherOutput').value;
+    const img=document.getElementById('shareQR');
+    if(b64){img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(b64);img.style.display=''}
+    else{img.style.display='none'}
+}
+// ---- 👻 Incognito cleanup on exit ----
+window.addEventListener('beforeunload',function(){if(isIncog()){localStorage.clear()}});
+
 // Init
-loadChat();checkShareLink();initDeviceName();setTheme();updateBgOpacity(60);uc();
+loadChat();checkShareLink();initDeviceName();setTheme();updateBgOpacity(100);uc();
 </script>
 </body>
 </html>
