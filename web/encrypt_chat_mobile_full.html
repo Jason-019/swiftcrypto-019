@@ -103,6 +103,28 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     color:#fff;padding:8px 18px;border-radius:18px;font-size:0.8rem;z-index:200;
     opacity:0;pointer-events:none;transition:opacity .3s}
 .toast.show{opacity:1}
+/* Emoji cipher mode */
+.emoji-cipher{font-size:1.25rem;line-height:1.8;word-break:break-all;letter-spacing:2px;min-height:60px;padding:12px;border-radius:var(--rs);background:rgba(0,0,0,0.25);border:1px solid var(--border);user-select:all}
+/* Share modal */
+#shareModal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:center;align-items:flex-end}
+#shareModal.show{display:flex}
+#shareModal .sheet{background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;width:100%;max-height:70vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+#shareModal .sheet h3{font-size:1rem;text-align:center}
+#shareModal input{width:100%;padding:10px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-size:0.8rem;outline:none}
+#shareLink{word-break:break-all;font-size:0.75rem;color:var(--accent);background:rgba(0,0,0,0.3);padding:10px;border-radius:var(--rs);border:1px solid var(--border);max-height:80px;overflow-y:auto}
+/* Chat mode */
+.chat-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:6px 0;min-height:200px;max-height:50vh}
+.chat-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:0.85rem;line-height:1.45;animation:msgIn .3s ease;word-break:break-word;position:relative}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.chat-msg.me{align-self:flex-end;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;border-bottom-right-radius:4px}
+.chat-msg.them{align-self:flex-start;background:rgba(255,255,255,0.08);border:1px solid var(--border);border-bottom-left-radius:4px}
+.chat-msg .meta{font-size:0.6rem;opacity:.6;margin-bottom:3px;display:flex;justify-content:space-between;gap:8px}
+.chat-msg .cipher-preview{font-size:0.6rem;opacity:.45;margin-top:4px;font-family:monospace;word-break:break-all;max-height:24px;overflow:hidden}
+.chat-input-row{display:flex;gap:6px;align-items:flex-end}
+.chat-input-row textarea{flex:1;min-height:44px;max-height:80px;padding:10px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(0,0,0,0.25);color:var(--text);font-size:0.85rem;resize:none;outline:none;font-family:inherit}
+.chat-input-row textarea:focus{border-color:var(--accent)}
+.chat-actions{display:flex;gap:6px;padding:4px 0}
+.empty-chat{text-align:center;color:var(--dim);font-size:0.8rem;padding:30px 0}
 </style>
 </head>
 <body>
@@ -132,6 +154,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 <div class="tabs">
     <div class="tab active" onclick="switchTab('enc')">🔒 加密</div>
     <div class="tab" onclick="switchTab('dec')">🔓 解密</div>
+    <div class="tab" onclick="switchTab('chat')">💬 密聊</div>
 </div>
 
 <div class="content">
@@ -142,8 +165,11 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
             <button class="btn btn-outline" onclick="clearArea('plainInput')">清空</button>
         </div>
         <textarea id="cipherOutput" placeholder="密文…" readonly></textarea>
+        <div class="emoji-cipher" id="emojiCipher" style="display:none"></div>
         <div class="btn-row">
             <button class="btn btn-copy" onclick="copyText('cipherOutput')">📋 复制密文</button>
+            <button class="btn btn-outline" id="emojiToggle" onclick="toggleEmojiMode()">🎭 Emoji</button>
+            <button class="btn btn-outline" onclick="openShareModal()">🔗 分享</button>
         </div>
         <div class="char-count" id="cipherCount">密文: 0 字</div>
     </div>
@@ -159,9 +185,50 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         </div>
         <div class="char-count" id="plainCount">明文: 0 字</div>
     </div>
+    <div class="panel" id="panelChat">
+        <div style="display:flex;align-items:center;gap:6px;padding:0 0 4px 0">
+            <span style="font-size:0.65rem;color:var(--dim)">📱</span>
+            <input id="deviceName" placeholder="设备名" onchange="saveDeviceName()" style="flex:1;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.7rem;outline:none;max-width:100px">
+        </div>
+        <div class="chat-area" id="chatArea">
+            <div class="empty-chat" id="emptyChat">🔐 输入共享密码后开始密聊…<br><small>双方使用相同密码即可加密对话</small></div>
+        </div>
+        <div class="chat-input-row">
+            <textarea id="chatInput" placeholder="输入消息…" rows="1"></textarea>
+            <button class="btn btn-primary" onclick="chatSend()" style="flex:none">🔒 发送</button>
+        </div>
+        <div id="chatCipherRow" style="display:none;margin-top:4px">
+            <div style="display:flex;gap:6px;align-items:center">
+                <span style="font-size:0.65rem;color:var(--dim);white-space:nowrap">📋 密文:</span>
+                <code id="chatCipherText" style="flex:1;font-size:0.65rem;color:var(--accent);word-break:break-all;background:rgba(0,0,0,0.25);padding:6px 8px;border-radius:6px;max-height:36px;overflow:hidden"></code>
+                <button class="btn btn-copy" onclick="copyChatCipher()" style="flex:none;padding:6px 10px;font-size:0.7rem">📋</button>
+            </div>
+        </div>
+        <div class="chat-input-row" style="margin-top:4px">
+            <textarea id="chatRecvInput" placeholder="📥 粘贴对方发来的密文…" rows="1"></textarea>
+            <button class="btn btn-copy" onclick="chatReceive()" style="flex:none">🔓 解密</button>
+        </div>
+        <div class="chat-actions">
+            <button class="btn btn-outline" onclick="clearChat()" style="flex:none">🗑 清除记录</button>
+        </div>
+    </div>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div id="shareModal">
+    <div class="sheet">
+        <h3>🔗 分享加密消息</h3>
+        <label style="font-size:0.75rem;color:var(--dim)">密码提示（可选，不要直接填密码！）</label>
+        <input type="text" id="shareHint" placeholder="例如：我们常用的那个密码…">
+        <label style="font-size:0.75rem;color:var(--dim)">分享链接</label>
+        <div id="shareLink">生成中…</div>
+        <div class="modal-btns">
+            <button class="btn btn-outline" onclick="closeShareModal()">关闭</button>
+            <button class="btn btn-primary" onclick="copyShareLink()">📋 复制链接</button>
+        </div>
+    </div>
+</div>
 
 <div id="lyricModal">
     <div class="sheet">
@@ -192,7 +259,7 @@ const NS=12,KS=256,IT=600000,ST=new TextEncoder().encode('SCMobile_v1');
 async function dk(p){const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:ST,iterations:IT,hash:'SHA-256'},m,{name:'AES-GCM',length:KS},false,['encrypt','decrypt'])}
 async function doEncrypt(){
     const p=document.getElementById('plainInput').value;if(!p)return t('请输入明文');
-    try{const k=await dk(gp()),n=crypto.getRandomValues(new Uint8Array(NS)),c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(p)),m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);document.getElementById('cipherOutput').value=btoa(String.fromCharCode(...m));uc();t('✅ 加密完成')}catch(e){t('❌ '+e.message)}
+    try{const k=await dk(gp()),n=crypto.getRandomValues(new Uint8Array(NS)),c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(p)),m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);document.getElementById('cipherOutput').value=btoa(String.fromCharCode(...m));uc();updateEmojiDisplay();t('✅ 加密完成')}catch(e){t('❌ '+e.message)}
 }
 async function doDecrypt(){
     const b=document.getElementById('cipherInput').value.trim();if(!b)return t('请输入密文');
@@ -200,7 +267,7 @@ async function doDecrypt(){
 }
 function gp(){return document.getElementById('password').value}
 function togglePwd(){const e=document.getElementById('password'),b=document.getElementById('togglePwd');if(e.type==='password'){e.type='text';b.textContent='🙈'}else{e.type='password';b.textContent='👁'}}
-function switchTab(tab){document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));if(tab==='enc'){document.querySelector('.tab:nth-child(1)').classList.add('active');document.getElementById('panelEnc').classList.add('active')}else{document.querySelector('.tab:nth-child(2)').classList.add('active');document.getElementById('panelDec').classList.add('active')}}
+function switchTab(tab){document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));if(tab==='enc'){document.querySelector('.tab:nth-child(1)').classList.add('active');document.getElementById('panelEnc').classList.add('active')}else if(tab==='dec'){document.querySelector('.tab:nth-child(2)').classList.add('active');document.getElementById('panelDec').classList.add('active')}else{document.querySelector('.tab:nth-child(3)').classList.add('active');document.getElementById('panelChat').classList.add('active');checkPwdChange();renderChat()}}
 function t(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
 function clearArea(id){document.getElementById(id).value='';uc()}
 async function copyText(id){const v=document.getElementById(id).value;if(!v)return t('⚠️ 无内容');try{await navigator.clipboard.writeText(v);t('✅ 已复制')}catch{document.getElementById(id).select();document.execCommand('copy');t('✅ 已复制')}}
@@ -285,7 +352,145 @@ function useLyric(){
 }
 function eh(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 document.getElementById('lyricModal').addEventListener('click',function(e){if(e.target===this)closeLyricPicker()});
-setTheme();updateBgOpacity(60);uc();
+
+// ========== 🎭 Emoji 密文模式 ==========
+const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const EMOJI_MAP=['😀','😃','😄','😁','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🥸','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶'];
+const REV_EMOJI={};for(let i=0;i<64;i++)REV_EMOJI[EMOJI_MAP[i]]=B64[i];
+let emojiMode=false;
+function cipherToEmoji(b64){let r='';for(const c of b64){const i=B64.indexOf(c);r+=i>=0?EMOJI_MAP[i]:c}return r}
+function emojiToCipher(emo){let r='';for(const c of emo){r+=REV_EMOJI[c]||c}return r}
+function toggleEmojiMode(){
+    emojiMode=!emojiMode;
+    const ta=document.getElementById('cipherOutput'),ec=document.getElementById('emojiCipher');
+    const btn=document.getElementById('emojiToggle');
+    if(emojiMode){
+        const b64=ta.value;if(!b64)return t('⚠️ 请先生成密文');
+        ec.textContent=cipherToEmoji(b64);ta.style.display='none';ec.style.display='block';
+        btn.innerHTML='🔤 文本';btn.style.color='#fbbf24';
+    }else{
+        ta.style.display='';ec.style.display='none';btn.innerHTML='🎭 Emoji';btn.style.color='';
+    }
+}
+function updateEmojiDisplay(){
+    if(emojiMode){
+        const b64=document.getElementById('cipherOutput').value;
+        document.getElementById('emojiCipher').textContent=b64?cipherToEmoji(b64):'';
+    }
+}
+
+// ========== 🔗 一键分享链接 ==========
+function openShareModal(){
+    const b64=document.getElementById('cipherOutput').value;
+    if(!b64)return t('⚠️ 请先生成密文');
+    const hint=document.getElementById('shareHint').value.trim()||'';
+    const url=location.origin+location.pathname+'#c='+encodeURIComponent(b64)+(hint?'&h='+encodeURIComponent(hint):'');
+    document.getElementById('shareLink').textContent=url;
+    document.getElementById('shareModal').classList.add('show');
+}
+function closeShareModal(){document.getElementById('shareModal').classList.remove('show')}
+async function copyShareLink(){
+    const url=document.getElementById('shareLink').textContent;
+    if(!url||url==='生成中…')return;
+    try{await navigator.clipboard.writeText(url);t('✅ 链接已复制，发给朋友吧！')}catch{t('⚠️ 复制失败，请手动复制')}
+}
+function checkShareLink(){
+    const hash=location.hash.slice(1);if(!hash)return;
+    const params=new URLSearchParams(hash);
+    const c=params.get('c'),h=params.get('h');
+    if(c){
+        document.getElementById('cipherInput').value=decodeURIComponent(c);
+        switchTab('dec');
+        if(h){document.getElementById('password').placeholder='💡 提示: '+decodeURIComponent(h);t('📨 收到分享密文！')}
+        else t('📨 收到分享密文！')
+    }
+}
+document.getElementById('shareModal').addEventListener('click',function(e){if(e.target===this)closeShareModal()});
+
+// ========== 💬 密语聊天模式 ==========
+let chatMsgs=[],_lastPwdHash='',_deviceName='';
+function getDeviceName(){
+    if(!_deviceName){_deviceName=localStorage.getItem('swiftcrypto_devname')||('设备'+Math.floor(Math.random()*900+100));saveDeviceName()}
+    return _deviceName;
+}
+function saveDeviceName(){
+    _deviceName=document.getElementById('deviceName').value.trim()||('设备'+Math.floor(Math.random()*900+100));
+    localStorage.setItem('swiftcrypto_devname',_deviceName);
+    document.getElementById('deviceName').value=_deviceName;
+}
+function initDeviceName(){document.getElementById('deviceName').value=getDeviceName();}
+function getChatKey(){
+    const pw=gp();if(!pw)return 'swiftcrypto_chat_default';
+    let h=0;for(let i=0;i<pw.length;i++)h=((h<<5)-h+pw.charCodeAt(i))|0;
+    return 'swiftcrypto_chat_'+((h>>>0).toString(36));
+}
+function loadChat(){
+    const key=getChatKey();_lastPwdHash=key;
+    try{const d=localStorage.getItem(key);if(d)chatMsgs=JSON.parse(d);else chatMsgs=[]}catch{chatMsgs=[]}
+}
+function saveChat(){try{localStorage.setItem(getChatKey(),JSON.stringify(chatMsgs))}catch{}}
+function checkPwdChange(){
+    const cur=getChatKey();
+    if(cur!==_lastPwdHash){loadChat();renderChat();t('🔐 已切换到密码: '+gp().slice(0,8)+(gp().length>8?'…':''))}
+}
+function renderChat(){
+    const area=document.getElementById('chatArea');
+    if(chatMsgs.length===0){
+        area.innerHTML='<div class="empty-chat" id="emptyChat">🔐 输入共享密码后开始密聊…<br><small>双方使用相同密码即可加密对话</small></div>';
+        return;
+    }
+    area.innerHTML=chatMsgs.map(m=>{
+        const cls=m.role==='me'?'me':'them',label=m.role==='me'?'🧑 我':'👤 对方';
+        const time=new Date(m.time).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+        const dev=m.device?` · ${m.device}`:'';
+        const cp=m.cipher?`<div class="cipher-preview">🔐 ${eh(m.cipher.slice(0,40))}…</div>`:'';
+        return `<div class="chat-msg ${cls}"><div class="meta"><span>${label}${dev}</span><span>${time}</span></div><div>${eh(m.text)}</div>${cp}</div>`;
+    }).join('');
+    area.scrollTop=area.scrollHeight;
+}
+async function chatSend(){
+    checkPwdChange();
+    const input=document.getElementById('chatInput'),text=input.value.trim();
+    if(!text)return t('请输入消息');
+    const pw=gp();if(!pw)return t('请先设置共享密码');
+    try{
+        const k=await dk(pw),n=crypto.getRandomValues(new Uint8Array(NS));
+        const c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(text));
+        const m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);
+        const b64=btoa(String.fromCharCode(...m));
+        chatMsgs.push({role:'me',text,cipher:b64,time:Date.now(),device:getDeviceName()});
+        saveChat();renderChat();input.value='';input.style.height='auto';
+        // Show cipher in chat panel for easy copy
+        document.getElementById('chatCipherText').textContent=b64;
+        document.getElementById('chatCipherRow').style.display='';
+        document.getElementById('cipherOutput').value=b64;uc();updateEmojiDisplay();
+        t('✅ 已加密！点击 📋 复制密文发给对方');
+    }catch(e){t('❌ '+e.message)}
+}
+async function chatReceive(){
+    checkPwdChange();
+    const b64=document.getElementById('chatRecvInput').value.trim();
+    if(!b64)return t('请先粘贴对方的密文');
+    const pw=gp();if(!pw)return t('请先设置共享密码');
+    try{
+        const k=await dk(pw),r=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+        const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));
+        const text=new TextDecoder().decode(p);
+        chatMsgs.push({role:'them',text,cipher:b64,time:Date.now(),device:getDeviceName()});
+        saveChat();renderChat();document.getElementById('chatRecvInput').value='';
+        t('✅ 解密成功！');
+    }catch(e){t(e.name==='OperationError'?'❌ 密码错误，对方用的密码和你不同':'❌ '+e.message)}
+}
+function clearChat(){if(confirm('确定清除所有聊天记录？')){chatMsgs=[];saveChat();renderChat();t('🗑 聊天记录已清除')}}
+async function copyChatCipher(){
+    const v=document.getElementById('chatCipherText').textContent;
+    if(!v)return t('⚠️ 无内容');
+    try{await navigator.clipboard.writeText(v);t('✅ 密文已复制！发给对方吧')}catch{t('⚠️ 复制失败')}
+}
+document.getElementById('chatInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();chatSend()}});
+
+// Init
+loadChat();checkShareLink();initDeviceName();setTheme();updateBgOpacity(60);uc();
 </script>
 </body>
 </html>
