@@ -49,7 +49,7 @@ HTML = f'''<!DOCTYPE html>
 body{{
     font-family:-apple-system,'PingFang SC',system-ui,sans-serif;
     background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;
-    display:flex;flex-direction:column;color-scheme:dark;
+    display:flex;flex-direction:column;color-scheme:dark;transition:background 0.5s;
 }}
 .topbar{{
     display:flex;align-items:center;gap:8px;padding:10px 12px;
@@ -155,6 +155,16 @@ textarea[readonly]{{background:rgba(0,0,0,0.15)}}
     <button class="icon-btn" onclick="openLyricPicker()" title="从歌词挑选" style="color:var(--accent)">📜</button>
 </div>
 
+<div style="display:flex;align-items:center;gap:6px;padding:4px 12px;font-size:0.75rem;color:var(--dim);">
+    <span>🎨</span>
+    <button class="icon-btn" onclick="prevTheme()" style="width:28px;height:28px;font-size:0.7rem;">◀</button>
+    <span id="themeName" style="min-width:90px;text-align:center;font-size:0.78rem;">1989</span>
+    <button class="icon-btn" onclick="nextTheme()" style="width:28px;height:28px;font-size:0.7rem;">▶</button>
+    <span style="margin-left:8px;">🌓</span>
+    <input type="range" id="bgOpacity" min="0" max="100" value="60" oninput="updateBgOpacity(this.value)" style="flex:1;max-width:80px;accent-color:var(--accent);">
+    <span id="bgOpacityVal" style="min-width:28px;">60%</span>
+</div>
+
 <div class="tabs">
     <div class="tab active" onclick="switchTab('enc')">🔒 加密</div>
     <div class="tab" onclick="switchTab('dec')">🔓 解密</div>
@@ -237,6 +247,32 @@ function genPwd(){{
     document.getElementById('password').value=p;document.getElementById('password').type='text';
     document.getElementById('togglePwd').textContent='🙈';t('🎲 '+p);
 }}
+// Theme gradients (inspired by album color palettes)
+const THEMES=[
+    {{name:'纯黑',grad:''}},
+    {{name:'Debut',grad:'linear-gradient(135deg,#0a4a3a,#1a6b5a,#0d5c8a)'}},
+    {{name:'Fearless',grad:'linear-gradient(135deg,#3d2b0a,#6b4c1a,#c4942a)'}},
+    {{name:'Speak Now',grad:'linear-gradient(135deg,#2a0a3d,#5c1a6b,#c94aa4)'}},
+    {{name:'Red',grad:'linear-gradient(135deg,#3d0a0a,#8b1a1a,#d44a2a)'}},
+    {{name:'1989',grad:'linear-gradient(135deg,#1a3a5c,#4a8ab5,#c4ddf0)'}},
+    {{name:'Reputation',grad:'linear-gradient(135deg,#0a0a0a,#2a2a2a,#5a5a5a)'}},
+    {{name:'Lover',grad:'linear-gradient(135deg,#4a2a5c,#8b6ab5,#f0c4e0)'}},
+    {{name:'Folklore',grad:'linear-gradient(135deg,#1a2a1a,#3a5a3a,#8a9a7a)'}},
+    {{name:'Evermore',grad:'linear-gradient(135deg,#3d2a1a,#6b4a2a,#c48a4a)'}},
+    {{name:'Midnights',grad:'linear-gradient(135deg,#0a0a2a,#1a1a5c,#4a3a8b)'}},
+    {{name:'TTPD',grad:'linear-gradient(135deg,#3d3a2a,#8b8a6a,#d4c4a0)'}},
+    {{name:'Showgirl',grad:'linear-gradient(135deg,#2a0a1a,#8b1a4a,#d4a43a)'}},
+];
+let themeIdx=5;
+function setTheme(){{
+    const t=THEMES[themeIdx];document.getElementById('themeName').textContent=t.name;
+    document.body.style.background=t.grad||'var(--bg)';
+}}
+function prevTheme(){{themeIdx=(themeIdx-1+THEMES.length)%THEMES.length;setTheme();}}
+function nextTheme(){{themeIdx=(themeIdx+1)%THEMES.length;setTheme();}}
+function updateBgOpacity(v){{
+    document.body.style.opacity=v/100;document.getElementById('bgOpacityVal').textContent=v+'%';
+}}
 
 // Lyrics Picker (full embedded data, custom selects)
 const LYRIC_DATA=`{embedded}`;
@@ -285,7 +321,7 @@ function useLyric(){{
 }}
 function eh(s){{return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}}
 document.getElementById('lyricModal').addEventListener('click',function(e){{if(e.target===this)closeLyricPicker()}});
-uc();
+setTheme();updateBgOpacity(60);uc();
 </script>
 </body>
 </html>
