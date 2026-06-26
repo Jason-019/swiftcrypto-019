@@ -254,7 +254,8 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <div class="btn-row">
             <button class="btn btn-copy" onclick="copyText('cipherOutput')">📋 复制密文</button>
             <button class="btn btn-outline" id="emojiToggle" onclick="toggleEmojiMode()">🎭 Emoji</button>
-            <button class="btn btn-outline" onclick="openShareModal()">🔗 分享</button>
+            <button class="btn btn-outline" onclick="shareCipher()">📤 分享</button>
+            <button class="btn btn-outline" onclick="openShareModal()">🔗 链接</button>
         </div>
         <div class="char-count" id="cipherCount">密文: 0 字</div>
     </div>
@@ -618,6 +619,20 @@ function switchTab(tab){document.querySelectorAll('.tab,.panel').forEach(e=>e.cl
 function t(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
 function clearArea(id){document.getElementById(id).value='';uc()}
 async function copyText(id){let v;if(id==='cipherOutput'&&emojiMode){v=document.getElementById('emojiCipher').textContent}else{v=document.getElementById(id).value}if(!v)return t('⚠️ 无内容');try{await navigator.clipboard.writeText(v);t('✅ 已复制')}catch{document.getElementById(id).select();document.execCommand('copy');t('✅ 已复制')}}
+async function shareCipher(){
+    const b64=document.getElementById('cipherOutput').value;
+    if(!b64)return t('⚠️ 请先生成密文');
+    if(!navigator.share)return copyText('cipherOutput'),t('📋 已复制（此浏览器不支持分享）');
+    try{await navigator.share({title:'SwiftCrypto 密文',text:b64});t('✅ 已分享')}catch(e){if(e.name!=='AbortError')copyText('cipherOutput'),t('📋 已复制（分享取消，已备选复制）')}
+}
+function handleIncomingShare(){
+    const params=new URLSearchParams(location.search);
+    const shared=params.get('text')||params.get('title')||'';
+    if(shared&&shared.length>10&&B64.indexOf(shared[0])>=0){
+        document.getElementById('cipherInput').value=shared;
+        switchTab('dec');setTimeout(()=>doDecrypt(),400);
+    }
+}
 function uc(){document.getElementById('cipherCount').textContent='密文: '+document.getElementById('cipherOutput').value.length+' 字';document.getElementById('plainCount').textContent='明文: '+document.getElementById('plainOutput').value.length+' 字'}
 function genPwd(){
     const w='starlight wonder midnight crystal velvet golden crimson silver whisper shadow dawn autumn winter summer thunder lightning rainbow phoenix dragon eagle ocean river mountain forest meadow garden castle bridge tower mirror'.split(' ');
@@ -1075,6 +1090,7 @@ window.addEventListener('beforeunload',function(){if(isIncog()){localStorage.cle
 
 // Init
 loadChat();checkShareLink();initDeviceName();setTheme();updateBgOpacity(100);uc();
+handleIncomingShare();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
 </script>
