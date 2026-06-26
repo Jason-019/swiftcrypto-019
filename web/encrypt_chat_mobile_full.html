@@ -851,7 +851,7 @@ function renderChat(){
         const sdRemain=m.sdExpiry?` <span class="sd-countdown" data-exp="${m.sdExpiry}">⏳${fmtRemaining(m.sdExpiry-Date.now())}</span>`:'';
         const sdBadge=m.sd&&!m.sdExpiry?'<span class="sd-badge">🔥</span>':'';
         const expStyle=m.expired?'opacity:0.5;font-style:italic':'';
-        const cp=m.cipher?`<div class="cipher-preview">🔐 ${eh(m.cipher.slice(0,40))}…</div>`:'';
+        const cp=m.cipher?`<div class="cipher-preview" onclick="copyChatMsgCipher('${eh(m.cipher)}')" title="点击复制完整密文" style="cursor:pointer">🔐 ${eh(m.cipher.slice(0,40))}…</div>`:'';
         return `<div class="chat-msg ${cls}" style="${expStyle}"><div class="meta"><span>${label}${devLabel}${sdBadge}${sdRemain}</span><span>${time}</span></div><div>${eh(m.text)}</div>${cp}</div>`;
     }).join('');
     area.scrollTop=area.scrollHeight;
@@ -920,6 +920,10 @@ async function copyChatCipher(){
     const v=document.getElementById('chatCipherText').textContent;
     if(!v)return t('⚠️ 无内容');
     try{await navigator.clipboard.writeText(v);t('✅ 密文已复制！发给对方吧')}catch{t('⚠️ 复制失败')}
+}
+async function copyChatMsgCipher(cipher){
+    if(!cipher)return;
+    try{await navigator.clipboard.writeText(cipher);t('✅ 历史密文已复制')}catch{t('⚠️ 复制失败')}
 }
 async function shareChatCipher(){
     const v=document.getElementById('chatCipherText').textContent;
