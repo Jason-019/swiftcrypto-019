@@ -959,12 +959,60 @@ async function autoPasteIfEnabled(){
 }
 document.getElementById('chatInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();chatSend()}});
 
+// ---- 🔧 XOR Parity ECC for Era Grid ----
+function encodeParity(b64){
+    // Group into blocks of 4, add XOR parity char per block (25% overhead)
+    const clean=b64.replace(/=+$/,'');let out='';
+    for(let i=0;i<clean.length;i+=4){
+        const block=clean.slice(i,i+4);
+        let xor=0;for(const c of block)xor^=B64.indexOf(c);
+        out+=block+B64[xor];
+    }
+    return out;
+}
+function decodeParity(b64){
+    // Decode parity: each 5-char block = 4 data + 1 parity. Try to repair single errors.
+    const clean=b64.replace(/=+$/,'');if(clean.length%5!==0)return b64; // Not parity-encoded
+    let out='',repaired=0;
+    for(let i=0;i<clean.length;i+=5){
+        const block=clean.slice(i,i+5);
+        const idx=block.split('').map(c=>B64.indexOf(c));
+        // Check if any char is invalid
+        const invalid=idx.map((v,j)=>v<0?j:-1).filter(j=>j>=0);
+        if(invalid.length>0){
+            // Try to repair: compute what the invalid char should be
+            let xor=0;for(let j=0;j<5;j++)if(j!==invalid[0])xor^=idx[j];
+            if(xor>=0&&xor<64){idx[invalid[0]]=xor;repaired++;}
+        }else{
+            // All valid — check parity
+            const parity=idx[0]^idx[1]^idx[2]^idx[3];
+            if(parity!==idx[4]){
+                // Parity mismatch — try each position
+                let found=false;
+                for(let tryPos=0;tryPos<5&&!found;tryPos++){
+                    let xor=0;for(let j=0;j<5;j++)if(j!==tryPos)xor^=idx[j];
+                    if(xor>=0&&xor<64){
+                        idx[tryPos]=xor;repaired++;found=true;
+                    }
+                }
+            }
+        }
+        // Output first 4 chars of the (possibly repaired) block
+        for(let j=0;j<4;j++){
+            const v=idx[j];
+            out+=(v>=0&&v<64)?B64[v]:clean[i+j]; // Use original if repair failed
+        }
+    }
+    if(repaired)console.log('Parity repaired '+repaired+' errors');
+    return out;
+}
 // ---- 🎨 Era Color Grid share ----
 const ERA_COLORS=['#FFD60A','#FF9500','#34C759','#007AFF','#AF52DE','#5AC8FA','#FF2D55','#8E8E93'];
 const ERA_NAMES=['Gold','Fearless','Debut','1989','Speak Now','Evermore','Lover','Midnights'];
 function renderEraGrid(){
-    const b64=document.getElementById('cipherOutput').value;
+    let b64=document.getElementById('cipherOutput').value;
     const cv=document.getElementById('eraGridCanvas');if(!cv||!b64)return;
+    b64=encodeParity(b64); // Add XOR parity
     const COLS=16,CELL=16,GAP=2,PAD=8,REF_H=CELL+8;
     const cells=[];for(const c of b64){const i=B64.indexOf(c);if(i>=0){cells.push(i>>3,i&7)}}
     const rows=Math.ceil(cells.length/COLS);
@@ -1124,7 +1172,9 @@ function decodeEraGrid(){
             }
         }
         if(b64){
-            // Restore base64 padding stripped during encoding
+            // XOR parity repair
+            b64=decodeParity(b64);
+            // Restore base64 padding
             while(b64.length%4)b64+='=';
             document.getElementById('cipherInput').value=b64;uc();
             document.getElementById('eraFileInput').value='';
