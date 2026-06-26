@@ -1218,63 +1218,91 @@ function stStopPlayback(){
     if(_stPlayTimer){clearInterval(_stPlayTimer);_stPlayTimer=null;}
 }
 
-// ---- Audio reception (microphone → FFT → frequency detection) ----
+// ---- Audio reception (microphone → envelope tracking + FFT) ----
 async function stListen(){
     if(_stListening){stStopListen();return;}
-    // Clear previous results
     document.getElementById('stOutput').value='';
-    stInitCanvas();
-    stProgress(0);
-    _stDetected=[];
+    stInitCanvas();stProgress(0);_stDetected=[];
     try{
         if(!_stAudioCtx)_stAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
         const ctx=_stAudioCtx;
         _stStream=await navigator.mediaDevices.getUserMedia({audio:true});
         const src=ctx.createMediaStreamSource(_stStream);
+        // Frequency analyser
         const analyser=ctx.createAnalyser();
-        analyser.fftSize=4096; // 93ms window at 44.1kHz, good time resolution
-        analyser.smoothingTimeConstant=0; // No smoothing, instant response
+        analyser.fftSize=2048; // 46ms window, fast response
+        analyser.smoothingTimeConstant=0;
         analyser.minDecibels=-90;analyser.maxDecibels=-10;
         src.connect(analyser);
+        // Time-domain analyser for envelope detection
+        const tdAnalyser=ctx.createAnalyser();
+        tdAnalyser.fftSize=512;smoothingTimeConstant=0;
+        src.connect(tdAnalyser);
         _stListening=true;
-        document.getElementById('stListenBtn').textContent='⏹ 停止接收';
-        document.getElementById('stListenBtn').style.background='#ef4444';
-        document.getElementById('stListenBtn').style.color='#fff';
+        const btn=document.getElementById('stListenBtn');
+        btn.textContent='⏹ 停止接收';btn.style.background='#ef4444';btn.style.color='#fff';
         stStatus('🎤 正在监听… 请播放 SwiftTone 音频');
-        stProgress(0);
 
-        _stDetected=[];
-        const buf=new Float32Array(analyser.fftSize);
+        const freqBuf=new Float32Array(analyser.fftSize);
+        const tdBuf=new Uint8Array(tdAnalyser.fftSize);
         const sampleRate=ctx.sampleRate;
-        const binWidth=sampleRate/analyser.fftSize; // ~10.8Hz per bin
-        const halfBin=Math.max(2,Math.round(20/binWidth)); // ±20Hz tolerance (~2 bins)
-        let lastDetect=-1,lastDetectTime=0;
-        const minGapMs=ST_SYM_LEN*0.6; // Minimum 72ms between distinct symbols
+        const binWidth=sampleRate/analyser.fftSize;
+        const halfBin=Math.max(2,Math.round(22/binWidth));
+
+        let state='IDLE'; // IDLE | TONE
+        let toneVotes={},toneReads=0;
+        let lastRecorded=-1,lastRecordTime=0;
+        const minGapMs=ST_SYM_LEN*0.55; // ~66ms cooldown
 
         const poll=()=>{
             if(!_stListening)return;
-            analyser.getFloatFrequencyData(buf);
+            // Get time-domain power for envelope detection
+            tdAnalyser.getByteTimeDomainData(tdBuf);
+            let sumSq=0;
+            for(let i=0;i<tdBuf.length;i++){const v=(tdBuf[i]-128)/128;sumSq+=v*v;}
+            const rms=Math.sqrt(sumSq/tdBuf.length); // 0~1
+
+            // Get frequency data
+            analyser.getFloatFrequencyData(freqBuf);
             let bestFreq=-1,bestP=-Infinity;
             for(let i=0;i<8;i++){
-                const targetFreq=ST_FREQS[i];
-                const k=Math.round(analyser.fftSize*targetFreq/sampleRate);
+                const k=Math.round(analyser.fftSize*ST_FREQS[i]/sampleRate);
                 if(k<1||k>=analyser.fftSize)continue;
-                // Average power around target bin
                 let sum=0,n=0;
-                for(let b=Math.max(0,k-halfBin);b<Math.min(analyser.fftSize,k+halfBin+1);b++){sum+=buf[b];n++;}
+                for(let b=Math.max(0,k-halfBin);b<Math.min(analyser.fftSize,k+halfBin+1);b++){sum+=freqBuf[b];n++;}
                 const avgP=n>0?sum/n:-200;
                 if(avgP>bestP){bestP=avgP;bestFreq=i;}
             }
-            // Adaptive threshold: detect if any frequency stands out
+
             const now=Date.now();
-            if(bestP>-75&&bestFreq>=0&&(bestFreq!==lastDetect||now-lastDetectTime>minGapMs)){
-                _stDetected.push(bestFreq);
-                lastDetect=bestFreq;lastDetectTime=now;
-                stStatus('🎤 '+ST_NOTE_NAMES[bestFreq]+' ('+_stDetected.length+'/'+_stPlaySyms.length+' 符号)');
-                stProgress(Math.min(100,Math.floor(100*_stDetected.length/(_stPlaySyms.length||100))));
-                stUpdateVisual(bestFreq);
+            const toneActive=rms>0.04&&bestP>-72&&bestFreq>=0; // Envelope + frequency together
+
+            if(state==='IDLE'){
+                if(toneActive){
+                    state='TONE';toneVotes={};toneReads=0;
+                }
             }
-            _stPollTimer=setTimeout(poll,ST_SYM_LEN/2); // Poll every 60ms
+            if(state==='TONE'){
+                if(toneActive){
+                    toneVotes[bestFreq]=(toneVotes[bestFreq]||0)+1;toneReads++;
+                }else{
+                    // Tone ended — record the winner
+                    if(toneReads>=2){ // Need at least 2 readings to be confident
+                        let winner=-1,winnerVotes=0;
+                        for(const[f,c]of Object.entries(toneVotes)){if(c>winnerVotes){winnerVotes=c;winner=parseInt(f);}}
+                        if(winner>=0&&winnerVotes>=toneReads*0.5&&(winner!==lastRecorded||now-lastRecordTime>minGapMs)){
+                            _stDetected.push(winner);
+                            lastRecorded=winner;lastRecordTime=now;
+                            stStatus('🎤 '+ST_NOTE_NAMES[winner]+' ('+_stDetected.length+' 符号, '+toneReads+' 采样)');
+                            stUpdateVisual(winner);
+                        }
+                    }
+                    state='IDLE';toneVotes={};toneReads=0;
+                }
+            }
+
+            stProgress(Math.min(99,Math.floor(100*_stDetected.length/(_stPlaySyms.length||100))));
+            _stPollTimer=setTimeout(poll,25); // Poll every 25ms (~4x per symbol)
         };
         poll();
     }catch(e){t('❌ 麦克风访问失败: '+e.message);stStatus('❌ '+e.message);}
