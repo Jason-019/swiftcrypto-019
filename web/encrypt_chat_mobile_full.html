@@ -219,6 +219,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 </div>
 <div class="pwd-strength"><div id="pwdStrengthBar"></div></div>
 <div class="pwd-label" id="pwdStrengthLabel"></div>
+<div id="pwdHint" style="display:none;margin:2px 12px;padding:6px 10px;border-radius:var(--rs);background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2);font-size:0.7rem;color:#c4b5fd">💡 <span id="pwdHintText"></span></div>
 
 <div style="display:flex;align-items:center;gap:4px;padding:4px 10px;font-size:0.75rem;color:var(--dim);">
     <span>🎨</span>
@@ -799,8 +800,11 @@ function checkShareLink(){
     if(c){
         document.getElementById('cipherInput').value=decodeURIComponent(c);
         switchTab('dec');
-        if(h){document.getElementById('password').placeholder='💡 提示: '+decodeURIComponent(h);t('📨 收到分享密文！')}
-        else t('📨 收到分享密文！')
+        if(h){
+            document.getElementById('pwdHintText').textContent='密码提示：'+decodeURIComponent(h);
+            document.getElementById('pwdHint').style.display='';
+            t('📨 收到分享密文！（密码提示已显示）')
+        }else t('📨 收到分享密文！')
     }
 }
 document.getElementById('shareModal').addEventListener('click',function(e){if(e.target===this)closeShareModal()});
