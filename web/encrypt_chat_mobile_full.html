@@ -293,11 +293,15 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
                 <span style="font-size:0.65rem;color:var(--dim);white-space:nowrap">📋</span>
                 <code id="chatCipherText" style="flex:1;font-size:0.65rem;color:var(--accent);word-break:break-all;background:rgba(0,0,0,0.25);padding:6px 8px;border-radius:6px;max-height:36px;overflow:hidden"></code>
                 <button class="btn btn-copy" onclick="copyChatCipher()" style="flex:none;padding:6px 10px;font-size:0.7rem">📋</button>
+                <button class="btn btn-outline" onclick="shareChatCipher()" style="flex:none;padding:4px 7px;font-size:0.65rem">📤</button>
                 <button class="btn btn-outline" id="chatEmojiToggle" onclick="toggleChatEmoji()" style="flex:none;padding:4px 7px;font-size:0.65rem">🎭</button>
             </div>
         </div>
         <div class="chat-input-row" style="margin-top:4px">
-            <textarea id="chatRecvInput" placeholder="📥 粘贴对方发来的密文…" rows="1"></textarea>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.6rem;color:var(--dim);cursor:pointer;flex-shrink:0">
+                <input type="checkbox" id="autoPasteChat" onchange="toggleAutoPasteChat()"> 📋 自动粘贴
+            </label>
+            <textarea id="chatRecvInput" placeholder="📥 粘贴对方发来的密文…" rows="1" onfocus="autoPasteIfEnabled()"></textarea>
             <button class="btn btn-copy" onclick="chatReceive()" style="flex:none">🔓 解密</button>
         </div>
         <div class="chat-actions">
@@ -910,6 +914,25 @@ async function copyChatCipher(){
     const v=document.getElementById('chatCipherText').textContent;
     if(!v)return t('⚠️ 无内容');
     try{await navigator.clipboard.writeText(v);t('✅ 密文已复制！发给对方吧')}catch{t('⚠️ 复制失败')}
+}
+async function shareChatCipher(){
+    const v=document.getElementById('chatCipherText').textContent;
+    if(!v)return t('⚠️ 无内容');
+    if(!navigator.share){copyChatCipher();return}
+    try{await navigator.share({title:'SwiftCrypto 密聊',text:v});t('✅ 已分享')}catch(e){if(e.name!=='AbortError')copyChatCipher(),t('📋 已复制（分享取消）')}
+}
+// Auto-paste clipboard into chat receive
+let _autoPasteChat=false;
+function toggleAutoPasteChat(){_autoPasteChat=document.getElementById('autoPasteChat').checked}
+async function autoPasteIfEnabled(){
+    if(!_autoPasteChat)return;
+    try{
+        const text=await navigator.clipboard.readText();
+        if(text&&text.length>10&&text.includes('/')||text.includes('+')){
+            document.getElementById('chatRecvInput').value=text;
+            chatReceive();
+        }
+    }catch(e){}
 }
 document.getElementById('chatInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();chatSend()}});
 
