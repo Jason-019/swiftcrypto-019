@@ -1088,17 +1088,17 @@ function decodeEraGrid(){
         }
         // Adaptive thresholds with safety floors
         const maxDist=Math.max(minPairDist*0.5,8000);
-        const darkestBg=Math.min(...calibratedRGB.map(c=>c[0]+c[1]+c[2]))*0.15;
+        const darkestBg=Math.min(...calibratedRGB.map(c=>c[0]+c[1]+c[2]))*0.1;
         // ---- Step 3: Decode using calibrated positions & colors ----
-        const dataStartY=refY+swatchW+Math.round(swatchW/2); // center of first data row
+        const dataStartY=refY+swatchW+Math.round(swatchW/2);
         const gridX=offsetX+cellGap;
         const sampleCell=(col,row)=>{
             const cx=gridX+col*(cellW+cellGap)+Math.floor(cellW/2);
             const cy=dataStartY+row*(cellW+cellGap);
-            if(cx<2||cy<2||cx>=W-2||cy>=H-2)return -1;
+            if(cx<3||cy<3||cx>=W-3||cy>=H-3)return -1;
             let sr=0,sg=0,sb=0,n=0;
-            for(let dx=-2;dx<=2;dx++)for(let dy=-2;dy<=2;dy++){
-                const w=3-Math.abs(dx)-Math.abs(dy);if(w<=0)continue;
+            for(let dx=-3;dx<=3;dx++)for(let dy=-3;dy<=3;dy++){
+                const w=4-Math.abs(dx)-Math.abs(dy);if(w<=0)continue;
                 const px=cx+dx,py=cy+dy;
                 if(px>=0&&py>=0&&px<W&&py<H){const d=ctx.getImageData(px,py,1,1).data;sr+=d[0]*w;sg+=d[1]*w;sb+=d[2]*w;n+=w;}
             }
@@ -1110,7 +1110,7 @@ function decodeEraGrid(){
                 const d=(r-calibratedRGB[i][0])**2+(g-calibratedRGB[i][1])**2+(b-calibratedRGB[i][2])**2;
                 if(d<bestD){secondD=bestD;bestD=d;bestI=i}else if(d<secondD)secondD=d;
             }
-            return (bestD<maxDist&&bestD*2.5<secondD)?bestI:-1;
+            return (bestD<maxDist&&bestD*2<secondD)?bestI:-1;
         };
         let b64='';let emptyRows=0;
         for(let row=0;;row++){
