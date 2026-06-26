@@ -349,22 +349,20 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 const NS=12,KS=256,IT=600000,ST=new TextEncoder().encode('SCMobile_v1');
 async function dk(p){const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:ST,iterations:IT,hash:'SHA-256'},m,{name:'AES-GCM',length:KS},false,['encrypt','decrypt'])}
 async function doEncrypt(){
-    autoSavePwd();
     let p=document.getElementById('plainInput').value;if(!p)return t('请输入明文');
     const sdm=getSDMeta();if(sdm)p=sdm+p;
-    try{const k=await dk(gp()),n=crypto.getRandomValues(new Uint8Array(NS)),c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(p)),m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);document.getElementById('cipherOutput').value=btoa(String.fromCharCode(...m));uc();updateEmojiDisplay();t(sdm?'🔥 定时焚毁密文已生成 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 加密完成')}catch(e){t('❌ '+e.message)}
+    try{const k=await dk(gp()),n=crypto.getRandomValues(new Uint8Array(NS)),c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(p)),m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);document.getElementById('cipherOutput').value=btoa(String.fromCharCode(...m));uc();updateEmojiDisplay();autoSavePwd();t(sdm?'🔥 定时焚毁密文已生成 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 加密完成')}catch(e){t('❌ '+e.message)}
 }
 async function doDecrypt(){
-    autoSavePwd();
     let b=document.getElementById('cipherInput').value.trim();if(!b)return t('请输入密文');
     if(isEmojiCipher(b)){b=emojiToCipher(b);document.getElementById('cipherInput').value=b;t('🎭 已识别Emoji密文')}
-    stopDecryptCountdown(); // clear previous timer
+    stopDecryptCountdown();
     try{const k=await dk(gp()),r=Uint8Array.from(atob(b),c=>c.charCodeAt(0)),p=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));let pt=new TextDecoder().decode(p);
         const sd=checkSelfDestruct(pt);
         if(!sd.valid){document.getElementById('plainOutput').value=sd.message;uc();t('🔥 '+sd.message);return}
         document.getElementById('plainOutput').value=sd.message;uc();
         if(sd.wasSD)startDecryptCountdown(sd.expiry,sd.message);
-        t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功')}catch(e){t(e.name==='OperationError'?'❌ 密码错误':'❌ '+e.message)}
+        autoSavePwd();t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功')}catch(e){t(e.name==='OperationError'?'❌ 密码错误':'❌ '+e.message)}
 }
 function gp(){return document.getElementById('password').value}
 // ---- 🔥 SD real-time countdown ----
@@ -602,7 +600,6 @@ function clearArea(id){document.getElementById(id).value='';uc()}
 async function copyText(id){let v;if(id==='cipherOutput'&&emojiMode){v=document.getElementById('emojiCipher').textContent}else{v=document.getElementById(id).value}if(!v)return t('⚠️ 无内容');try{await navigator.clipboard.writeText(v);t('✅ 已复制')}catch{document.getElementById(id).select();document.execCommand('copy');t('✅ 已复制')}}
 function uc(){document.getElementById('cipherCount').textContent='密文: '+document.getElementById('cipherOutput').value.length+' 字';document.getElementById('plainCount').textContent='明文: '+document.getElementById('plainOutput').value.length+' 字'}
 function genPwd(){
-    autoSavePwd();
     const w='starlight wonder midnight crystal velvet golden crimson silver whisper shadow dawn autumn winter summer thunder lightning rainbow phoenix dragon eagle ocean river mountain forest meadow garden castle bridge tower mirror'.split(' ');
     const p=w[Math.floor(Math.random()*w.length)]+'-'+Math.floor(Math.random()*900+100)+'-'+w[Math.floor(Math.random()*w.length)];
     document.getElementById('password').value=p;document.getElementById('password').type='text';
@@ -685,7 +682,7 @@ function pickLyric(el){
 function openLyricPicker(){document.getElementById('lyricModal').classList.add('show')}
 function closeLyricPicker(){document.getElementById('lyricModal').classList.remove('show')}
 function useLyric(){
-    const pw=document.getElementById('password');pw.value=_selectedLyric;pw.type='text';autoSavePwd();
+    const pw=document.getElementById('password');pw.value=_selectedLyric;pw.type='text';
     document.getElementById('togglePwd').textContent='🙈';closeLyricPicker();t('✅ 歌词已填入');updatePwdStrength();
 }
 function eh(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
@@ -816,7 +813,7 @@ function renderChat(){
     else stopChatSDWatch();
 }
 async function chatSend(){
-    checkPwdChange();autoSavePwd();
+    checkPwdChange();
     const input=document.getElementById('chatInput'),text=input.value.trim();
     if(!text)return t('请输入消息');
     const pw=gp();if(!pw)return t('请先设置共享密码');
@@ -835,10 +832,11 @@ async function chatSend(){
         document.getElementById('chatCipherRow').style.display='';
         document.getElementById('cipherOutput').value=b64;uc();updateEmojiDisplay();
         t(sdm?'🔥 定时焚毁消息已加密 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 已加密！点击 📋 复制密文发给对方');
+        autoSavePwd();
     }catch(e){t('❌ '+e.message)}
 }
 async function chatReceive(){
-    checkPwdChange();autoSavePwd();
+    checkPwdChange();
     let b64=document.getElementById('chatRecvInput').value.trim();
     if(!b64)return t('请先粘贴对方的密文');
     if(isEmojiCipher(b64)){b64=emojiToCipher(b64);document.getElementById('chatRecvInput').value=b64;t('🎭 已识别Emoji密文')}
@@ -862,7 +860,7 @@ async function chatReceive(){
         chatMsgs.push({role:'them',text,cipher:b64,time:Date.now(),device:senderId,senderName,sd:sd.wasSD,sdExpiry:sd.expiry});
         saveChat();renderChat();document.getElementById('chatRecvInput').value='';
         if(sd.wasSD)startChatSDWatch();
-        t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功！');
+        autoSavePwd();t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功！');
     }catch(e){t(e.name==='OperationError'?'❌ 密码错误，对方用的密码和你不同':'❌ '+e.message)}
 }
 function clearChat(skipConfirm){if(skipConfirm||confirm('确定清除所有聊天记录？')){chatMsgs=[];saveChat();renderChat();t('🗑 聊天记录已清除')}}
