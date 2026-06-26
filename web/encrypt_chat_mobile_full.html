@@ -325,7 +325,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     <div class="sheet">
         <h3>🔗 分享加密消息</h3>
         <label style="font-size:0.75rem;color:var(--dim)">密码提示（可选，不要直接填密码！）</label>
-        <input type="text" id="shareHint" placeholder="例如：我们常用的那个密码…">
+        <input type="text" id="shareHint" placeholder="例如：我们常用的那个密码…" oninput="updateShareLink()">
         <label style="font-size:0.75rem;color:var(--dim)">🎨 Eras 色块密码 — 截图发微信</label>
         <div style="text-align:center"><canvas id="eraGridCanvas" style="width:100%;max-width:340px;border-radius:8px;image-rendering:pixelated"></canvas></div>
         <div id="shareLink">生成中…</div>
@@ -778,13 +778,20 @@ function updateEmojiDisplay(){
 }
 
 // ========== 🔗 一键分享链接 ==========
+function buildShareUrl(){
+    const b64=document.getElementById('cipherOutput').value;
+    if(!b64)return '';
+    const hint=document.getElementById('shareHint').value.trim()||'';
+    const base=location.origin==='null'||location.protocol==='file:'?location.href.split('#')[0]:location.origin+location.pathname;
+    return base+'#c='+encodeURIComponent(b64)+(hint?'&h='+encodeURIComponent(hint):'');
+}
+function updateShareLink(){
+    const url=buildShareUrl();if(url)document.getElementById('shareLink').textContent=url;
+}
 function openShareModal(){
     const b64=document.getElementById('cipherOutput').value;
     if(!b64)return t('⚠️ 请先生成密文');
-    const hint=document.getElementById('shareHint').value.trim()||'';
-    const base=location.origin==='null'||location.protocol==='file:'?location.href.split('#')[0]:location.origin+location.pathname;
-    const url=base+'#c='+encodeURIComponent(b64)+(hint?'&h='+encodeURIComponent(hint):'');
-    document.getElementById('shareLink').textContent=url;
+    document.getElementById('shareLink').textContent=buildShareUrl();
     renderEraGrid();
     document.getElementById('shareModal').classList.add('show');
 }
