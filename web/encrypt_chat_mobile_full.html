@@ -156,6 +156,21 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 .incog-toggle .switch::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .3s}
 .incog-toggle input:checked+.switch{background:#ef4444}
 .incog-toggle input:checked+.switch::after{left:16px}
+/* Self-destruct */
+.sd-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:0.72rem}
+.sd-row .sd-toggle{display:flex;align-items:center;gap:3px;cursor:pointer}
+.sd-row .sd-toggle input{display:none}
+.sd-row .sd-toggle .switch{width:28px;height:16px;border-radius:8px;background:rgba(255,255,255,0.12);position:relative;transition:background .3s;flex-shrink:0}
+.sd-row .sd-toggle .switch::after{content:'';position:absolute;top:1.5px;left:1.5px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left .3s}
+.sd-row .sd-toggle input:checked+.switch{background:#f97316}
+.sd-row .sd-toggle input:checked+.switch::after{left:13.5px}
+.sd-row .sd-opts{display:none;align-items:center;gap:4px;flex-wrap:wrap}
+.sd-row .sd-opts.show{display:flex}
+.sd-row .sd-time{display:flex;align-items:center;gap:2px}
+.sd-row .sd-time input{width:34px;padding:3px;border-radius:4px;border:1px solid var(--border);background:rgba(0,0,0,0.25);color:var(--text);font-size:0.7rem;text-align:center;outline:none;color-scheme:dark}
+.sd-row .sd-time input:focus{border-color:var(--accent)}
+.sd-badge{display:inline-block;font-size:0.55rem;background:#f97316;color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
+.sd-countdown{font-size:0.55rem;color:#f97316;margin-left:4px}
 </style>
 </head>
 <body>
@@ -207,6 +222,19 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 <div class="content">
     <div class="panel active" id="panelEnc">
         <textarea id="plainInput" placeholder="输入明文…"></textarea>
+        <div class="sd-row">
+            <label class="sd-toggle" title="🔥 定时焚毁">
+                <input type="checkbox" id="sdEnabled" onchange="toggleSD()">
+                <span class="switch"></span> <span style="color:var(--dim)">🔥 定时焚毁</span>
+            </label>
+            <span class="sd-opts" id="sdOpts">
+                <span class="sd-time">
+                    <input type="number" id="sdH" min="0" max="71" value="0" onchange="clampSD()"> <span style="font-size:0.65rem;color:var(--dim)">时</span>
+                    <input type="number" id="sdM" min="0" max="59" value="0" onchange="clampSD()"> <span style="font-size:0.65rem;color:var(--dim)">分</span>
+                    <input type="number" id="sdS" min="0" max="59" value="10" onchange="clampSD()"> <span style="font-size:0.65rem;color:var(--dim)">秒后销毁</span>
+                </span>
+            </span>
+        </div>
         <div class="btn-row">
             <button class="btn btn-primary" onclick="doEncrypt()">🔒 加密</button>
             <button class="btn btn-outline" onclick="clearArea('plainInput')">清空</button>
@@ -319,16 +347,107 @@ const NS=12,KS=256,IT=600000,ST=new TextEncoder().encode('SCMobile_v1');
 async function dk(p){const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:ST,iterations:IT,hash:'SHA-256'},m,{name:'AES-GCM',length:KS},false,['encrypt','decrypt'])}
 async function doEncrypt(){
     autoSavePwd();
-    const p=document.getElementById('plainInput').value;if(!p)return t('请输入明文');
-    try{const k=await dk(gp()),n=crypto.getRandomValues(new Uint8Array(NS)),c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(p)),m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);document.getElementById('cipherOutput').value=btoa(String.fromCharCode(...m));uc();updateEmojiDisplay();t('✅ 加密完成')}catch(e){t('❌ '+e.message)}
+    let p=document.getElementById('plainInput').value;if(!p)return t('请输入明文');
+    const sdm=getSDMeta();if(sdm)p=sdm+p;
+    try{const k=await dk(gp()),n=crypto.getRandomValues(new Uint8Array(NS)),c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(p)),m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);document.getElementById('cipherOutput').value=btoa(String.fromCharCode(...m));uc();updateEmojiDisplay();t(sdm?'🔥 定时焚毁密文已生成 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 加密完成')}catch(e){t('❌ '+e.message)}
 }
 async function doDecrypt(){
     autoSavePwd();
     let b=document.getElementById('cipherInput').value.trim();if(!b)return t('请输入密文');
     if(isEmojiCipher(b)){b=emojiToCipher(b);document.getElementById('cipherInput').value=b;t('🎭 已识别Emoji密文')}
-    try{const k=await dk(gp()),r=Uint8Array.from(atob(b),c=>c.charCodeAt(0)),p=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));document.getElementById('plainOutput').value=new TextDecoder().decode(p);uc();t('✅ 解密成功')}catch(e){t(e.name==='OperationError'?'❌ 密码错误':'❌ '+e.message)}
+    stopDecryptCountdown(); // clear previous timer
+    try{const k=await dk(gp()),r=Uint8Array.from(atob(b),c=>c.charCodeAt(0)),p=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));let pt=new TextDecoder().decode(p);
+        const sd=checkSelfDestruct(pt);
+        if(!sd.valid){document.getElementById('plainOutput').value=sd.message;uc();t('🔥 '+sd.message);return}
+        document.getElementById('plainOutput').value=sd.message;uc();
+        if(sd.wasSD)startDecryptCountdown(sd.expiry,sd.message);
+        t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功')}catch(e){t(e.name==='OperationError'?'❌ 密码错误':'❌ '+e.message)}
 }
 function gp(){return document.getElementById('password').value}
+// ---- 🔥 SD real-time countdown ----
+let _sdCD={expiry:0,timer:null,msg:''};
+function startDecryptCountdown(expiry,msg){
+    _sdCD={expiry,msg,timer:setInterval(()=>{
+        const r=expiry-Date.now();
+        const po=document.getElementById('plainOutput');
+        if(r<=0){po.value='💨 此消息已过期焚毁';uc();stopDecryptCountdown();t('🔥 消息已焚毁');return}
+        po.value=msg+'\n\n⏳ 剩余 '+fmtRemaining(r)+' 后焚毁';
+    },500)};
+}
+function stopDecryptCountdown(){
+    if(_sdCD.timer){clearInterval(_sdCD.timer);_sdCD={expiry:0,timer:null,msg:''};}
+}
+// ---- 🔥 Self-destruct (timer-based, 30s ~ 71h59m59s) ----
+function toggleSD(){
+    const on=document.getElementById('sdEnabled').checked;
+    document.getElementById('sdOpts').classList.toggle('show',on);
+}
+function clampSD(){
+    let h=parseInt(document.getElementById('sdH').value)||0;
+    let m=parseInt(document.getElementById('sdM').value)||0;
+    let s=parseInt(document.getElementById('sdS').value)||0;
+    if(m<0)m=0;if(m>59)m=59;
+    if(s<0)s=0;if(s>59)s=59;
+    if(h<0)h=0;if(h>71)h=71;
+    const total=h*3600+m*60+s;
+    if(total<10){h=0;m=0;s=10;} // minimum 10s
+    if(total>259199){h=71;m=59;s=59;} // max 71h59m59s
+    if(h===71&&m===59&&s>59)s=59;
+    document.getElementById('sdH').value=h;
+    document.getElementById('sdM').value=m;
+    document.getElementById('sdS').value=s;
+}
+function getSDMeta(){
+    if(!document.getElementById('sdEnabled').checked)return '';
+    clampSD();
+    const h=parseInt(document.getElementById('sdH').value)||0;
+    const m=parseInt(document.getElementById('sdM').value)||0;
+    const s=parseInt(document.getElementById('sdS').value)||10;
+    const exp=Date.now()+(h*3600+m*60+s)*1000;
+    return '🔥'+exp+'|';
+}
+function fmtRemaining(ms){
+    // Format remaining time nicely
+    if(ms<=0)return '已过期';
+    const t=Math.floor(ms/1000);
+    if(t<60)return t+'秒';
+    if(t<3600)return Math.floor(t/60)+'分'+ (t%60?t%60+'秒':'');
+    return Math.floor(t/3600)+'小时'+ (t%3600>=60?Math.floor((t%3600)/60)+'分':'');
+}
+function getSDRemainFromMeta(sdm){const m=sdm.match(/^🔥(\d+)\|/);return m?parseInt(m[1])-Date.now():0;}
+// ---- Chat SD live countdown watchdog ----
+let _chatSDTimer=null;
+function startChatSDWatch(){
+    if(_chatSDTimer)return;
+    _chatSDTimer=setInterval(()=>{
+        let changed=false;
+        const now=Date.now();
+        for(const m of chatMsgs){
+            if(!m.sdExpiry||m.expired)continue;
+            if(now>=m.sdExpiry){m.text='💨 此消息已过期焚毁';m.expired=true;m.sdExpiry=0;changed=true;}
+        }
+        if(changed){saveChat();renderChat();}
+        // Update visible countdowns without full re-render
+        document.querySelectorAll('.sd-countdown').forEach(el=>{
+            const exp=parseInt(el.dataset.exp);
+            const r=exp-now;
+            if(r<=0){el.textContent='💨已焚毁';el.style.color='#ef4444';}
+            else el.textContent='⏳'+fmtRemaining(r);
+        });
+        // Stop timer if no active SD messages
+        if(!chatMsgs.some(m=>m.sdExpiry&&!m.expired))stopChatSDWatch();
+    },500);
+}
+function stopChatSDWatch(){if(_chatSDTimer){clearInterval(_chatSDTimer);_chatSDTimer=null;}}
+function checkSelfDestruct(pt){
+    // Returns {valid, message, wasSD, remaining, expiry}
+    const m=pt.match(/^🔥(\d+)\|/);
+    if(!m)return {valid:true,message:pt,wasSD:false,remaining:0,expiry:0};
+    const exp=parseInt(m[1]),msg=pt.slice(m[0].length);
+    const remain=exp-Date.now();
+    if(remain<=0)return {valid:false,message:'💨 此消息已过期焚毁',wasSD:true,remaining:0,expiry:exp};
+    return {valid:true,message:msg,wasSD:true,remaining:remain,expiry:exp};
+}
 // ---- 📊 Password strength meter (entropy-based) ----
 function updatePwdStrength(){
     const p=gp(),bar=document.getElementById('pwdStrengthBar'),lbl=document.getElementById('pwdStrengthLabel');
@@ -658,10 +777,16 @@ function renderChat(){
             const hasNick=!!nick;
             devLabel=` · <span onclick="promptNickname('${eh(m.device||'')}')" style="cursor:pointer;border-bottom:1px dashed var(--dim)" title="${hasNick?'点击修改备注':'点击设置备注'}">${eh(displayName)}</span>`;
         }
+        const sdRemain=m.sdExpiry?` <span class="sd-countdown" data-exp="${m.sdExpiry}">⏳${fmtRemaining(m.sdExpiry-Date.now())}</span>`:'';
+        const sdBadge=m.sd&&!m.sdExpiry?'<span class="sd-badge">🔥</span>':'';
+        const expStyle=m.expired?'opacity:0.5;font-style:italic':'';
         const cp=m.cipher?`<div class="cipher-preview">🔐 ${eh(m.cipher.slice(0,40))}…</div>`:'';
-        return `<div class="chat-msg ${cls}"><div class="meta"><span>${label}${devLabel}</span><span>${time}</span></div><div>${eh(m.text)}</div>${cp}</div>`;
+        return `<div class="chat-msg ${cls}" style="${expStyle}"><div class="meta"><span>${label}${devLabel}${sdBadge}${sdRemain}</span><span>${time}</span></div><div>${eh(m.text)}</div>${cp}</div>`;
     }).join('');
     area.scrollTop=area.scrollHeight;
+    // Auto-start SD watchdog if any active countdowns
+    if(chatMsgs.some(m=>m.sdExpiry&&!m.expired))startChatSDWatch();
+    else stopChatSDWatch();
 }
 async function chatSend(){
     checkPwdChange();autoSavePwd();
@@ -670,18 +795,19 @@ async function chatSend(){
     const pw=gp();if(!pw)return t('请先设置共享密码');
     try{
         const k=await dk(pw),n=crypto.getRandomValues(new Uint8Array(NS));
-        const payload=`[${getDeviceName()}|${getDeviceId()}]${text}`;
+        const sdm=getSDMeta();
+        const payload=sdm+`[${getDeviceName()}|${getDeviceId()}]${text}`;
         const c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(payload));
         const m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);
         const b64=btoa(String.fromCharCode(...m));
-        chatMsgs.push({role:'me',text,cipher:b64,time:Date.now(),device:getDeviceId()});
+        const sdExp=sdm?parseInt(sdm.match(/^🔥(\d+)\|/)?.[1]||'0'):0;
+        chatMsgs.push({role:'me',text,cipher:b64,time:Date.now(),device:getDeviceId(),sd:!!sdm,sdExpiry:sdExp});
         saveChat();renderChat();input.value='';input.style.height='auto';
-        // Show cipher in chat panel
         _lastChatB64=b64;chatEmojiMode=false;document.getElementById('chatEmojiToggle').textContent='🎭';document.getElementById('chatEmojiToggle').style.color='';
         document.getElementById('chatCipherText').textContent=b64;
         document.getElementById('chatCipherRow').style.display='';
         document.getElementById('cipherOutput').value=b64;uc();updateEmojiDisplay();
-        t('✅ 已加密！点击 📋 复制密文发给对方');
+        t(sdm?'🔥 定时焚毁消息已加密 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 已加密！点击 📋 复制密文发给对方');
     }catch(e){t('❌ '+e.message)}
 }
 async function chatReceive(){
@@ -694,14 +820,22 @@ async function chatReceive(){
         const k=await dk(pw),r=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
         const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));
         const raw=new TextDecoder().decode(p);
+        // Self-destruct check first
+        const sd=checkSelfDestruct(raw);
+        if(!sd.valid){
+            chatMsgs.push({role:'them',text:sd.message,cipher:b64,time:Date.now(),device:'',senderName:'系统',expired:true});
+            saveChat();renderChat();document.getElementById('chatRecvInput').value='';
+            t('🔥 '+sd.message);return;
+        }
         // Parse: "[发送方名字|设备ID]消息内容"
-        const m2=raw.match(/^\[(.+?)\|(.+?)\]/);
+        const m2=sd.message.match(/^\[(.+?)\|(.+?)\]/);
         const senderName=m2?m2[1]:'';
         const senderId=m2?m2[2]:'未知';
-        const text=m2?raw.slice(m2[0].length):raw;
-        chatMsgs.push({role:'them',text,cipher:b64,time:Date.now(),device:senderId,senderName});
+        const text=m2?sd.message.slice(m2[0].length):sd.message;
+        chatMsgs.push({role:'them',text,cipher:b64,time:Date.now(),device:senderId,senderName,sd:sd.wasSD,sdExpiry:sd.expiry});
         saveChat();renderChat();document.getElementById('chatRecvInput').value='';
-        t('✅ 解密成功！');
+        if(sd.wasSD)startChatSDWatch();
+        t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功！');
     }catch(e){t(e.name==='OperationError'?'❌ 密码错误，对方用的密码和你不同':'❌ '+e.message)}
 }
 function clearChat(skipConfirm){if(skipConfirm||confirm('确定清除所有聊天记录？')){chatMsgs=[];saveChat();renderChat();t('🗑 聊天记录已清除')}}
