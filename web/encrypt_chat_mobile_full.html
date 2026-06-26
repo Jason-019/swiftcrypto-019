@@ -182,6 +182,13 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 .sd-row .sd-time input:focus{border-color:var(--accent)}
 .sd-badge{display:inline-block;font-size:0.55rem;background:#f97316;color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
 .sd-countdown{font-size:0.55rem;color:#f97316;margin-left:4px}
+/* SwiftTone audio */
+.st-visual{width:100%;height:80px;border-radius:var(--rs);background:rgba(0,0,0,0.3);border:1px solid var(--border);overflow:hidden;position:relative}
+.st-visual canvas{width:100%;height:100%}
+.st-freq-bar{position:absolute;bottom:0;background:var(--accent);opacity:0.7;border-radius:2px 2px 0 0;transition:height .1s,opacity .1s}
+.st-status{font-size:0.7rem;color:var(--dim);text-align:center;padding:4px 0}
+.st-progress{height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;margin:4px 0}
+.st-progress div{height:100%;background:var(--accent);transition:width .3s;width:0}
 </style>
 </head>
 <body>
@@ -227,6 +234,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     <div class="tab active" onclick="switchTab('enc')">🔒 加密</div>
     <div class="tab" onclick="switchTab('dec')">🔓 解密</div>
     <div class="tab" onclick="switchTab('chat')">💬 密聊</div>
+    <div class="tab" onclick="switchTab('st')">🔊 SwiftTone</div>
 </div>
 
 <div class="content">
@@ -301,6 +309,27 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         </div>
         <div class="chat-actions">
             <button class="btn btn-outline" onclick="clearChat()" style="flex:none">🗑 清除记录</button>
+        </div>
+    </div>
+    <div class="panel" id="panelST">
+        <div style="font-size:0.75rem;color:var(--dim);text-align:center">🎵 音频密文传输 — 通过声音发送加密消息</div>
+        <div class="st-visual" id="stVisual">
+            <canvas id="stCanvas"></canvas>
+        </div>
+        <div class="st-status" id="stStatus">准备就绪</div>
+        <div class="st-progress"><div id="stProgressBar"></div></div>
+        <div class="btn-row">
+            <button class="btn btn-primary" id="stSendBtn" onclick="stSend()">🔊 播放音频密文</button>
+            <button class="btn btn-outline" id="stListenBtn" onclick="stListen()">🎤 开始接收</button>
+        </div>
+        <div class="btn-row" style="font-size:0.65rem;color:var(--dim);gap:12px;justify-content:center">
+            <span>⏱ 速率: ~6 符号/秒</span>
+            <span>🛡 ECC: 5x冗余+投票</span>
+        </div>
+        <textarea id="stOutput" placeholder="接收到的密文…" readonly style="min-height:60px"></textarea>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="stDecrypt()" style="flex:1">🔓 解密收到的密文</button>
+            <button class="btn btn-copy" onclick="copyText('stOutput')">📋 复制</button>
         </div>
     </div>
 </div>
@@ -601,7 +630,7 @@ function clearPassword(){
 }
 function autoSavePwd(){const p=gp();if(p)savePwdHistory(p);}
 function togglePwd(){const e=document.getElementById('password'),b=document.getElementById('togglePwd');if(e.type==='password'){e.type='text';b.textContent='🙈'}else{e.type='password';b.textContent='👁'}}
-function switchTab(tab){document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));if(tab==='enc'){document.querySelector('.tab:nth-child(1)').classList.add('active');document.getElementById('panelEnc').classList.add('active')}else if(tab==='dec'){document.querySelector('.tab:nth-child(2)').classList.add('active');document.getElementById('panelDec').classList.add('active')}else{document.querySelector('.tab:nth-child(3)').classList.add('active');document.getElementById('panelChat').classList.add('active');checkPwdChange();renderChat()}}
+function switchTab(tab){document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));if(tab==='enc'){document.querySelector('.tab:nth-child(1)').classList.add('active');document.getElementById('panelEnc').classList.add('active')}else if(tab==='dec'){document.querySelector('.tab:nth-child(2)').classList.add('active');document.getElementById('panelDec').classList.add('active')}else if(tab==='chat'){document.querySelector('.tab:nth-child(3)').classList.add('active');document.getElementById('panelChat').classList.add('active');checkPwdChange();renderChat()}else{document.querySelector('.tab:nth-child(4)').classList.add('active');document.getElementById('panelST').classList.add('active');stInitCanvas()}}
 function t(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
 function clearArea(id){document.getElementById(id).value='';uc()}
 async function copyText(id){let v;if(id==='cipherOutput'&&emojiMode){v=document.getElementById('emojiCipher').textContent}else{v=document.getElementById(id).value}if(!v)return t('⚠️ 无内容');try{await navigator.clipboard.writeText(v);t('✅ 已复制')}catch{document.getElementById(id).select();document.execCommand('copy');t('✅ 已复制')}}
@@ -1035,6 +1064,302 @@ function decodeEraGrid(){
     };
     img.src=URL.createObjectURL(file);
 }
+// ---- 🎵 SwiftTone audio transmission ----
+const ST_FREQS=[262,294,330,349,392,440,523,587]; // C4 D4 E4 F4 G4 A4 C5 D5 (8 notes = 3 bits)
+const ST_NOTE_NAMES=['C4','D4','E4','F4','G4','A4','C5','D5'];
+const ST_SYM_LEN=120; // ms per symbol
+const ST_GAP=20; // ms gap between symbols
+const ST_SYNC=[0,2,4,7,5,3,1,6]; // C→E→G→D5→A4→F4→D4→C5 "Love Story" arpeggio
+
+let _stAudioCtx=null,_stListening=false,_stStream=null,_stDetected=[],_stPollTimer=null;
+
+function stInitCanvas(){
+    const cv=document.getElementById('stCanvas'),vis=document.getElementById('stVisual');
+    if(!cv||!vis)return;
+    cv.width=vis.clientWidth||320;cv.height=vis.clientHeight||80;
+    const ctx=cv.getContext('2d');ctx.fillStyle='#111';ctx.fillRect(0,0,cv.width,cv.height);
+    // Draw frequency grid lines
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
+    for(let i=0;i<8;i++){
+        const y=cv.height-(cv.height/8)*(i+0.5);
+        ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cv.width,y);ctx.stroke();
+    }
+    // Draw note labels
+    ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='8px monospace';
+    for(let i=0;i<8;i++){
+        const y=cv.height-(cv.height/8)*(i+0.5)+3;
+        ctx.fillText(ST_NOTE_NAMES[i],2,y);
+    }
+}
+
+function stStatus(msg){const el=document.getElementById('stStatus');if(el)el.textContent=msg;}
+function stProgress(pct){const el=document.getElementById('stProgressBar');if(el)el.style.width=Math.min(100,Math.max(0,pct))+'%';}
+
+function stEncodeB64(b64){
+    // Strip padding, encode base64 → frequency indices
+    const clean=b64.replace(/=+$/,'');
+    const symbols=[...ST_SYNC]; // Start with sync sequence
+    for(const c of clean){
+        const i=B64.indexOf(c);
+        if(i<0)continue;
+        symbols.push(i>>3,i&7);
+    }
+    return symbols;
+}
+
+function stDecodeSymbols(symbols){
+    // Decode frequency indices → base64 string, skip sync
+    let b64='';
+    // Find sync sequence start
+    let start=-1;
+    for(let i=0;i<symbols.length-ST_SYNC.length+1;i++){
+        let match=true;
+        for(let j=0;j<ST_SYNC.length;j++){
+            if(symbols[i+j]!==ST_SYNC[j]){match=false;break;}
+        }
+        if(match){start=i+ST_SYNC.length;break;}
+    }
+    if(start<0)start=0; // No sync found, try from beginning
+    for(let i=start;i+1<symbols.length;i+=2){
+        const hi=symbols[i],lo=symbols[i+1];
+        if(hi>=0&&hi<8&&lo>=0&&lo<8)b64+=B64[(hi<<3)|lo];
+    }
+    return b64;
+}
+
+const ST_REDUNDANCY=5; // Repeat each symbol 5 times for majority voting
+// ---- ECC: Nx redundancy with majority voting ----
+function stEncodeECC(symbols){
+    const enc=[];
+    for(const s of symbols)for(let i=0;i<ST_REDUNDANCY;i++)enc.push(s);
+    return enc;
+}
+
+function stDecodeECC(symbols){
+    const dec=[];
+    for(let i=0;i+ST_REDUNDANCY-1<symbols.length;i+=ST_REDUNDANCY){
+        const votes={};
+        for(let j=0;j<ST_REDUNDANCY;j++){
+            const v=symbols[i+j];votes[v]=(votes[v]||0)+1;
+        }
+        let best=-1,bestCount=0;
+        for(const[sym,count]of Object.entries(votes)){
+            if(count>bestCount){bestCount=count;best=parseInt(sym);}
+        }
+        dec.push(bestCount>ST_REDUNDANCY/2?best:-1);
+    }
+    return dec;
+}
+
+// ---- Audio playback ----
+let _stPlayTimer=null,_stPlayStart=0,_stPlayDur=0,_stPlaySyms=[];
+
+async function stSend(){
+    const b64=document.getElementById('cipherOutput').value;
+    if(!b64)return t('⚠️ 请先在加密面板生成密文');
+    stStopPlayback();
+    stStatus('🎵 正在生成音频…');
+    stProgress(0);
+    // Encode
+    let symbols=stEncodeB64(b64);
+    const rawLen=symbols.length;
+    symbols=stEncodeECC(symbols);
+    stProgress(10);
+    // Play
+    try{
+        if(!_stAudioCtx)_stAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
+        const ctx=_stAudioCtx;
+        const sampleRate=ctx.sampleRate;
+        const symSamples=Math.floor(sampleRate*ST_SYM_LEN/1000);
+        const gapSamples=Math.floor(sampleRate*ST_GAP/1000);
+        const totalSamples=symbols.length*(symSamples+gapSamples);
+        const buf=ctx.createBuffer(1,totalSamples,sampleRate);
+        const data=buf.getChannelData(0);
+        const stSendBtn=document.getElementById('stSendBtn');
+        // Generate audio buffer
+        for(let i=0;i<symbols.length;i++){
+            const s=symbols[i];
+            if(s<0||s>=8)continue;
+            const freq=ST_FREQS[s];
+            const offset=i*(symSamples+gapSamples);
+            for(let j=0;j<symSamples;j++){
+                const t=j/sampleRate;
+                const env=Math.sin(Math.PI*j/symSamples);
+                data[offset+j]=Math.sin(2*Math.PI*freq*t)*env*0.6;
+            }
+        }
+        stProgress(20);stStatus('🔊 开始播放…');
+        // Calculate actual playback duration
+        const totalDur=(totalSamples/sampleRate)*1000; // ms
+        _stPlayStart=Date.now();_stPlayDur=totalDur;_stPlaySyms=symbols;
+        // Start playback
+        const src=ctx.createBufferSource();src.buffer=buf;
+        const gain=ctx.createGain();gain.gain.value=0.8;
+        src.connect(gain);gain.connect(ctx.destination);
+        src.onended=()=>{
+            stStopPlayback();
+            stProgress(100);
+            stStatus('✅ 播放完成！原始: '+rawLen+' 符号, ECC: '+symbols.length+' 符号, 时长: '+Math.round(totalDur/1000)+'s');
+            stSendBtn.disabled=false;
+        };
+        stSendBtn.disabled=true;
+        src.start();
+        // Start progress animation during playback
+        _stPlayTimer=setInterval(()=>{
+            const elapsed=Date.now()-_stPlayStart;
+            const pct=Math.min(99,20+Math.floor(80*elapsed/_stPlayDur));
+            stProgress(pct);
+            // Animate visualizer: show current symbol's frequency
+            const idx=Math.floor(elapsed/(ST_SYM_LEN+ST_GAP));
+            if(idx<_stPlaySyms.length&&idx>=0){
+                const s=_stPlaySyms[idx];
+                if(s>=0&&s<8)stUpdateVisual(s);
+                const remain=Math.max(0,Math.ceil((_stPlayDur-elapsed)/1000));
+                stStatus('🔊 播放中… '+Math.floor(100*elapsed/_stPlayDur)+'% 剩余 '+remain+'s 音符: '+ST_NOTE_NAMES[s]||'');
+            }
+        },ST_SYM_LEN+ST_GAP);
+    }catch(e){t('❌ 音频播放失败: '+e.message);stStatus('❌ '+e.message);}
+}
+
+function stStopPlayback(){
+    if(_stPlayTimer){clearInterval(_stPlayTimer);_stPlayTimer=null;}
+}
+
+// ---- Audio reception (microphone → envelope tracking + FFT) ----
+async function stListen(){
+    if(_stListening){stStopListen();return;}
+    document.getElementById('stOutput').value='';
+    stInitCanvas();stProgress(0);_stDetected=[];
+    try{
+        if(!_stAudioCtx)_stAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
+        const ctx=_stAudioCtx;
+        _stStream=await navigator.mediaDevices.getUserMedia({audio:true});
+        const src=ctx.createMediaStreamSource(_stStream);
+        // Frequency analyser
+        const analyser=ctx.createAnalyser();
+        analyser.fftSize=2048; // 46ms window, fast response
+        analyser.smoothingTimeConstant=0;
+        analyser.minDecibels=-90;analyser.maxDecibels=-10;
+        src.connect(analyser);
+        // Time-domain analyser for envelope detection
+        const tdAnalyser=ctx.createAnalyser();
+        tdAnalyser.fftSize=512;smoothingTimeConstant=0;
+        src.connect(tdAnalyser);
+        _stListening=true;
+        const btn=document.getElementById('stListenBtn');
+        btn.textContent='⏹ 停止接收';btn.style.background='#ef4444';btn.style.color='#fff';
+        stStatus('🎤 正在监听… 请播放 SwiftTone 音频');
+
+        const freqBuf=new Float32Array(analyser.fftSize);
+        const tdBuf=new Uint8Array(tdAnalyser.fftSize);
+        const sampleRate=ctx.sampleRate;
+        const binWidth=sampleRate/analyser.fftSize;
+        const halfBin=Math.max(2,Math.round(22/binWidth));
+
+        let state='IDLE'; // IDLE | TONE
+        let toneVotes={},toneReads=0;
+        let lastRecorded=-1,lastRecordTime=0;
+        const minGapMs=ST_SYM_LEN*0.55; // ~66ms cooldown
+
+        const poll=()=>{
+            if(!_stListening)return;
+            // Get time-domain power for envelope detection
+            tdAnalyser.getByteTimeDomainData(tdBuf);
+            let sumSq=0;
+            for(let i=0;i<tdBuf.length;i++){const v=(tdBuf[i]-128)/128;sumSq+=v*v;}
+            const rms=Math.sqrt(sumSq/tdBuf.length); // 0~1
+
+            // Get frequency data
+            analyser.getFloatFrequencyData(freqBuf);
+            let bestFreq=-1,bestP=-Infinity;
+            for(let i=0;i<8;i++){
+                const k=Math.round(analyser.fftSize*ST_FREQS[i]/sampleRate);
+                if(k<1||k>=analyser.fftSize)continue;
+                let sum=0,n=0;
+                for(let b=Math.max(0,k-halfBin);b<Math.min(analyser.fftSize,k+halfBin+1);b++){sum+=freqBuf[b];n++;}
+                const avgP=n>0?sum/n:-200;
+                if(avgP>bestP){bestP=avgP;bestFreq=i;}
+            }
+
+            const now=Date.now();
+            const toneActive=rms>0.04&&bestP>-72&&bestFreq>=0; // Envelope + frequency together
+
+            if(state==='IDLE'){
+                if(toneActive){
+                    state='TONE';toneVotes={};toneReads=0;
+                }
+            }
+            if(state==='TONE'){
+                if(toneActive){
+                    toneVotes[bestFreq]=(toneVotes[bestFreq]||0)+1;toneReads++;
+                    stUpdateVisual(bestFreq); // Smooth real-time visual
+                }else{
+                    // Tone ended — record the winner
+                    if(toneReads>=2){
+                        let winner=-1,winnerVotes=0;
+                        for(const[f,c]of Object.entries(toneVotes)){if(c>winnerVotes){winnerVotes=c;winner=parseInt(f);}}
+                        if(winner>=0&&winnerVotes>=toneReads*0.5&&(winner!==lastRecorded||now-lastRecordTime>minGapMs)){
+                            _stDetected.push(winner);
+                            lastRecorded=winner;lastRecordTime=now;
+                            stStatus('🎤 '+ST_NOTE_NAMES[winner]+' ('+_stDetected.length+' 符号, '+toneReads+' 采样)');
+                        }
+                    }
+                    state='IDLE';toneVotes={};toneReads=0;
+                }
+            }
+
+            stProgress(Math.min(99,Math.floor(100*_stDetected.length/(_stPlaySyms.length||100))));
+            _stPollTimer=setTimeout(poll,25); // Poll every 25ms (~4x per symbol)
+        };
+        poll();
+    }catch(e){t('❌ 麦克风访问失败: '+e.message);stStatus('❌ '+e.message);}
+}
+
+function stStopListen(){
+    _stListening=false;
+    if(_stPollTimer){clearTimeout(_stPollTimer);_stPollTimer=null;}
+    if(_stStream){_stStream.getTracks().forEach(t=>t.stop());_stStream=null;}
+    const btn=document.getElementById('stListenBtn');
+    btn.textContent='🎤 开始接收';btn.style.background='';btn.style.color='';
+    stStatus('📡 接收已停止，共 '+_stDetected.length+' 符号');
+    // Decode: ECC voting → symbols → B64
+    if(_stDetected.length>ST_SYNC.length){
+        const dec=stDecodeECC(_stDetected);
+        const b64=stDecodeSymbols(dec);
+        if(b64){
+            document.getElementById('stOutput').value=b64;
+            stStatus('✅ 解码成功！密文长度: '+b64.length+' 字符');
+            stProgress(100);
+            t('✅ 音频密文解码成功');
+        }else{stStatus('⚠️ 未能解码出有效密文，请重试');}
+    }else{stStatus('⚠️ 检测到的符号太少，请靠近音源重试');}
+    _stDetected=[];
+}
+
+function stUpdateVisual(freqIdx){
+    const cv=document.getElementById('stCanvas');if(!cv)return;
+    const ctx=cv.getContext('2d'),w=cv.width,h=cv.height;
+    // Shift canvas left
+    const imgData=ctx.getImageData(2,0,w-2,h);
+    ctx.putImageData(imgData,0,0);
+    // Draw new bar
+    const barH=h/8,barW=3;
+    const y=h-(freqIdx+1)*barH;
+    ctx.fillStyle='#a78bfa';
+    ctx.fillRect(w-4,y,barW,barH-1);
+    // Clear right edge
+    ctx.fillStyle='#111';ctx.fillRect(w-2,0,2,h);
+}
+
+// Connect ST output to decrypt
+async function stDecrypt(){
+    const b64=document.getElementById('stOutput').value.trim();
+    if(!b64)return t('⚠️ 请先接收音频密文');
+    document.getElementById('cipherInput').value=b64;
+    switchTab('dec');
+    setTimeout(()=>doDecrypt(),300);
+}
+
 // ---- 👻 Incognito cleanup on exit ----
 window.addEventListener('beforeunload',function(){if(isIncog()){localStorage.clear()}});
 
