@@ -205,7 +205,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 
 <div class="pwd-row" style="flex-direction:column;gap:6px">
     <div style="display:flex;gap:6px;width:100%">
-        <input type="password" id="password" placeholder="共享密码…" autocomplete="off" oninput="updatePwdStrength()" style="flex:1">
+        <input type="password" id="password" placeholder="共享密码…" autocomplete="off" oninput="updatePwdStrength();checkPwdChange()" style="flex:1">
         <button class="icon-btn" id="togglePwd" onclick="togglePwd()">👁</button>
         <button class="icon-btn" onclick="clearPassword()" title="清除密码" style="color:var(--dim);font-size:0.75rem">✕</button>
     </div>
@@ -824,11 +824,12 @@ function getChatKey(){
 function loadChat(){
     const key=getChatKey();_lastPwdHash=key;
     try{const d=localStorage.getItem(key);if(d)chatMsgs=JSON.parse(d);else chatMsgs=[]}catch{chatMsgs=[]}
+    renderChat();
 }
 function saveChat(){if(isIncog())return;try{localStorage.setItem(getChatKey(),JSON.stringify(chatMsgs))}catch{}}
 function checkPwdChange(){
     const cur=getChatKey();
-    if(cur!==_lastPwdHash){loadChat();renderChat();t('🔐 已切换到密码: '+gp().slice(0,8)+(gp().length>8?'…':''))}
+    if(cur!==_lastPwdHash){loadChat();t('🔐 已切换到密码: '+gp().slice(0,8)+(gp().length>8?'…':''))}
 }
 function renderChat(){
     const area=document.getElementById('chatArea');
@@ -1121,7 +1122,7 @@ function decodeEraGrid(){
 window.addEventListener('beforeunload',function(){if(isIncog()){localStorage.clear()}});
 
 // Init
-loadChat();checkShareLink();initDeviceName();setTheme();updateBgOpacity(100);uc();
+loadChat();checkShareLink();initDeviceName();setTheme();updateBgOpacity(100);uc();renderPwdHistory();
 handleIncomingShare();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
