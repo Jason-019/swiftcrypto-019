@@ -254,7 +254,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         </div>
         <div class="btn-row">
             <button class="btn btn-primary" onclick="doEncrypt()">🔒 加密</button>
-            <button class="btn btn-outline" onclick="clearArea('plainInput')">清空</button>
+            <button class="btn btn-outline" onclick="clearEncrypt()">清空</button>
         </div>
         <textarea id="cipherOutput" placeholder="密文…" readonly></textarea>
         <div class="emoji-cipher" id="emojiCipher" style="display:none"></div>
@@ -274,7 +274,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         </div>
         <div class="btn-row">
             <button class="btn btn-primary" onclick="doDecrypt()">🔓 解密</button>
-            <button class="btn btn-outline" onclick="clearArea('cipherInput')">清空</button>
+            <button class="btn btn-outline" onclick="clearDecrypt()">清空</button>
         </div>
         <textarea id="plainOutput" placeholder="明文…" readonly></textarea>
         <div class="btn-row">
@@ -629,6 +629,19 @@ function autoSavePwd(){const p=gp();if(p)savePwdHistory(p);}
 function togglePwd(){const e=document.getElementById('password'),b=document.getElementById('togglePwd');if(e.type==='password'){e.type='text';b.textContent='🙈'}else{e.type='password';b.textContent='👁'}}
 function switchTab(tab){document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));if(tab==='enc'){document.querySelector('.tab:nth-child(1)').classList.add('active');document.getElementById('panelEnc').classList.add('active')}else if(tab==='dec'){document.querySelector('.tab:nth-child(2)').classList.add('active');document.getElementById('panelDec').classList.add('active')}else{document.querySelector('.tab:nth-child(3)').classList.add('active');document.getElementById('panelChat').classList.add('active');renderChat()}}
 function t(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
+function clearEncrypt(){
+    document.getElementById('plainInput').value='';
+    document.getElementById('cipherOutput').value='';
+    document.getElementById('emojiCipher').textContent='';
+    stopDecryptCountdown();
+    uc();
+}
+function clearDecrypt(){
+    document.getElementById('cipherInput').value='';
+    document.getElementById('plainOutput').value='';
+    stopDecryptCountdown();
+    uc();
+}
 function clearArea(id){document.getElementById(id).value='';uc()}
 async function copyText(id){let v;if(id==='cipherOutput'&&emojiMode){v=document.getElementById('emojiCipher').textContent}else{v=document.getElementById(id).value}if(!v)return t('⚠️ 无内容');try{await navigator.clipboard.writeText(v);t('✅ 已复制')}catch{document.getElementById(id).select();document.execCommand('copy');t('✅ 已复制')}}
 async function shareCipher(){
