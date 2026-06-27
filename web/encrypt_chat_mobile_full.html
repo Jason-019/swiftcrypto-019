@@ -1107,37 +1107,41 @@ function renderEraCard(){
     // 追加 1 字符 XOR 校验和（2 个色块）
     let cs=0;for(const c of b64){const i=B64.indexOf(c);if(i>=0)cs^=i;}
     b64+=B64[cs&63];
-    const COLS=16,CELL=16,GAP=2,PAD=10,REF_H=CELL+8;
+    const COLS=14,CELL=20,GAP=2,PAD=8,REF_H=CELL+12;
     const cells=[];for(const c of b64){const i=B64.indexOf(c);if(i>=0){cells.push(i>>3,i&7)}}
     const rows=Math.ceil(cells.length/COLS);
     const gridW=COLS*(CELL+GAP)+GAP+PAD*2;
     const gridH=rows*(CELL+GAP)+GAP+REF_H+PAD*2;
     // 名片卡：网格 + 标题 + 日期/主题
-    const cardW=gridW+32,cardH=gridH+80;
+    const cardW=gridW+40,cardH=gridH+90;
     cv.width=cardW;cv.height=cardH;
     const ctx=cv.getContext('2d');
     // 背景
     const grad=ctx.createLinearGradient(0,0,cardW,cardH);
     grad.addColorStop(0,'#1a1a2e');grad.addColorStop(0.5,'#16213e');grad.addColorStop(1,'#0f0f1a');
     ctx.fillStyle=grad;roundRect(ctx,0,0,cardW,cardH,16);ctx.fill();
-    ctx.strokeStyle='rgba(167,139,250,0.5)';ctx.lineWidth=2;
+    ctx.strokeStyle='rgba(167,139,250,0.4)';ctx.lineWidth=2;
     roundRect(ctx,1,1,cardW-2,cardH-2,16);ctx.stroke();
-    // 标题
     ctx.fillStyle='#a78bfa';ctx.font='bold 16px -apple-system,sans-serif';ctx.textAlign='center';
     ctx.fillText('🔐 SwiftCrypto',cardW/2,26);
-    // 绘制色块网格（居中）
-    const offsetX=Math.floor((cardW-gridW)/2),offsetY=38;
-    // 参考色块行
-    const refX=offsetX+PAD,refY=offsetY+PAD+4,refW=CELL,refH=CELL-4;
+    // 网格纯黑底色，隔离卡片渐变
+    const offsetX=Math.floor((cardW-gridW)/2),offsetY=36;
+    ctx.fillStyle='#111';ctx.fillRect(offsetX,offsetY,gridW,gridH);
+    // 参考色块（加大到 32x22，更容易采样）
+    const refX=offsetX+PAD,refY=offsetY+PAD+4,refW=32,refH=22;
+    const refGap=(gridW-PAD*2-refW*8)/7;
     for(let i=0;i<8;i++){
         ctx.fillStyle=ERA_COLORS[i];
-        ctx.fillRect(refX+i*(refW+GAP),refY,refW,refH);
+        ctx.fillRect(refX+i*(refW+refGap),refY,refW,refH);
     }
-    // 数据色块
+    // 数据色块（20x20，带1px黑边增强对比）
+    const dataStartY=offsetY+REF_H+PAD;
     for(let i=0;i<cells.length;i++){
         const col=i%COLS,row=Math.floor(i/COLS);
+        const cx=offsetX+PAD+col*(CELL+GAP)+GAP,cy=dataStartY+row*(CELL+GAP)+GAP;
+        ctx.fillStyle='#000';ctx.fillRect(cx-1,cy-1,CELL+2,CELL+2);
         ctx.fillStyle=ERA_COLORS[cells[i]];
-        ctx.fillRect(offsetX+PAD+col*(CELL+GAP)+GAP,offsetY+REF_H+PAD+row*(CELL+GAP)+GAP,CELL,CELL);
+        ctx.fillRect(cx,cy,CELL,CELL);
     }
     // 底部信息
     const now=new Date();
@@ -1183,7 +1187,7 @@ function decodeEraGrid(){
     const img=new Image();img.onload=()=>{
         const cv=document.createElement('canvas');cv.width=img.width;cv.height=img.height;
         const ctx=cv.getContext('2d');ctx.drawImage(img,0,0);
-        const W=img.width,H=img.height,COLS=16;
+        const W=img.width,H=img.height,COLS=14;
         // ---- Step 1: Auto-detect reference swatch row ----
         // Scan top 15% of image for 8 bright regions in a row
         let refY=-1,refXs=[],swatchW=0,swatchGap=0,leftEdge=0;
@@ -1243,8 +1247,8 @@ function decodeEraGrid(){
             const cy=dataStartY+row*(cellW+cellGap);
             if(cx<3||cy<3||cx>=W-3||cy>=H-3)return -1;
             let sr=0,sg=0,sb=0,n=0;
-            for(let dx=-3;dx<=3;dx++)for(let dy=-3;dy<=3;dy++){
-                const w=4-Math.abs(dx)-Math.abs(dy);if(w<=0)continue;
+            for(let dx=-4;dx<=4;dx++)for(let dy=-4;dy<=4;dy++){
+                const w=5-Math.abs(dx)-Math.abs(dy);if(w<=0)continue;
                 const px=cx+dx,py=cy+dy;
                 if(px>=0&&py>=0&&px<W&&py<H){const d=ctx.getImageData(px,py,1,1).data;sr+=d[0]*w;sg+=d[1]*w;sb+=d[2]*w;n+=w;}
             }
