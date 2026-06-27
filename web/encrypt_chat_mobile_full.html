@@ -1053,10 +1053,11 @@ document.getElementById('chatInput').addEventListener('keydown',function(e){if(e
 // ---- 🔧 XOR Parity ECC for Era Grid ----
 function encodeParity(b64){
     // Group into blocks of 4, add XOR parity char per block (25% overhead)
-    const clean=b64.replace(/=+$/,'');let out='';
-    for(let i=0;i<clean.length;i+=4){
-        const block=clean.slice(i,i+4);
-        let xor=0;for(const c of block)xor^=B64.indexOf(c);
+    // Keep == padding so input is always multiple of 4; '=' treated as XOR 0
+    let out='';
+    for(let i=0;i<b64.length;i+=4){
+        const block=b64.slice(i,i+4);
+        let xor=0;for(const c of block){const idx=B64.indexOf(c);if(idx>=0)xor^=idx;}
         out+=block+B64[xor];
     }
     return out;
@@ -1100,19 +1101,19 @@ function decodeParity(b64){
 // ---- 🎨 Era Color Grid share ----
 const ERA_COLORS=['#FFD60A','#FF9500','#34C759','#007AFF','#AF52DE','#5AC8FA','#FF2D55','#8E8E93'];
 const ERA_NAMES=['Gold','Fearless','Debut','1989','Speak Now','Evermore','Lover','Midnights'];
+const EC_COLS=12,EC_CELL=26,EC_GAP=6,EC_REF_W=26,EC_REF_H=22;
 function renderEraCard(){
     let b64=document.getElementById('cipherOutput').value;
     const cv=document.getElementById('eraCardCanvas');if(!cv||!b64)return;
-    b64=encodeParity(b64);
-    // 追加 1 字符 XOR 校验和（2 个色块）
-    let cs=0;for(const c of b64){const i=B64.indexOf(c);if(i>=0)cs^=i;}
-    b64+=B64[cs&63];
-    const COLS=14,CELL=20,GAP=2,PAD=8,REF_H=CELL+12;
+    // Strip == padding (restored on decode), add 1-char checksum
+    const clean=b64.replace(/=+$/,'');
+    let cs=0;for(const c of clean){const i=B64.indexOf(c);if(i>=0)cs^=i;}
+    b64=clean+B64[cs&63];
+    const COLS=EC_COLS,CELL=EC_CELL,GAP=EC_GAP,cellSp=CELL+GAP;
     const cells=[];for(const c of b64){const i=B64.indexOf(c);if(i>=0){cells.push(i>>3,i&7)}}
     const rows=Math.ceil(cells.length/COLS);
-    const gridW=COLS*(CELL+GAP)+GAP+PAD*2;
-    const gridH=rows*(CELL+GAP)+GAP+REF_H+PAD*2;
-    // 名片卡：网格 + 标题 + 日期/主题
+    const gridW=COLS*cellSp+GAP;
+    const gridH=rows*cellSp+GAP+40+GAP; // +40 for ref row
     const cardW=gridW+40,cardH=gridH+90;
     cv.width=cardW;cv.height=cardH;
     const ctx=cv.getContext('2d');
@@ -1125,23 +1126,15 @@ function renderEraCard(){
     ctx.fillStyle='#a78bfa';ctx.font='bold 16px -apple-system,sans-serif';ctx.textAlign='center';
     ctx.fillText('🔐 SwiftCrypto',cardW/2,26);
     // 网格纯黑底色，隔离卡片渐变
-    const offsetX=Math.floor((cardW-gridW)/2),offsetY=36;
-    ctx.fillStyle='#111';ctx.fillRect(offsetX,offsetY,gridW,gridH);
-    // 参考色块（加大到 32x22，更容易采样）
-    const refX=offsetX+PAD,refY=offsetY+PAD+4,refW=32,refH=22;
-    const refGap=(gridW-PAD*2-refW*8)/7;
-    for(let i=0;i<8;i++){
-        ctx.fillStyle=ERA_COLORS[i];
-        ctx.fillRect(refX+i*(refW+refGap),refY,refW,refH);
-    }
-    // 数据色块（20x20，带1px黑边增强对比）
-    const dataStartY=offsetY+REF_H+PAD;
+    const ox=Math.floor((cardW-gridW)/2),oy=36;
+    ctx.fillStyle='#000';ctx.fillRect(ox,oy,gridW,gridH);
+    const refW=EC_REF_W,refH=EC_REF_H,refGap=(gridW-GAP*2-refW*8)/7,refY=oy+GAP;
+    for(let i=0;i<8;i++){ctx.fillStyle=ERA_COLORS[i];ctx.fillRect(ox+GAP+i*(refW+refGap),refY,refW,refH)}
+    const dataY0=oy+GAP+refH+GAP;
     for(let i=0;i<cells.length;i++){
         const col=i%COLS,row=Math.floor(i/COLS);
-        const cx=offsetX+PAD+col*(CELL+GAP)+GAP,cy=dataStartY+row*(CELL+GAP)+GAP;
-        ctx.fillStyle='#000';ctx.fillRect(cx-1,cy-1,CELL+2,CELL+2);
         ctx.fillStyle=ERA_COLORS[cells[i]];
-        ctx.fillRect(cx,cy,CELL,CELL);
+        ctx.fillRect(ox+GAP+col*cellSp,dataY0+row*cellSp,CELL,CELL);
     }
     // 底部信息
     const now=new Date();
@@ -1183,106 +1176,89 @@ function roundRect(ctx,x,y,w,h,r){
 function decodeEraGrid(){
     const file=document.getElementById('eraFileInput').files[0];
     if(!file)return;
-    t('🔍 正在定位参考色块…');
+    t('🔍 正在定位…');
     const img=new Image();img.onload=()=>{
         const cv=document.createElement('canvas');cv.width=img.width;cv.height=img.height;
         const ctx=cv.getContext('2d');ctx.drawImage(img,0,0);
-        const W=img.width,H=img.height,COLS=14;
-        // ---- Step 1: Auto-detect reference swatch row ----
-        // Scan top 15% of image for 8 bright regions in a row
-        let refY=-1,refXs=[],swatchW=0,swatchGap=0,leftEdge=0;
-        for(let y=4;y<H*0.5&&refY<0;y++){
-            const bright=[]; // runs of bright pixels
-            let inBright=false,runStart=0;
-            for(let x=0;x<W;x++){
-                const px=ctx.getImageData(x,y,1,1).data;
-                const brightPx=px[0]+px[1]+px[2]>120;
-                if(brightPx&&!inBright){inBright=true;runStart=x;}
-                if(!brightPx&&inBright){inBright=false;if(x-runStart>=4)bright.push({s:runStart,e:x});}
-            }
-            if(bright.length>=8){
-                // Check if runs are equally spaced
-                const spacings=[];
-                for(let i=1;i<bright.length;i++)spacings.push(bright[i].s-bright[i-1].s);
-                const avgSp=spacings.reduce((a,b)=>a+b,0)/spacings.length;
-                const consistent=spacings.every(s=>Math.abs(s-avgSp)<avgSp*0.25);
-                if(consistent){
-                    refY=y;
-                    refXs=bright.slice(0,8).map(b=>Math.round((b.s+b.e)/2));
-                    swatchW=bright[0].e-bright[0].s;
-                    swatchGap=refXs[1]-refXs[0]-swatchW;
-                    leftEdge=bright[0].s;
-                }
-            }
-        }
-        if(refY<0){t('⚠️ 未找到参考色块，请确保图片完整');document.getElementById('eraFileInput').value='';return}
-        // Adjust refY from top-edge to center of swatch row
-        refY+=Math.floor(swatchW/2);
-        // ---- Step 2: 用已知精确颜色匹配，不校准（杜绝误读）----
-        const CELL=20,GAP=2,cellSpacing=CELL+GAP;
-        // 固定目标 RGB（8 种 Era 色）
+        const W=img.width,H=img.height;
         const TARGET_RGB=ERA_COLORS.map(c=>[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)]);
-        // 计算两两最小距离的一半作为匹配阈值
         let minPair=Infinity;
         for(let i=0;i<8;i++)for(let j=i+1;j<8;j++){
             const d=(TARGET_RGB[i][0]-TARGET_RGB[j][0])**2+(TARGET_RGB[i][1]-TARGET_RGB[j][1])**2+(TARGET_RGB[i][2]-TARGET_RGB[j][2])**2;
             if(d<minPair)minPair=d;
         }
-        const maxDist=Math.max(minPair*0.40,5000);
-        t('📐 已定位，开始解码…');
-        // ---- Step 3: 数据格采样 + 固定色匹配 ----
-        const dataStartY=refY+Math.round(swatchW/2)+6+CELL/2;
-        const sampleCell=(col,row)=>{
-            const cx=leftEdge+GAP+col*cellSpacing+Math.floor(CELL/2);
-            const cy=dataStartY+row*cellSpacing;
-            if(cx<3||cy<3||cx>=W-3||cy>=H-3)return -1;
-            let sr=0,sg=0,sb=0,n=0;
-            for(let dx=-4;dx<=4;dx++)for(let dy=-4;dy<=4;dy++){
-                const w=5-Math.abs(dx)-Math.abs(dy);if(w<=0)continue;
-                const px=cx+dx,py=cy+dy;
-                if(px>=0&&py>=0&&px<W&&py<H){const d=ctx.getImageData(px,py,1,1).data;sr+=d[0]*w;sg+=d[1]*w;sb+=d[2]*w;n+=w;}
+        const maxDist=10000;
+        // ── 找参考行：8个等间距亮色块 ──
+        let refY=-1,refX0=0,refW=0,refSp=0;
+        for(let y=4;y<H*0.4&&refY<0;y++){
+            const runs=[];let inB=false,rs=0;
+            for(let x=0;x<W;x++){
+                const px=ctx.getImageData(x,y,1,1).data;
+                const b=px[0]+px[1]+px[2]>120;
+                if(b&&!inB){inB=true;rs=x}
+                if(!b&&inB){inB=false;if(x-rs>=8)runs.push({s:rs,e:x})}
             }
-            if(n===0)return -1;
-            const r=Math.round(sr/n),g=Math.round(sg/n),b=Math.round(sb/n);
-            // 与 8 种已知精确颜色做最近邻匹配
-            let bestI=0,bestD=Infinity,secondD=Infinity;
-            for(let i=0;i<8;i++){
-                const d=(r-TARGET_RGB[i][0])**2+(g-TARGET_RGB[i][1])**2+(b-TARGET_RGB[i][2])**2;
-                if(d<bestD){secondD=bestD;bestD=d;bestI=i}else if(d<secondD)secondD=d;
+            if(runs.length>=8){
+                const sp=[];for(let i=1;i<runs.length;i++)sp.push(runs[i].s-runs[i-1].s);
+                const avg=sp.reduce((a,b)=>a+b,0)/sp.length;
+                if(sp.every(s=>Math.abs(s-avg)<avg*0.3)){
+                    refY=y;refX0=runs[0].s;refW=runs[0].e-runs[0].s;refSp=avg;
+                }
             }
-            return (bestD<maxDist&&bestD*2.0<secondD)?bestI:-1;
+        }
+        if(refY<0){t('⚠️ 未找到参考色块');document.getElementById('eraFileInput').value='';return}
+        // 垂直扫描测参考块高度
+        const refCx=refX0+Math.round(refW/2);
+        let refTop=refY,refBot=refY;
+        while(refTop>0&&ctx.getImageData(refCx,refTop-1,1,1).data[0]+ctx.getImageData(refCx,refTop-1,1,1).data[1]+ctx.getImageData(refCx,refTop-1,1,1).data[2]>120)refTop--;
+        while(refBot<H&&ctx.getImageData(refCx,refBot+1,1,1).data[0]+ctx.getImageData(refCx,refBot+1,1,1).data[1]+ctx.getImageData(refCx,refBot+1,1,1).data[2]>120)refBot++;
+        const refH=refBot-refTop+1;
+        // 8参考块=12数据格铺满同宽: cellSp从refSp推算
+        const GAP_act=(7*refSp-11*refW)/11;
+        const cellSp=refW+GAP_act,cellW=refW;
+        const dataY0=refTop+refH+GAP_act;
+        t('📐 已定位，解码中…');
+        // ── 逐格采样 ──
+        const readCell=(col,row)=>{
+            const cx=refX0+col*cellSp,cy=dataY0+row*cellSp;
+            if(cx<3||cy<3||cx+cellW>=W||cy+cellW>=H)return -1;
+            const votes=[0,0,0,0,0,0,0,0];let total=0;
+            const m=Math.max(2,Math.round(cellW*0.08));
+            for(let dy=m;dy<cellW-m;dy++)for(let dx=m;dx<cellW-m;dx++){
+                const d=ctx.getImageData(cx+dx,cy+dy,1,1).data;
+                if(d[0]+d[1]+d[2]<25)continue;total++;
+                let best=0,bestD=1e9;
+                for(let k=0;k<8;k++){const dist=(d[0]-TARGET_RGB[k][0])**2+(d[1]-TARGET_RGB[k][1])**2+(d[2]-TARGET_RGB[k][2])**2;if(dist<bestD){bestD=dist;best=k}}
+                if(bestD<maxDist)votes[best]++;
+            }
+            if(total===0)return -1;
+            let winner=0,maxV=0;for(let k=0;k<8;k++){if(votes[k]>maxV){maxV=votes[k];winner=k}}
+            return maxV>total*0.40?winner:-1;
         };
-        let b64='';let emptyRows=0;
+        // ── 逐行解码 ──
+        let b64='',emptyRows=0;
         for(let row=0;;row++){
-            let matchCount=0;
-            for(let col=0;col<COLS;col++){if(sampleCell(col,row)>=0)matchCount++;}
-            if(matchCount===0){emptyRows++;if(emptyRows>=2)break;} // 2 consecutive empty rows = end
-            else emptyRows=0;
-            for(let col=0;col+1<COLS;col+=2){
-                const hi=sampleCell(col,row),lo=sampleCell(col+1,row);
+            let mc=0;for(let col=0;col<EC_COLS;col++)if(readCell(col,row)>=0)mc++;
+            if(mc<3){emptyRows++;if(emptyRows>=2)break;continue}else emptyRows=0;
+            for(let col=0;col+1<EC_COLS;col+=2){
+                const hi=readCell(col,row),lo=readCell(col+1,row);
                 if(hi>=0&&lo>=0)b64+=B64[(hi<<3)|lo];
             }
         }
-        if(b64){
-            // XOR parity repair
-            b64=decodeParity(b64);
-            // 校验和验证：最后一个字符是 XOR 校验
-            if(b64.length>1){
-                const csChar=b64.slice(-1),dataPart=b64.slice(0,-1);
-                let cs=0;for(const c of dataPart){const i=B64.indexOf(c);if(i>=0)cs^=i;}
-                if((cs&63)!==B64.indexOf(csChar)){
-                    t('⚠️ 校验和不匹配，可能有误读，请重新截图');
-                    document.getElementById('eraFileInput').value='';return;
-                }
-                b64=dataPart;
-            }
-            // Restore base64 padding
-            while(b64.length%4)b64+='=';
-            document.getElementById('cipherInput').value=b64;uc();
-            document.getElementById('eraFileInput').value='';
-            t('✅ 解码成功！'+b64.length+' 字符');
-            const pw=gp();if(pw){doDecrypt()}
-        }else{t('⚠️ 未识别到数据色块');document.getElementById('eraFileInput').value=''}
+        if(!b64){t('⚠️ 未识别到数据');document.getElementById('eraFileInput').value='';return}
+        // 编码: clean_b64 + checksum_char。验证校验和，剥离后补回==
+        if(b64.length>1){
+            const csChar=b64.slice(-1),data=b64.slice(0,-1);
+            let cs=0;for(const c of data){const i=B64.indexOf(c);if(i>=0)cs^=i;}
+            if((cs&63)!==B64.indexOf(csChar)){t('⚠️ 校验和不匹配');document.getElementById('eraFileInput').value='';return}
+            b64=data;
+        }
+        while(b64.length%4)b64+='=';
+        while(b64.length%4)b64+='=';
+        document.getElementById('cipherInput').value=b64;uc();
+        document.getElementById('eraFileInput').value='';
+        t('✅ 解码成功！'+b64.length+' 字符');
+        const pw=gp();if(pw){doDecrypt()}
     };
     img.src=URL.createObjectURL(file);
 }
@@ -1297,7 +1273,7 @@ loadChat();checkShareLink();initDeviceName();setTheme();updateBgOpacity(75);uc()
 handleIncomingShare();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=31"></script>
+</script><script src="midi_stego.js?v=35"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
