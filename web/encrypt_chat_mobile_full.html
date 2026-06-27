@@ -1219,7 +1219,8 @@ function decodeEraGrid(){
         // Adjust refY from top-edge to center of swatch row
         refY+=Math.floor(swatchW/2);
         // ---- Step 2: Calibrate colors from detected swatches ----
-        const cellW=swatchW,cellGap=swatchGap,offsetX=leftEdge;
+        // 数据格参数（与编码器一致: CELL=20, GAP=2）不要从参考块推导
+        const CELL=20,GAP=2,cellSpacing=CELL+GAP;
         const calibratedRGB=[];
         for(let i=0;i<8;i++){
             const cx=refXs[i];let sr=0,sg=0,sb=0,n=0;
@@ -1239,12 +1240,12 @@ function decodeEraGrid(){
         // Adaptive thresholds with safety floors
         const maxDist=Math.max(minPairDist*0.35,6000);
         const darkestBg=Math.min(...calibratedRGB.map(c=>c[0]+c[1]+c[2]))*0.25;
-        // ---- Step 3: Decode using calibrated positions & colors ----
-        const dataStartY=refY+swatchW+Math.round(swatchW/2);
-        const gridX=offsetX+cellGap;
+        // ---- Step 3: 数据格用固定 CELL/GAP，不从参考块大小推导 ----
+        const dataStartY=refY+Math.round(swatchW/2)+6+CELL/2;
+        const gridX=leftEdge;
         const sampleCell=(col,row)=>{
-            const cx=gridX+col*(cellW+cellGap)+Math.floor(cellW/2);
-            const cy=dataStartY+row*(cellW+cellGap);
+            const cx=gridX+GAP+col*cellSpacing+Math.floor(CELL/2);
+            const cy=dataStartY+row*cellSpacing;
             if(cx<3||cy<3||cx>=W-3||cy>=H-3)return -1;
             let sr=0,sg=0,sb=0,n=0;
             for(let dx=-4;dx<=4;dx++)for(let dy=-4;dy<=4;dy++){
