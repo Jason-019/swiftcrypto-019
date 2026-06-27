@@ -1218,33 +1218,22 @@ function decodeEraGrid(){
         if(refY<0){t('⚠️ 未找到参考色块，请确保图片完整');document.getElementById('eraFileInput').value='';return}
         // Adjust refY from top-edge to center of swatch row
         refY+=Math.floor(swatchW/2);
-        // ---- Step 2: Calibrate colors from detected swatches ----
-        // 数据格参数（与编码器一致: CELL=20, GAP=2）不要从参考块推导
+        // ---- Step 2: 用已知精确颜色匹配，不校准（杜绝误读）----
         const CELL=20,GAP=2,cellSpacing=CELL+GAP;
-        const calibratedRGB=[];
-        for(let i=0;i<8;i++){
-            const cx=refXs[i];let sr=0,sg=0,sb=0,n=0;
-            for(let dx=-2;dx<=2;dx++)for(let dy=-2;dy<=2;dy++){
-                const px=cx+dx,py=refY+dy;
-                if(px>=0&&py>=0&&px<W&&py<H){const d=ctx.getImageData(px,py,1,1).data;sr+=d[0];sg+=d[1];sb+=d[2];n++;}
-            }
-            calibratedRGB.push([Math.round(sr/n),Math.round(sg/n),Math.round(sb/n)]);
-        }
-        t('📐 已定位，正在计算容差…');
-        // ---- Compute adaptive thresholds from actual color distances ----
-        let minPairDist=Infinity;
+        // 固定目标 RGB（8 种 Era 色）
+        const TARGET_RGB=ERA_COLORS.map(c=>[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)]);
+        // 计算两两最小距离的一半作为匹配阈值
+        let minPair=Infinity;
         for(let i=0;i<8;i++)for(let j=i+1;j<8;j++){
-            const d=(calibratedRGB[i][0]-calibratedRGB[j][0])**2+(calibratedRGB[i][1]-calibratedRGB[j][1])**2+(calibratedRGB[i][2]-calibratedRGB[j][2])**2;
-            if(d<minPairDist)minPairDist=d;
+            const d=(TARGET_RGB[i][0]-TARGET_RGB[j][0])**2+(TARGET_RGB[i][1]-TARGET_RGB[j][1])**2+(TARGET_RGB[i][2]-TARGET_RGB[j][2])**2;
+            if(d<minPair)minPair=d;
         }
-        // Adaptive thresholds with safety floors
-        const maxDist=Math.max(minPairDist*0.35,6000);
-        const darkestBg=Math.min(...calibratedRGB.map(c=>c[0]+c[1]+c[2]))*0.25;
-        // ---- Step 3: 数据格用固定 CELL/GAP，不从参考块大小推导 ----
+        const maxDist=Math.max(minPair*0.40,5000);
+        t('📐 已定位，开始解码…');
+        // ---- Step 3: 数据格采样 + 固定色匹配 ----
         const dataStartY=refY+Math.round(swatchW/2)+6+CELL/2;
-        const gridX=leftEdge;
         const sampleCell=(col,row)=>{
-            const cx=gridX+GAP+col*cellSpacing+Math.floor(CELL/2);
+            const cx=leftEdge+GAP+col*cellSpacing+Math.floor(CELL/2);
             const cy=dataStartY+row*cellSpacing;
             if(cx<3||cy<3||cx>=W-3||cy>=H-3)return -1;
             let sr=0,sg=0,sb=0,n=0;
@@ -1255,10 +1244,10 @@ function decodeEraGrid(){
             }
             if(n===0)return -1;
             const r=Math.round(sr/n),g=Math.round(sg/n),b=Math.round(sb/n);
-            if(r+g+b<darkestBg)return -1;
+            // 与 8 种已知精确颜色做最近邻匹配
             let bestI=0,bestD=Infinity,secondD=Infinity;
             for(let i=0;i<8;i++){
-                const d=(r-calibratedRGB[i][0])**2+(g-calibratedRGB[i][1])**2+(b-calibratedRGB[i][2])**2;
+                const d=(r-TARGET_RGB[i][0])**2+(g-TARGET_RGB[i][1])**2+(b-TARGET_RGB[i][2])**2;
                 if(d<bestD){secondD=bestD;bestD=d;bestI=i}else if(d<secondD)secondD=d;
             }
             return (bestD<maxDist&&bestD*2.0<secondD)?bestI:-1;
