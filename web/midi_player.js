@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════════
 // 🎹 MIDI 播放引擎 (SpessaSynth + FluidR3 GM SoundFont)
 // ═══════════════════════════════════════════════════════════════
-let _ssSynth=null,_ssReady=false,_ssLoading=false,_ssEvents=[];
-let _ssIdx=0,_ssStart=0,_ssPausedAt=0,_ssPlaying=false,_ssPaused=false;
-let _ssPlaybackBuf=null,_ssTimer=null;
+let _ssSynth=null,_ssReady=false,_ssLoading=false;
+let _ssStart=0,_ssPausedAt=0,_ssPlaying=false,_ssPaused=false;
+let _ssPlaybackBuf=null,_ssTimer=null,_ssEvents=[];
 const SS_CDN='https://esm.sh/spessasynth_lib@4.3.8';
 const SS_SF='soundfonts/FluidR3Mono_GM.sf3';
 
@@ -84,26 +84,19 @@ function _ssParseEvents(buf){
     return events;
 }
 
-// ── 调度器 ──
-function _ssSchedule(){
-    if(!_ssSynth||_ssIdx>=_ssEvents.length){ssStop();return}
-    const now=_ssSynth.currentTime,elapsed=now-_ssStart;
-    while(_ssIdx<_ssEvents.length){
-        const e=_ssEvents[_ssIdx];
-        const t=e.time/1000+_ssPausedAt;
-        if(t-elapsed>0.12)break;
-        if(e.cmd===0x90&&e.vel>0)_ssSynth.noteOn(e.ch,e.note,e.vel);
-        else if(e.cmd===0x80||(e.cmd===0x90&&e.vel===0))_ssSynth.noteOff(e.ch,e.note);
+// ── 调度器：一次调度全部事件，利用 SpessaSynth 精确时序 ──
+function _ssScheduleAll(){
+    if(!_ssSynth||!_ssEvents.length)return;
+    const startOff=_ssStart+_ssPausedAt;
+    for(const e of _ssEvents){
+        const t=startOff+e.time/1000;
+        if(e.cmd===0x90&&e.vel>0)_ssSynth.noteOn(e.ch,e.note,e.vel,t);
+        else if(e.cmd===0x80||(e.cmd===0x90&&e.vel===0))_ssSynth.noteOff(e.ch,e.note,t);
         else if(e.cmd===0xC0)_ssSynth.programChange(e.ch,e.val);
-        _ssIdx++;
     }
-    if(_ssIdx>=_ssEvents.length){
-        const last=_ssEvents[_ssEvents.length-1];
-        const endT=last.time/1000+_ssPausedAt+3;
-        _ssTimer=setTimeout(()=>_ssFinish(),Math.max(500,(endT-elapsed)*1000));
-    }else{
-        _ssTimer=setTimeout(_ssSchedule,50);
-    }
+    const last=_ssEvents[_ssEvents.length-1];
+    const endT=last.time/1000+_ssPausedAt+3;
+    _ssTimer=setTimeout(()=>_ssFinish(),endT*1000);
 }
 
 // ── 发送 MIDI CC 静音所有通道 ──
@@ -112,7 +105,6 @@ function _ssAllNotesOff(){
     try{
         for(let ch=0;ch<16;ch++){_ssSynth.controllerChange(ch,123,0);_ssSynth.controllerChange(ch,120,0);}
     }catch(e){
-        // 回退：逐个音符关
         for(let ch=0;ch<16;ch++)for(let n=0;n<128;n++)try{_ssSynth.noteOff(ch,n)}catch(e){}
     }
 }
@@ -125,11 +117,11 @@ async function ssPlay(buf){
     if(!_ssReady)return;
     _ssPlaybackBuf=buf;
     _ssEvents=_ssParseEvents(buf);
-    _ssIdx=0;_ssStart=_ssSynth.currentTime;_ssPausedAt=0;
+    _ssStart=_ssSynth.currentTime;_ssPausedAt=0;
     _ssPlaying=true;_ssPaused=false;
     _ssUpdateBtn();
     document.getElementById('midiPlayRow').style.display='flex';
-    _ssSchedule();
+    _ssScheduleAll();
 }
 
 function ssTogglePlay(){
@@ -141,28 +133,34 @@ function ssPause(){
     _ssPausedAt+=_ssSynth.currentTime-_ssStart;
     if(_ssTimer){clearTimeout(_ssTimer);_ssTimer=null}
     _ssAllNotesOff();
+    _ssPlaying=false; // 暂停后不能 resume，需重新 _ssScheduleAll
     _ssPaused=true;_ssUpdateBtn();
 }
 
 function ssResume(){
     if(!_ssPaused)return;
-    _ssStart=_ssSynth.currentTime;_ssPaused=false;
-    _ssUpdateBtn();_ssSchedule();
+    _ssStart=_ssSynth.currentTime;_ssPlaying=true;_ssPaused=false;
+    _ssUpdateBtn();
+    // 重新调度剩余事件
+    const remaining=_ssEvents.filter((e,i)=>i>=_ssIdx-128); // 安全余量
+    _ssEvents=remaining;
+    _ssScheduleAll();
 }
 
 function ssStop(){
     if(_ssTimer){clearTimeout(_ssTimer);_ssTimer=null}
     _ssAllNotesOff();
-    _ssEvents=[];_ssIdx=0;_ssPausedAt=0;
+    _ssEvents=[];_ssPausedAt=0;
     _ssPlaying=false;_ssPaused=false;
     _ssUpdateBtn();
 }
 
-// 自然播放完毕：不杀音符，只更新状态
 function _ssFinish(){
     if(_ssTimer){clearTimeout(_ssTimer);_ssTimer=null}
-    _ssEvents=[];_ssIdx=0;_ssPausedAt=0;
+    _ssEvents=[];_ssPausedAt=0;
     _ssPlaying=false;_ssPaused=false;
+    _ssUpdateBtn();
+}
     _ssUpdateBtn();
 }
 
