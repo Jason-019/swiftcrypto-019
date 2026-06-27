@@ -337,6 +337,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <div class="btn-row" id="midiPlayRow" style="display:none">
             <button class="btn btn-outline" id="midiPlayBtn" onclick="midiTogglePlay()" style="font-size:0.8rem;gap:4px">▶️ 播放</button>
             <button class="btn btn-outline" onclick="midiStop()" style="font-size:0.8rem">⏹️ 停止</button>
+            <button class="btn btn-outline" onclick="midiExportWav()" style="font-size:0.8rem">🎧 WAV</button>
         </div>
         <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px">
             <div style="font-size:0.75rem;color:var(--dim);margin-bottom:4px">📥 接收方：打开收到的 .mid 文件</div>
@@ -1241,7 +1242,7 @@ loadChat();checkShareLink();initDeviceName();setTheme();updateBgOpacity(75);uc()
 handleIncomingShare();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=14"></script>
+</script><script src="midi_stego.js?v=15"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">

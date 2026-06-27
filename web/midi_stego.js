@@ -530,3 +530,113 @@ function _updatePlayBtn(){
     else if(_midiPaused){btn.textContent='▶️ 继续';row.style.display=''}
     else{btn.textContent='▶️ 播放';if(!_midiPlaybackBuf)row.style.display='none'}
 }
+
+// ═══════════════════════════════════════════════════════════════
+// 🎧 MIDI → WAV 导出 (Web Audio API 加法合成钢琴音色)
+// ═══════════════════════════════════════════════════════════════
+async function midiExportWav(){
+    if(!_midiPlaybackBuf){t('⚠️ 请先编码或解码 MIDI');return}
+    const status=document.getElementById('midiEncodeStatus');
+    try{
+        status.textContent='🎧 正在合成音频…';
+        const wav=await midiToWav(_midiPlaybackBuf);
+        const blob=new Blob([wav],{type:'audio/wav'});
+        const name=(document.getElementById('midiSongInfo')?.textContent?.split('|').pop()?.trim()||'midi')+'.wav';
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');a.href=url;a.download=name.replace(/[^a-zA-Z0-9\u4e00-\u9fff _.-]/g,'');a.click();
+        URL.revokeObjectURL(url);
+        t('✅ WAV 已导出');
+        status.textContent='✅ WAV 导出完成';
+    }catch(e){
+        status.textContent='❌ '+e.message;
+        t('❌ '+e.message);
+    }
+}
+
+async function midiToWav(buf){
+    const rawEvents=parseMidiTimedEvents(buf);
+    if(!rawEvents.length)throw new Error('MIDI 无音符');
+    // 计算每个 Note-On 的持续时长（找到对应的 Note-Off）
+    for(let i=0;i<rawEvents.length;i++){
+        const e=rawEvents[i];
+        if((e.bytes[0]&0xF0)===0x90&&e.bytes[2]>0){
+            const note=e.bytes[1];let endT=e.time/1000+2;
+            for(let j=i+1;j<rawEvents.length;j++){
+                const ej=rawEvents[j];
+                if(((ej.bytes[0]&0xF0)===0x80||((ej.bytes[0]&0xF0)===0x90&&ej.bytes[2]===0))&&ej.bytes[1]===note){
+                    endT=ej.time/1000;break;
+                }
+            }
+            rawEvents[i].duration=Math.max(0.15,endT-e.time/1000);
+        }
+    }
+    const sampleRate=44100;
+    const lastEvt=rawEvents[rawEvents.length-1];
+    const duration=Math.max(lastEvt.time/1000+(lastEvt.duration||1)+1.5,2);
+    const ctx=new OfflineAudioContext(2,Math.ceil(sampleRate*duration),sampleRate);
+    const master=ctx.createGain();master.gain.value=0.55;master.connect(ctx.destination);
+    const comp=ctx.createDynamicsCompressor();
+    comp.threshold.value=-22;comp.knee.value=6;comp.ratio.value=3.5;
+    comp.attack.value=0.002;comp.release.value=0.2;
+    comp.connect(master);
+    for(const evt of rawEvents){
+        const cmd=evt.bytes[0]&0xF0;
+        if(cmd===0x90&&evt.bytes[2]>0){
+            const freq=440*Math.pow(2,(evt.bytes[1]-69)/12);
+            _createPianoVoice(ctx,freq,evt.bytes[2]/127,evt.time/1000,evt.duration||0.8,comp);
+        }
+    }
+    const rendered=await ctx.startRendering();
+    return _audioBufferToWav(rendered);
+}
+
+function _createPianoVoice(ctx,freq,velocity,startTime,duration,dest){
+    // 谐波: 基频 + 2次 + 3次 + 4次 (模拟钢琴泛音列)
+    const harmonics=[1,0.55,0.22,0.08,0.03,0.015];
+    for(let h=0;h<harmonics.length;h++){
+        const osc=ctx.createOscillator();
+        const env=ctx.createGain();
+        osc.type=h===0?'sine':(h===1?'triangle':'sine');
+        osc.frequency.value=freq*(h+1)*((h>0)?1.0005:1); // 微失谐
+        // ADSR
+        const now=startTime;
+        const attack=0.008+velocity*0.015;
+        const decay=h===0?0.3:0.12;
+        const sustain=h===0?0.6*velocity:0.35*velocity;
+        const release=Math.min(duration*0.3,1.2);
+        env.gain.setValueAtTime(0,now);
+        env.gain.linearRampToValueAtTime(harmonics[h]*velocity,now+attack);
+        env.gain.linearRampToValueAtTime(harmonics[h]*sustain,now+attack+decay);
+        env.gain.setValueAtTime(harmonics[h]*sustain,now+duration);
+        env.gain.linearRampToValueAtTime(0,now+duration+release);
+        osc.connect(env);env.connect(dest);
+        osc.start(now);osc.stop(now+duration+release+0.05);
+    }
+}
+
+function _audioBufferToWav(buffer){
+    const numChannels=buffer.numberOfChannels;
+    const sampleRate=buffer.sampleRate;
+    const length=buffer.length;
+    const bytesPerSample=2;
+    const blockAlign=numChannels*bytesPerSample;
+    const dataSize=length*blockAlign;
+    const buf=new ArrayBuffer(44+dataSize);
+    const view=new DataView(buf);
+    const writeStr=(off,s)=>{for(let i=0;i<s.length;i++)view.setUint8(off+i,s.charCodeAt(i))};
+    writeStr(0,'RIFF');view.setUint32(4,36+dataSize,true);writeStr(8,'WAVE');
+    writeStr(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);
+    view.setUint16(22,numChannels,true);view.setUint32(24,sampleRate,true);
+    view.setUint32(28,sampleRate*blockAlign,true);view.setUint16(32,blockAlign,true);
+    view.setUint16(34,bytesPerSample*8,true);
+    writeStr(36,'data');view.setUint32(40,dataSize,true);
+    let offset=44;
+    for(let i=0;i<length;i++){
+        for(let ch=0;ch<numChannels;ch++){
+            const sample=Math.max(-1,Math.min(1,buffer.getChannelData(ch)[i]));
+            const intSample=sample<0?sample*0x8000:sample*0x7FFF;
+            view.setInt16(offset,intSample,true);offset+=2;
+        }
+    }
+    return buf;
+}
