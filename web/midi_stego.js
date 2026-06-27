@@ -308,6 +308,10 @@ async function midiEncodeAndShare(){
             midiDownloadFallback(blob,fileName,status,encodedBits,song);
         }
         status.textContent=`✅ 编码完成 — ${encodedBits} bits 已嵌入 "${song.name}"`;
+        // 存储编码后的 MIDI 数据供播放
+        _midiPlaybackBuf=bytes.buffer.slice(0);
+        document.getElementById('midiPlayRow').style.display='';
+        _updatePlayBtn();
         autoSavePwd();
     }catch(e){
         status.textContent='❌ '+e.message;
@@ -380,6 +384,10 @@ function midiDecodeFromFile(){
             const sd=checkSelfDestruct(pt);
             document.getElementById('midiPlainOutput').value=sd.message;
             status.textContent=sd.wasSD?`✅ 解码成功！(🔥 剩余 ${fmtRemaining(sd.remaining)} 后焚毁)`:'✅ 解码成功！';
+            // 存储解码的 MIDI 数据供播放
+            _midiPlaybackBuf=buf.slice(0);
+            document.getElementById('midiPlayRow').style.display='';
+            _updatePlayBtn();
             t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功');
             autoSavePwd();
         }catch(e){
@@ -396,4 +404,129 @@ function compareArrayBuffers(a,b){
     const ua=new Uint8Array(a),ub=new Uint8Array(b);
     for(let i=0;i<ua.length;i++)if(ua[i]!==ub[i])return false;
     return true;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🎹 MIDI 播放 (Web MIDI API)
+// ═══════════════════════════════════════════════════════════════
+let _midiOutput=null,_midiPlayTimer=null,_midiPlayEvents=[];
+let _midiPlayIdx=0,_midiPlayStart=0,_midiPausedAt=0,_midiPlaybackBuf=null;
+let _midiPlaying=false,_midiPaused=false;
+
+async function midiInitOutput(){
+    if(_midiOutput)return true;
+    try{const a=await navigator.requestMIDIAccess();const outs=[...a.outputs.values()];if(outs.length){_midiOutput=outs[0];return true}}
+    catch(e){console.warn('Web MIDI:',e)}return false;
+}
+
+function parseMidiTimedEvents(buf){
+    const dv=new DataView(buf),events=[];
+    let pos=0;
+    if(dv.getUint32(pos)!==0x4D546864)throw new Error('不是标准 MIDI 文件');
+    pos+=4;const hdrLen=dv.getUint32(pos);pos+=4;
+    const format=dv.getUint16(pos);pos+=2;
+    const tracks=dv.getUint16(pos);pos+=2;
+    const division=dv.getUint16(pos);pos+=2;
+    const tpqn=(division&0x8000)?480:division;
+    let usPerQuarter=500000;
+    pos+=hdrLen-6;
+    while(pos<buf.byteLength){
+        if(dv.getUint32(pos)!==0x4D54726B)break;
+        pos+=4;const trackLen=dv.getUint32(pos);pos+=4;
+        const trackEnd=pos+trackLen;
+        let runningStatus=0,tickTime=0;
+        while(pos<trackEnd){
+            let delta=0,b;
+            do{b=dv.getUint8(pos++);delta=(delta<<7)|(b&0x7f)}while(b&0x80);
+            tickTime+=delta;
+            let status=dv.getUint8(pos);
+            if(status<0x80){status=runningStatus;pos--;}
+            else{pos++;runningStatus=status;}
+            const cmd=status&0xF0;
+            if(cmd===0x90||cmd===0x80){
+                const note=dv.getUint8(pos++);
+                const vel=dv.getUint8(pos++);
+                const ms=tickTime*usPerQuarter/tpqn/1000;
+                events.push({time:ms,bytes:[status,note,vel]});
+            }else if(cmd===0xC0||cmd===0xD0){pos++}
+            else if(cmd===0xF0){
+                if(status===0xFF){
+                    const type=dv.getUint8(pos++);
+                    let len=0;do{b=dv.getUint8(pos++);len=(len<<7)|(b&0x7f)}while(b&0x80);
+                    if(type===0x51&&len===3){usPerQuarter=(dv.getUint8(pos)<<16)|(dv.getUint8(pos+1)<<8)|dv.getUint8(pos+2)}
+                    pos+=len;
+                }else{pos++;while(dv.getUint8(pos++)&0x80);}
+            }else{pos+=2}
+        }
+        pos=trackEnd;
+    }
+    events.sort((a,b)=>a.time-b.time);
+    return events;
+}
+
+function _midiSchedule(){
+    if(!_midiOutput||_midiPlayIdx>=_midiPlayEvents.length){midiStop();return}
+    const now=performance.now(),elapsed=now-_midiPlayStart;
+    while(_midiPlayIdx<_midiPlayEvents.length){
+        const evt=_midiPlayEvents[_midiPlayIdx];
+        if(evt.time+_midiPausedAt-elapsed>60)break;
+        const t=now+Math.max(0,evt.time+_midiPausedAt-elapsed);
+        _midiOutput.send(evt.bytes,t);
+        _midiPlayIdx++;
+    }
+    if(_midiPlayIdx>=_midiPlayEvents.length){
+        // All notes off after last event
+        const lastT=_midiPlayEvents[_midiPlayEvents.length-1].time+_midiPausedAt;
+        _midiPlayTimer=setTimeout(()=>midiStop(),Math.max(0,lastT-elapsed+200));
+    }else{
+        _midiPlayTimer=setTimeout(_midiSchedule,30);
+    }
+}
+
+async function midiPlay(buf){
+    if(!buf)return;
+    midiStop();
+    if(!await midiInitOutput()){t('⚠️ 需 Chrome + MIDI 输出设备（Windows 自带软波表）');return}
+    _midiPlaybackBuf=buf;_midiPlayEvents=parseMidiTimedEvents(buf);
+    _midiPlayIdx=0;_midiPlayStart=performance.now();_midiPausedAt=0;
+    _midiPlaying=true;_midiPaused=false;
+    _updatePlayBtn();
+    _midiSchedule();
+}
+
+function midiTogglePlay(){
+    if(_midiPaused)midiResume();else if(_midiPlaying)midiPause();else midiPlay(_midiPlaybackBuf);
+}
+
+function midiPause(){
+    if(!_midiPlaying||_midiPaused)return;
+    _midiPausedAt+=performance.now()-_midiPlayStart;
+    if(_midiPlayTimer){clearTimeout(_midiPlayTimer);_midiPlayTimer=null}
+    if(_midiOutput)_midiOutput.clear();
+    _midiPaused=true;
+    _updatePlayBtn();
+}
+
+function midiResume(){
+    if(!_midiPaused)return;
+    _midiPlayStart=performance.now();_midiPaused=false;
+    _updatePlayBtn();
+    _midiSchedule();
+}
+
+function midiStop(){
+    if(_midiPlayTimer){clearTimeout(_midiPlayTimer);_midiPlayTimer=null}
+    if(_midiOutput){_midiOutput.send([0xB0,0x7B,0x00]);_midiOutput.clear()}
+    _midiPlayEvents=[];_midiPlayIdx=0;_midiPausedAt=0;
+    _midiPlaying=false;_midiPaused=false;
+    _updatePlayBtn();
+}
+
+function _updatePlayBtn(){
+    const btn=document.getElementById('midiPlayBtn');
+    if(!btn)return;
+    const row=document.getElementById('midiPlayRow');
+    if(_midiPlaying&&!_midiPaused){btn.textContent='⏸️ 暂停';row.style.display=''}
+    else if(_midiPaused){btn.textContent='▶️ 继续';row.style.display=''}
+    else{btn.textContent='▶️ 播放';if(!_midiPlaybackBuf)row.style.display='none'}
 }
