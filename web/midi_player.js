@@ -24,11 +24,11 @@ async function ssInit(){
         const synth=new mod.WorkletSynthesizer(actx);
         await synth.soundBankManager.addSoundBank(sfBuf,'gm');
         await synth.isReady;
-        // 设置默认钢琴音色
         synth.programChange(0,0); // Acoustic Grand Piano
-        _ssSynth=synth;_ssReady=true;
-        // 连接输出
+        // 连接输出并确保 AudioContext 运行
         synth.connect(actx.destination);
+        await actx.resume();
+        _ssSynth=synth;_ssReady=true;
         status.textContent='✅ 音色库就绪';
     }catch(e){
         status.textContent='❌ '+e.message;
@@ -99,10 +99,21 @@ function _ssSchedule(){
     }
     if(_ssIdx>=_ssEvents.length){
         const last=_ssEvents[_ssEvents.length-1];
-        const endT=last.time/1000+_ssPausedAt+2;
-        _ssTimer=setTimeout(()=>ssStop(),Math.max(500,(endT-elapsed)*1000));
+        const endT=last.time/1000+_ssPausedAt+3;
+        _ssTimer=setTimeout(()=>_ssFinish(),Math.max(500,(endT-elapsed)*1000));
     }else{
         _ssTimer=setTimeout(_ssSchedule,50);
+    }
+}
+
+// ── 发送 MIDI CC 静音所有通道 ──
+function _ssAllNotesOff(){
+    if(!_ssSynth)return;
+    try{
+        for(let ch=0;ch<16;ch++){_ssSynth.controllerChange(ch,123,0);_ssSynth.controllerChange(ch,120,0);}
+    }catch(e){
+        // 回退：逐个音符关
+        for(let ch=0;ch<16;ch++)for(let n=0;n<128;n++)try{_ssSynth.noteOff(ch,n)}catch(e){}
     }
 }
 
@@ -129,7 +140,7 @@ function ssPause(){
     if(!_ssPlaying||_ssPaused)return;
     _ssPausedAt+=_ssSynth.currentTime-_ssStart;
     if(_ssTimer){clearTimeout(_ssTimer);_ssTimer=null}
-    try{_ssSynth.stopAll();}catch(e){_ssSynth.allNotesOff();}
+    _ssAllNotesOff();
     _ssPaused=true;_ssUpdateBtn();
 }
 
@@ -141,7 +152,15 @@ function ssResume(){
 
 function ssStop(){
     if(_ssTimer){clearTimeout(_ssTimer);_ssTimer=null}
-    if(_ssSynth){try{_ssSynth.stopAll();}catch(e){_ssSynth.allNotesOff();}}
+    _ssAllNotesOff();
+    _ssEvents=[];_ssIdx=0;_ssPausedAt=0;
+    _ssPlaying=false;_ssPaused=false;
+    _ssUpdateBtn();
+}
+
+// 自然播放完毕：不杀音符，只更新状态
+function _ssFinish(){
+    if(_ssTimer){clearTimeout(_ssTimer);_ssTimer=null}
     _ssEvents=[];_ssIdx=0;_ssPausedAt=0;
     _ssPlaying=false;_ssPaused=false;
     _ssUpdateBtn();
