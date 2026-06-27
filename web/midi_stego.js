@@ -309,7 +309,7 @@ async function midiEncodeAndShare(){
         }
         status.textContent=`✅ 编码完成 — ${encodedBits} bits 已嵌入 "${song.name}"`;
         // 存储编码后的 MIDI 数据供播放
-        _midiPlaybackBuf=bytes.buffer.slice(0);
+        _acPlaybackBuf=bytes.buffer.slice(0);
         document.getElementById('midiPlayRow').style.display='';
         _updatePlayBtn();
         autoSavePwd();
@@ -385,7 +385,7 @@ function midiDecodeFromFile(){
             document.getElementById('midiPlainOutput').value=sd.message;
             status.textContent=sd.wasSD?`✅ 解码成功！(🔥 剩余 ${fmtRemaining(sd.remaining)} 后焚毁)`:'✅ 解码成功！';
             // 存储解码的 MIDI 数据供播放
-            _midiPlaybackBuf=buf.slice(0);
+            _acPlaybackBuf=buf.slice(0);
             document.getElementById('midiPlayRow').style.display='';
             _updatePlayBtn();
             t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功');
@@ -407,139 +407,152 @@ function compareArrayBuffers(a,b){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 🎹 MIDI 播放 (Web MIDI API)
+// 🎹 音频播放 + 🎧 WAV导出 (AudioContext 加法合成钢琴)
 // ═══════════════════════════════════════════════════════════════
-let _midiOutput=null,_midiPlayTimer=null,_midiPlayEvents=[];
-let _midiPlayIdx=0,_midiPlayStart=0,_midiPausedAt=0,_midiPlaybackBuf=null;
-let _midiPlaying=false,_midiPaused=false;
+let _acCtx=null,_acTimer=null,_acEvents=[],_acComp=null,_acMaster=null;
+let _acIdx=0,_acStart=0,_acPausedAt=0,_acPlaybackBuf=null;
+let _acPlaying=false,_acPaused=false;
 
-async function midiInitOutput(){
-    if(_midiOutput)return true;
-    try{const a=await navigator.requestMIDIAccess();const outs=[...a.outputs.values()];if(outs.length){_midiOutput=outs[0];return true}}
-    catch(e){console.warn('Web MIDI:',e)}return false;
-}
-
-function parseMidiTimedEvents(buf){
-    const dv=new DataView(buf),events=[];
-    let pos=0;
-    if(dv.getUint32(pos)!==0x4D546864)throw new Error('不是标准 MIDI 文件');
-    pos+=4;const hdrLen=dv.getUint32(pos);pos+=4;
-    const format=dv.getUint16(pos);pos+=2;
-    const tracks=dv.getUint16(pos);pos+=2;
-    const division=dv.getUint16(pos);pos+=2;
-    const tpqn=(division&0x8000)?480:division;
-    let usPerQuarter=500000;
-    pos+=hdrLen-6;
-    while(pos<buf.byteLength){
-        if(dv.getUint32(pos)!==0x4D54726B)break;
-        pos+=4;const trackLen=dv.getUint32(pos);pos+=4;
-        const trackEnd=pos+trackLen;
-        let runningStatus=0,tickTime=0;
-        while(pos<trackEnd){
-            let delta=0,b;
-            do{b=dv.getUint8(pos++);delta=(delta<<7)|(b&0x7f)}while(b&0x80);
-            tickTime+=delta;
-            let status=dv.getUint8(pos);
-            if(status<0x80){status=runningStatus;pos--;}
-            else{pos++;runningStatus=status;}
-            const cmd=status&0xF0;
-            if(cmd===0x90||cmd===0x80){
-                const note=dv.getUint8(pos++);
-                const vel=dv.getUint8(pos++);
-                const ms=tickTime*usPerQuarter/tpqn/1000;
-                events.push({time:ms,bytes:[status,note,vel]});
-            }else if(cmd===0xC0||cmd===0xD0){pos++}
-            else if(cmd===0xF0){
-                if(status===0xFF){
-                    const type=dv.getUint8(pos++);
-                    let len=0;do{b=dv.getUint8(pos++);len=(len<<7)|(b&0x7f)}while(b&0x80);
-                    if(type===0x51&&len===3){usPerQuarter=(dv.getUint8(pos)<<16)|(dv.getUint8(pos+1)<<8)|dv.getUint8(pos+2)}
-                    pos+=len;
-                }else{pos++;while(dv.getUint8(pos++)&0x80);}
-            }else{pos+=2}
+function _acComputeDurations(events){
+    for(let i=0;i<events.length;i++){
+        const e=events[i];
+        if((e.bytes[0]&0xF0)===0x90&&e.bytes[2]>0){
+            const note=e.bytes[1];let endT=e.time/1000+2;
+            for(let j=i+1;j<events.length;j++){
+                const ej=events[j];
+                if(((ej.bytes[0]&0xF0)===0x80||((ej.bytes[0]&0xF0)===0x90&&ej.bytes[2]===0))&&ej.bytes[1]===note){
+                    endT=ej.time/1000;break;
+                }
+            }
+            events[i].duration=Math.max(0.15,endT-e.time/1000);
         }
-        pos=trackEnd;
     }
-    events.sort((a,b)=>a.time-b.time);
-    return events;
 }
 
-function _midiSchedule(){
-    if(!_midiOutput||_midiPlayIdx>=_midiPlayEvents.length){midiStop();return}
-    const now=performance.now(),elapsed=now-_midiPlayStart;
-    while(_midiPlayIdx<_midiPlayEvents.length){
-        const evt=_midiPlayEvents[_midiPlayIdx];
-        if(evt.time+_midiPausedAt-elapsed>60)break;
-        const t=now+Math.max(0,evt.time+_midiPausedAt-elapsed);
-        _midiOutput.send(evt.bytes,t);
-        _midiPlayIdx++;
+function _acEnsureCtx(){
+    if(_acCtx&&_acCtx.state!=='closed')return;
+    _acCtx=new AudioContext();
+    _acMaster=_acCtx.createGain();_acMaster.gain.value=0.5;_acMaster.connect(_acCtx.destination);
+    _acComp=_acCtx.createDynamicsCompressor();
+    _acComp.threshold.value=-22;_acComp.knee.value=6;_acComp.ratio.value=3.5;
+    _acComp.attack.value=0.002;_acComp.release.value=0.2;
+    _acComp.connect(_acMaster);
+}
+
+function _acSchedule(){
+    if(!_acCtx||_acIdx>=_acEvents.length){audioStop();return}
+    const now=_acCtx.currentTime,elapsed=now-_acStart;
+    while(_acIdx<_acEvents.length){
+        const evt=_acEvents[_acIdx];
+        const evtT=evt.time/1000+_acPausedAt;
+        if(evtT-elapsed>0.12)break;
+        if((evt.bytes[0]&0xF0)===0x90&&evt.bytes[2]>0){
+            const freq=440*Math.pow(2,(evt.bytes[1]-69)/12);
+            const startT=now+Math.max(0,evtT-elapsed);
+            _createPianoVoice(_acCtx,freq,evt.bytes[2]/127,startT,evt.duration||0.8,_acComp);
+        }
+        _acIdx++;
     }
-    if(_midiPlayIdx>=_midiPlayEvents.length){
-        // All notes off after last event
-        const lastT=_midiPlayEvents[_midiPlayEvents.length-1].time+_midiPausedAt;
-        _midiPlayTimer=setTimeout(()=>midiStop(),Math.max(0,lastT-elapsed+200));
+    if(_acIdx>=_acEvents.length){
+        const last=_acEvents[_acEvents.length-1];
+        const endT=last.time/1000+(last.duration||1)+_acPausedAt+0.5;
+        _acTimer=setTimeout(()=>audioStop(),Math.max(500,(endT-elapsed)*1000));
     }else{
-        _midiPlayTimer=setTimeout(_midiSchedule,30);
+        _acTimer=setTimeout(_acSchedule,60);
     }
 }
 
-async function midiPlay(buf){
+function audioPlay(buf){
     if(!buf)return;
-    midiStop();
-    if(!await midiInitOutput()){t('⚠️ 需 Chrome + MIDI 输出设备（Windows 自带软波表）');return}
-    _midiPlaybackBuf=buf;_midiPlayEvents=parseMidiTimedEvents(buf);
-    _midiPlayIdx=0;_midiPlayStart=performance.now();_midiPausedAt=0;
-    _midiPlaying=true;_midiPaused=false;
+    audioStop();
+    _acEnsureCtx();
+    _acPlaybackBuf=buf;
+    _acEvents=parseMidiTimedEvents(buf);
+    _acComputeDurations(_acEvents);
+    _acIdx=0;_acStart=_acCtx.currentTime;_acPausedAt=0;
+    _acPlaying=true;_acPaused=false;
     _updatePlayBtn();
-    _midiSchedule();
+    _acSchedule();
 }
 
-function midiTogglePlay(){
-    if(_midiPaused)midiResume();else if(_midiPlaying)midiPause();else midiPlay(_midiPlaybackBuf);
+function audioPause(){
+    if(!_acPlaying||_acPaused)return;
+    _acPausedAt+=_acCtx.currentTime-_acStart;
+    if(_acTimer){clearTimeout(_acTimer);_acTimer=null}
+    _acCtx.suspend();
+    _acPaused=true;_updatePlayBtn();
 }
 
-function midiPause(){
-    if(!_midiPlaying||_midiPaused)return;
-    _midiPausedAt+=performance.now()-_midiPlayStart;
-    if(_midiPlayTimer){clearTimeout(_midiPlayTimer);_midiPlayTimer=null}
-    if(_midiOutput)_midiOutput.clear();
-    _midiPaused=true;
+function audioResume(){
+    if(!_acPaused)return;
+    _acCtx.resume();
+    _acStart=_acCtx.currentTime;_acPaused=false;
+    _updatePlayBtn();_acSchedule();
+}
+
+function audioStop(){
+    if(_acTimer){clearTimeout(_acTimer);_acTimer=null}
+    if(_acCtx&&_acCtx.state!=='closed'){
+        try{_acCtx.close()}catch(e){}
+        _acCtx=null;_acComp=null;_acMaster=null;
+    }
+    _acEvents=[];_acIdx=0;_acPausedAt=0;
+    _acPlaying=false;_acPaused=false;
     _updatePlayBtn();
 }
 
-function midiResume(){
-    if(!_midiPaused)return;
-    _midiPlayStart=performance.now();_midiPaused=false;
-    _updatePlayBtn();
-    _midiSchedule();
-}
-
-function midiStop(){
-    if(_midiPlayTimer){clearTimeout(_midiPlayTimer);_midiPlayTimer=null}
-    if(_midiOutput){_midiOutput.send([0xB0,0x7B,0x00]);_midiOutput.clear()}
-    _midiPlayEvents=[];_midiPlayIdx=0;_midiPausedAt=0;
-    _midiPlaying=false;_midiPaused=false;
-    _updatePlayBtn();
+function midiTogglePlay(){audioTogglePlay()}
+function midiStop(){audioStop()}
+function midiPlay(buf){audioPlay(buf)}
+function midiPause(){audioPause()}
+function midiResume(){audioResume()}
+function audioTogglePlay(){
+    if(_acPaused)audioResume();else if(_acPlaying)audioPause();else audioPlay(_acPlaybackBuf);
 }
 
 function _updatePlayBtn(){
     const btn=document.getElementById('midiPlayBtn');
     if(!btn)return;
     const row=document.getElementById('midiPlayRow');
-    if(_midiPlaying&&!_midiPaused){btn.textContent='⏸️ 暂停';row.style.display=''}
-    else if(_midiPaused){btn.textContent='▶️ 继续';row.style.display=''}
-    else{btn.textContent='▶️ 播放';if(!_midiPlaybackBuf)row.style.display='none'}
+    if(_acPlaying&&!_acPaused){btn.textContent='⏸️ 暂停';row.style.display=''}
+    else if(_acPaused){btn.textContent='▶️ 继续';row.style.display=''}
+    else{btn.textContent='▶️ 播放';if(!_acPlaybackBuf)row.style.display='none'}
 }
 
-// ═══════════════════════════════════════════════════════════════
-// 🎧 MIDI → WAV 导出 (Web Audio API 加法合成钢琴音色)
-// ═══════════════════════════════════════════════════════════════
+// ─── 🎧 WAV 导出（轻量版：限制时长防卡死）───
 async function midiExportWav(){
-    if(!_midiPlaybackBuf){t('⚠️ 请先编码或解码 MIDI');return}
+    if(!_acPlaybackBuf){t('⚠️ 请先编码或解码 MIDI');return}
     const status=document.getElementById('midiEncodeStatus');
     try{
         status.textContent='🎧 正在合成音频…';
-        const wav=await midiToWav(_midiPlaybackBuf);
+        // 限制最长 5 分钟（300s），防止超大文件卡死
+        const MAX_DURATION=300;
+        const rawEvents=parseMidiTimedEvents(_acPlaybackBuf);
+        if(!rawEvents.length)throw new Error('MIDI 无音符');
+        _acComputeDurations(rawEvents);
+        const lastEvt=rawEvents[rawEvents.length-1];
+        const totalDuration=Math.min(lastEvt.time/1000+(lastEvt.duration||1)+1.5,MAX_DURATION);
+        const sampleRate=44100;
+        const ctx=new OfflineAudioContext(2,Math.ceil(sampleRate*totalDuration),sampleRate);
+        const master=ctx.createGain();master.gain.value=0.5;master.connect(ctx.destination);
+        const comp=ctx.createDynamicsCompressor();
+        comp.threshold.value=-22;comp.knee.value=6;comp.ratio.value=3.5;
+        comp.attack.value=0.002;comp.release.value=0.2;
+        comp.connect(master);
+        // 仅渲染时长内的音符
+        let voiceCount=0;
+        for(const evt of rawEvents){
+            if(evt.time/1000>totalDuration)break;
+            if((evt.bytes[0]&0xF0)===0x90&&evt.bytes[2]>0){
+                const freq=440*Math.pow(2,(evt.bytes[1]-69)/12);
+                const dur=Math.min(evt.duration||0.8,totalDuration-evt.time/1000+0.5);
+                _createPianoVoice(ctx,freq,evt.bytes[2]/127,evt.time/1000,dur,comp);
+                voiceCount++;
+            }
+        }
+        status.textContent=`🎧 合成 ${voiceCount} 个音符…`;
+        const rendered=await ctx.startRendering();
+        const wav=_audioBufferToWav(rendered);
         const blob=new Blob([wav],{type:'audio/wav'});
         const name=(document.getElementById('midiSongInfo')?.textContent?.split('|').pop()?.trim()||'midi')+'.wav';
         const url=URL.createObjectURL(blob);
@@ -553,57 +566,21 @@ async function midiExportWav(){
     }
 }
 
-async function midiToWav(buf){
-    const rawEvents=parseMidiTimedEvents(buf);
-    if(!rawEvents.length)throw new Error('MIDI 无音符');
-    // 计算每个 Note-On 的持续时长（找到对应的 Note-Off）
-    for(let i=0;i<rawEvents.length;i++){
-        const e=rawEvents[i];
-        if((e.bytes[0]&0xF0)===0x90&&e.bytes[2]>0){
-            const note=e.bytes[1];let endT=e.time/1000+2;
-            for(let j=i+1;j<rawEvents.length;j++){
-                const ej=rawEvents[j];
-                if(((ej.bytes[0]&0xF0)===0x80||((ej.bytes[0]&0xF0)===0x90&&ej.bytes[2]===0))&&ej.bytes[1]===note){
-                    endT=ej.time/1000;break;
-                }
-            }
-            rawEvents[i].duration=Math.max(0.15,endT-e.time/1000);
-        }
-    }
-    const sampleRate=44100;
-    const lastEvt=rawEvents[rawEvents.length-1];
-    const duration=Math.max(lastEvt.time/1000+(lastEvt.duration||1)+1.5,2);
-    const ctx=new OfflineAudioContext(2,Math.ceil(sampleRate*duration),sampleRate);
-    const master=ctx.createGain();master.gain.value=0.55;master.connect(ctx.destination);
-    const comp=ctx.createDynamicsCompressor();
-    comp.threshold.value=-22;comp.knee.value=6;comp.ratio.value=3.5;
-    comp.attack.value=0.002;comp.release.value=0.2;
-    comp.connect(master);
-    for(const evt of rawEvents){
-        const cmd=evt.bytes[0]&0xF0;
-        if(cmd===0x90&&evt.bytes[2]>0){
-            const freq=440*Math.pow(2,(evt.bytes[1]-69)/12);
-            _createPianoVoice(ctx,freq,evt.bytes[2]/127,evt.time/1000,evt.duration||0.8,comp);
-        }
-    }
-    const rendered=await ctx.startRendering();
-    return _audioBufferToWav(rendered);
-}
-
 function _createPianoVoice(ctx,freq,velocity,startTime,duration,dest){
-    // 谐波: 基频 + 2次 + 3次 + 4次 (模拟钢琴泛音列)
-    const harmonics=[1,0.55,0.22,0.08,0.03,0.015];
+    const harmonics=[1,0.5,0.2,0.07,0.025,0.01];
     for(let h=0;h<harmonics.length;h++){
         const osc=ctx.createOscillator();
         const env=ctx.createGain();
         osc.type=h===0?'sine':(h===1?'triangle':'sine');
-        osc.frequency.value=freq*(h+1)*((h>0)?1.0005:1); // 微失谐
-        // ADSR
+        // 跳过超出奈奎斯特频率的泛音
+        const hFreq=freq*(h+1);
+        if(hFreq>20000)continue;
+        osc.frequency.value=hFreq*((h>0)?1.0005:1);
         const now=startTime;
-        const attack=0.008+velocity*0.015;
-        const decay=h===0?0.3:0.12;
-        const sustain=h===0?0.6*velocity:0.35*velocity;
-        const release=Math.min(duration*0.3,1.2);
+        const attack=0.006+velocity*0.012;
+        const decay=h===0?0.28:0.1;
+        const sustain=h===0?0.55*velocity:0.3*velocity;
+        const release=Math.min(duration*0.28,1.0);
         env.gain.setValueAtTime(0,now);
         env.gain.linearRampToValueAtTime(harmonics[h]*velocity,now+attack);
         env.gain.linearRampToValueAtTime(harmonics[h]*sustain,now+attack+decay);
@@ -615,28 +592,19 @@ function _createPianoVoice(ctx,freq,velocity,startTime,duration,dest){
 }
 
 function _audioBufferToWav(buffer){
-    const numChannels=buffer.numberOfChannels;
-    const sampleRate=buffer.sampleRate;
-    const length=buffer.length;
-    const bytesPerSample=2;
-    const blockAlign=numChannels*bytesPerSample;
-    const dataSize=length*blockAlign;
-    const buf=new ArrayBuffer(44+dataSize);
-    const view=new DataView(buf);
-    const writeStr=(off,s)=>{for(let i=0;i<s.length;i++)view.setUint8(off+i,s.charCodeAt(i))};
-    writeStr(0,'RIFF');view.setUint32(4,36+dataSize,true);writeStr(8,'WAVE');
-    writeStr(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);
-    view.setUint16(22,numChannels,true);view.setUint32(24,sampleRate,true);
-    view.setUint32(28,sampleRate*blockAlign,true);view.setUint16(32,blockAlign,true);
-    view.setUint16(34,bytesPerSample*8,true);
-    writeStr(36,'data');view.setUint32(40,dataSize,true);
-    let offset=44;
-    for(let i=0;i<length;i++){
-        for(let ch=0;ch<numChannels;ch++){
-            const sample=Math.max(-1,Math.min(1,buffer.getChannelData(ch)[i]));
-            const intSample=sample<0?sample*0x8000:sample*0x7FFF;
-            view.setInt16(offset,intSample,true);offset+=2;
-        }
+    const nc=buffer.numberOfChannels,sr=buffer.sampleRate,len=buffer.length;
+    const bps=2,ba=nc*bps,ds=len*ba,buf=new ArrayBuffer(44+ds);
+    const v=new DataView(buf);
+    const ws=(off,s)=>{for(let i=0;i<s.length;i++)v.setUint8(off+i,s.charCodeAt(i))};
+    ws(0,'RIFF');v.setUint32(4,36+ds,true);ws(8,'WAVE');
+    ws(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);
+    v.setUint16(22,nc,true);v.setUint32(24,sr,true);
+    v.setUint32(28,sr*ba,true);v.setUint16(32,ba,true);v.setUint16(34,bps*8,true);
+    ws(36,'data');v.setUint32(40,ds,true);
+    let off=44;
+    for(let i=0;i<len;i++)for(let ch=0;ch<nc;ch++){
+        const s=Math.max(-1,Math.min(1,buffer.getChannelData(ch)[i]));
+        v.setInt16(off,s<0?s*0x8000:s*0x7FFF,true);off+=2;
     }
     return buf;
 }
