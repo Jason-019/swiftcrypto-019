@@ -407,11 +407,12 @@ function compareArrayBuffers(a,b){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 🎹 音频播放 + 🎧 WAV导出 (AudioContext 加法合成钢琴)
+// 🎹 音频播放 + 🎧 WAV导出 (预生成钢琴采样, 6倍加速)
 // ═══════════════════════════════════════════════════════════════
 let _acCtx=null,_acTimer=null,_acEvents=[],_acComp=null,_acMaster=null;
 let _acIdx=0,_acStart=0,_acPausedAt=0,_acPlaybackBuf=null;
 let _acPlaying=false,_acPaused=false;
+let _pianoSamples=null; // {midiNote: AudioBuffer} 预生成的八度采样
 
 function _acComputeDurations(events){
     for(let i=0;i<events.length;i++){
@@ -426,6 +427,78 @@ function _acComputeDurations(events){
             }
             events[i].duration=Math.max(0.15,endT-e.time/1000);
         }
+    }
+}
+
+async function _initPianoSamples(){
+    if(_pianoSamples)return;
+    _pianoSamples={};
+    const sampleRate=44100,duration=2.5;
+    // 每个八度生成一个采样: C1(24) ~ C7(96)
+    const octaveNotes=[24,30,36,42,48,54,60,66,72,78,84,90,96];
+    for(const midiNote of octaveNotes){
+        const freq=440*Math.pow(2,(midiNote-69)/12);
+        const ctx=new OfflineAudioContext(1,Math.ceil(sampleRate*duration),sampleRate);
+        // 用加法合成生成饱满的钢琴采样（力度127满）
+        _synthPianoSample(ctx,freq,1.0,0,duration-0.1,ctx.destination);
+        const buffer=await ctx.startRendering();
+        _pianoSamples[midiNote]=buffer;
+    }
+}
+
+// 获取最接近的八度采样 + 播放速率偏移
+function _getPianoSample(midiNote){
+    if(!_pianoSamples)return null;
+    const octaves=Object.keys(_pianoSamples).map(Number).sort((a,b)=>a-b);
+    let best=octaves[0],bestDist=Math.abs(octaves[0]-midiNote);
+    for(const o of octaves){
+        const d=Math.abs(o-midiNote);
+        if(d<bestDist){bestDist=d;best=o;}
+    }
+    return{buffer:_pianoSamples[best],rate:Math.pow(2,(midiNote-best)/12)};
+}
+
+// 用采样回放代替实时振荡器（1 个 BufferSourceNode vs 6 个 OscillatorNode）
+function _playSampleVoice(ctx,midiNote,velocity,startTime,duration,dest){
+    const s=_getPianoSample(midiNote);
+    if(!s)return;
+    const src=ctx.createBufferSource();
+    src.buffer=s.buffer;src.playbackRate.value=s.rate;
+    const env=ctx.createGain();
+    const now=startTime;
+    const attack=0.005+velocity*0.01;
+    const sustain=0.5*velocity;
+    const release=Math.min(duration*0.3,1.0);
+    env.gain.setValueAtTime(0,now);
+    env.gain.linearRampToValueAtTime(velocity,now+attack);
+    env.gain.setValueAtTime(sustain,now+duration);
+    env.gain.linearRampToValueAtTime(0,now+duration+release);
+    src.connect(env);env.connect(dest);
+    const totalDur=duration+release+0.05;
+    src.start(now,0,totalDur);src.stop(now+totalDur);
+}
+
+// 仅用于生成采样：全泛音加法合成
+function _synthPianoSample(ctx,freq,velocity,startTime,duration,dest){
+    const harmonics=[1,0.5,0.2,0.07,0.025,0.01];
+    for(let h=0;h<harmonics.length;h++){
+        const osc=ctx.createOscillator();
+        const env=ctx.createGain();
+        osc.type=h===0?'sine':(h===1?'triangle':'sine');
+        const hFreq=freq*(h+1);if(hFreq>20000)continue;
+        osc.frequency.value=hFreq*((h>0)?1.0005:1);
+        const now=startTime;
+        const attack=0.005+velocity*0.01;
+        const decay=h===0?0.25:0.08;
+        const sustain=h===0?0.5*velocity:0.25*velocity;
+        const release=Math.min(duration*0.25,0.8);
+        env.gain.setValueAtTime(0,now);
+        env.gain.linearRampToValueAtTime(harmonics[h]*velocity,now+attack);
+        env.gain.linearRampToValueAtTime(harmonics[h]*sustain,now+attack+decay);
+        env.gain.setValueAtTime(harmonics[h]*sustain,now+duration);
+        env.gain.linearRampToValueAtTime(0,now+duration+release);
+        osc.connect(env);env.connect(dest);
+        osc.start(now);osc.stop(now+duration+release+0.05);
     }
 }
 
@@ -447,9 +520,8 @@ function _acSchedule(){
         const evtT=evt.time/1000+_acPausedAt;
         if(evtT-elapsed>0.12)break;
         if((evt.bytes[0]&0xF0)===0x90&&evt.bytes[2]>0){
-            const freq=440*Math.pow(2,(evt.bytes[1]-69)/12);
             const startT=now+Math.max(0,evtT-elapsed);
-            _createPianoVoice(_acCtx,freq,evt.bytes[2]/127,startT,evt.duration||0.8,_acComp);
+            _playSampleVoice(_acCtx,evt.bytes[1],evt.bytes[2]/127,startT,evt.duration||0.8,_acComp);
         }
         _acIdx++;
     }
@@ -471,6 +543,7 @@ function audioPlay(buf){
     _acComputeDurations(_acEvents);
     _acIdx=0;_acStart=_acCtx.currentTime;_acPausedAt=0;
     _acPlaying=true;_acPaused=false;
+    _initPianoSamples(); // fire-and-forget 预热采样缓存
     _updatePlayBtn();
     _acSchedule();
 }
@@ -519,13 +592,14 @@ function _updatePlayBtn(){
     else{btn.textContent='▶️ 播放';if(!_acPlaybackBuf)row.style.display='none'}
 }
 
-// ─── 🎧 WAV 导出（轻量版：限制时长防卡死）───
+// ─── 🎧 WAV 导出（采样回放, 6倍速度）───
 async function midiExportWav(){
     if(!_acPlaybackBuf){t('⚠️ 请先编码或解码 MIDI');return}
     const status=document.getElementById('midiEncodeStatus');
     try{
+        status.textContent='🎹 准备钢琴采样…';
+        await _initPianoSamples(); // 确保采样已就绪
         status.textContent='🎧 正在合成音频…';
-        // 限制最长 5 分钟（300s），防止超大文件卡死
         const MAX_DURATION=300;
         const rawEvents=parseMidiTimedEvents(_acPlaybackBuf);
         if(!rawEvents.length)throw new Error('MIDI 无音符');
@@ -539,14 +613,12 @@ async function midiExportWav(){
         comp.threshold.value=-22;comp.knee.value=6;comp.ratio.value=3.5;
         comp.attack.value=0.002;comp.release.value=0.2;
         comp.connect(master);
-        // 仅渲染时长内的音符
         let voiceCount=0;
         for(const evt of rawEvents){
             if(evt.time/1000>totalDuration)break;
             if((evt.bytes[0]&0xF0)===0x90&&evt.bytes[2]>0){
-                const freq=440*Math.pow(2,(evt.bytes[1]-69)/12);
                 const dur=Math.min(evt.duration||0.8,totalDuration-evt.time/1000+0.5);
-                _createPianoVoice(ctx,freq,evt.bytes[2]/127,evt.time/1000,dur,comp);
+                _playSampleVoice(ctx,evt.bytes[1],evt.bytes[2]/127,evt.time/1000,dur,comp);
                 voiceCount++;
             }
         }
@@ -563,31 +635,6 @@ async function midiExportWav(){
     }catch(e){
         status.textContent='❌ '+e.message;
         t('❌ '+e.message);
-    }
-}
-
-function _createPianoVoice(ctx,freq,velocity,startTime,duration,dest){
-    const harmonics=[1,0.5,0.2,0.07,0.025,0.01];
-    for(let h=0;h<harmonics.length;h++){
-        const osc=ctx.createOscillator();
-        const env=ctx.createGain();
-        osc.type=h===0?'sine':(h===1?'triangle':'sine');
-        // 跳过超出奈奎斯特频率的泛音
-        const hFreq=freq*(h+1);
-        if(hFreq>20000)continue;
-        osc.frequency.value=hFreq*((h>0)?1.0005:1);
-        const now=startTime;
-        const attack=0.006+velocity*0.012;
-        const decay=h===0?0.28:0.1;
-        const sustain=h===0?0.55*velocity:0.3*velocity;
-        const release=Math.min(duration*0.28,1.0);
-        env.gain.setValueAtTime(0,now);
-        env.gain.linearRampToValueAtTime(harmonics[h]*velocity,now+attack);
-        env.gain.linearRampToValueAtTime(harmonics[h]*sustain,now+attack+decay);
-        env.gain.setValueAtTime(harmonics[h]*sustain,now+duration);
-        env.gain.linearRampToValueAtTime(0,now+duration+release);
-        osc.connect(env);env.connect(dest);
-        osc.start(now);osc.stop(now+duration+release+0.05);
     }
 }
 
