@@ -278,6 +278,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <div style="display:flex;gap:6px;align-items:center">
             <span style="font-size:0.6rem;color:var(--dim)">🎨 或上传Era色块图:</span>
             <input type="file" id="eraFileInput" accept="image/*" onchange="decodeEraGrid()" style="flex:1;font-size:0.6rem;color:var(--dim)">
+            <button class="icon-btn" onclick="clearFileInput('eraFileInput')" title="清除图片" style="font-size:0.6rem;flex-shrink:0">✕</button>
         </div>
         <div class="btn-row">
             <button class="btn btn-primary" onclick="doDecrypt()">🔓 解密</button>
@@ -343,7 +344,10 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <div id="midiEncodeStatus" style="font-size:0.7rem;color:var(--dim);min-height:18px"></div>
         <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px">
             <div style="font-size:0.75rem;color:var(--dim);margin-bottom:4px">📥 接收方：打开收到的 .mid 文件</div>
-            <input type="file" id="midiFileInput" accept=".mid,.midi" onchange="midiDecodeFromFile()" style="width:100%;padding:8px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.75rem;outline:none;color-scheme:dark">
+            <div style="display:flex;gap:4px;align-items:center">
+                <input type="file" id="midiFileInput" accept=".mid,.midi" onchange="midiDecodeFromFile()" style="flex:1;padding:8px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.75rem;outline:none;color-scheme:dark">
+                <button class="icon-btn" onclick="clearFileInput('midiFileInput')" title="清除文件" style="font-size:0.6rem;flex-shrink:0">✕</button>
+            </div>
             <button class="btn btn-outline" onclick="handlePastedMidi()" style="width:100%;font-size:0.75rem;margin-top:4px">📋 粘贴收到的 .mid 文件</button>
             <textarea id="midiPlainOutput" placeholder="解码后的明文…" readonly style="margin-top:6px;width:100%;box-sizing:border-box"></textarea>
             <div class="btn-row">
@@ -752,6 +756,7 @@ function clearDecrypt(){
     uc();
 }
 function clearArea(id){document.getElementById(id).value='';uc();if(id==='midiPlainInput')updateMidiCapacity()}
+function clearFileInput(id){document.getElementById(id).value='';t('🗑 已清除')}
 
 // ---- 💾 MIDI 文件缓存 ----
 const MIDI_CACHE='swiftcrypto-midi-v1';
@@ -1413,7 +1418,7 @@ document.getElementById('password').addEventListener('input',saveDrafts);
 })();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=49"></script>
+</script><script src="midi_stego.js?v=50"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
