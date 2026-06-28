@@ -301,8 +301,8 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <div style="display:flex;gap:4px;align-items:center;padding:0 0 4px 0">
             <input id="chatSearch" placeholder="🔍 搜索消息…" oninput="renderChat()" style="flex:1;padding:3px 6px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.6rem;outline:none">
             <span id="chatStats" style="font-size:0.55rem;color:var(--dim);white-space:nowrap;flex-shrink:0"></span>
-            <button class="icon-btn" onclick="exportChat()" title="导出聊天记录" style="font-size:0.55rem;flex-shrink:0">�</button>
-            <button class="icon-btn" onclick="importChat()" title="导入聊天记录" style="font-size:0.55rem;flex-shrink:0">📂</button>
+            <button class="btn btn-outline" onclick="exportChat()" title="导出聊天记录" style="font-size:0.55rem;padding:2px 5px;flex-shrink:0">导出</button>
+            <button class="btn btn-outline" onclick="importChat()" title="导入聊天记录" style="font-size:0.55rem;padding:2px 5px;flex-shrink:0">导入</button>
         </div>
         <div class="chat-area" id="chatArea">
             <div class="empty-chat" id="emptyChat">🔐 输入共享密码后开始密聊…<br><small>双方使用相同密码即可加密对话</small></div>
@@ -1129,29 +1129,78 @@ function updateChatScrollBtn(){
 }
 
 // Export/Import
-function exportChat(){
+async function exportChat(){
     if(!chatMsgs.length)return t('⚠️ 无聊天记录');
-    const data={version:1,exportedAt:Date.now(),deviceName:getDeviceName(),deviceId:getDeviceId(),messages:chatMsgs};
-    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-    const a=document.createElement('a');a.download='swiftcrypto-chat-'+new Date().toISOString().slice(0,10)+'.json';
-    a.href=URL.createObjectURL(blob);a.click();t('📤 已导出 '+chatMsgs.length+' 条消息');
+    const data={version:2,exportedAt:Date.now(),deviceName:getDeviceName(),deviceId:getDeviceId(),messages:chatMsgs};
+    const json=JSON.stringify(data,null,2);
+
+    // Ask for encryption
+    const wantEnc=confirm('🔐 是否加密导出聊天记录？\n\n• 取消 = 导出明文 JSON（任何人可查看）\n• 确定 = 设置密码加密（需密码才能导入）');
+    if(wantEnc){
+        const pw=prompt('🔑 请设置加密密码（务必记住！）');
+        if(!pw){t('⚠️ 已取消');return}
+        try{
+            const k=await dk(pw),n=crypto.getRandomValues(new Uint8Array(NS));
+            const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(json));
+            const m=new Uint8Array(n.length+ct.byteLength);m.set(n);m.set(new Uint8Array(ct),n.length);
+            let b64='';for(const b of m)b64+=String.fromCharCode(b);b64=btoa(b64);
+            const blob=new Blob(['SWIFTCRYPTO_CHAT_V2:'+b64],{type:'text/plain'});
+            const a=document.createElement('a');a.download='swiftcrypto-chat-encrypted-'+new Date().toISOString().slice(0,10)+'.txt';
+            a.href=URL.createObjectURL(blob);a.click();
+            t('🔐 已加密导出 '+chatMsgs.length+' 条消息（需密码导入）');
+        }catch(e){t('❌ 加密失败: '+e.message)}
+    }else{
+        const blob=new Blob([json],{type:'application/json'});
+        const a=document.createElement('a');a.download='swiftcrypto-chat-'+new Date().toISOString().slice(0,10)+'.json';
+        a.href=URL.createObjectURL(blob);a.click();
+        t('📤 已导出 '+chatMsgs.length+' 条消息（明文JSON）');
+    }
 }
-function importChat(){
-    const input=document.createElement('input');input.type='file';input.accept='.json';
+async function importChat(){
+    const input=document.createElement('input');input.type='file';input.accept='.json,.txt';
     input.onchange=async()=>{
         try{
             const f=input.files[0];if(!f)return;
-            const text=await f.text();const data=JSON.parse(text);
-            if(!data.messages||!Array.isArray(data.messages))throw new Error('格式错误');
-            if(!confirm(`即将导入 ${data.messages.length} 条消息（现有 ${chatMsgs.length} 条将被合并），确定？`))return;
+            const text=await f.text();let json;
+            // Detect encrypted format
+            if(text.startsWith('SWIFTCRYPTO_CHAT_V2:')){
+                const pw=prompt('🔑 此文件已加密，请输入密码：');
+                if(!pw){t('⚠️ 已取消');return}
+                try{
+                    const k=await dk(pw),r=Uint8Array.from(atob(text.slice(21)),c=>c.charCodeAt(0));
+                    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));
+                    json=JSON.parse(new TextDecoder().decode(pt));
+                }catch(e){
+                    if(e.name==='OperationError'){t('❌ 密码错误');return}
+                    throw e;
+                }
+            }else if(text.startsWith('SWIFTCRYPTO_CHAT_V1:')){
+                // Legacy v1 support
+                const pw=prompt('🔑 此文件已加密（旧版），请输入密码：');
+                if(!pw){t('⚠️ 已取消');return}
+                // Same decryption logic for v1
+                try{
+                    const k=await dk(pw),r=Uint8Array.from(atob(text.slice(21)),c=>c.charCodeAt(0));
+                    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));
+                    json=JSON.parse(new TextDecoder().decode(pt));
+                }catch(e){
+                    if(e.name==='OperationError'){t('❌ 密码错误');return}
+                    throw e;
+                }
+            }else{
+                // Plain JSON
+                json=JSON.parse(text);
+            }
+            if(!json.messages||!Array.isArray(json.messages))throw new Error('格式错误');
+            if(!confirm(`即将导入 ${json.messages.length} 条消息（现有 ${chatMsgs.length} 条将被合并），确定？`))return;
             const existingIds=new Set(chatMsgs.map(m=>m.time+':'+m.text));
             let added=0;
-            for(const m of data.messages){
+            for(const m of json.messages){
                 const key=m.time+':'+m.text;
                 if(!existingIds.has(key)){chatMsgs.push(m);existingIds.add(key);added++}
             }
             chatMsgs.sort((a,b)=>a.time-b.time);
-            saveChat();renderChat();t('📥 已导入 '+added+' 条新消息（跳过 '+(data.messages.length-added)+' 条重复）');
+            saveChat();renderChat();t('📥 已导入 '+added+' 条新消息（跳过 '+(json.messages.length-added)+' 条重复）');
         }catch(e){t('❌ 导入失败: '+e.message)}
     };
     input.click();
@@ -1484,7 +1533,7 @@ document.getElementById('password').addEventListener('input',saveDrafts);
 })();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=53"></script>
+</script><script src="midi_stego.js?v=55"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
