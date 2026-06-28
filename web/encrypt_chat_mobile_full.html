@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -770,35 +770,24 @@ async function cacheAllMidi(){
     const total=songs.length;
     const cache=await caches.open(MIDI_CACHE);
     let cached=0,skipped=0;
-
-    // Show progress
-    t(`� 正在缓存 ${total} 首 MIDI…`);
+    for(const [id,s] of songs){if(await cache.match(s.file))skipped++}
+    if(skipped===total){t('全部 '+total+' 首已缓存，无需重复下载');showMidiCacheStatus();return}
+    if(skipped>0)t('已有 '+skipped+'/'+total+' 首缓存，跳过已缓存的…');
     const bar=document.getElementById('midiCapBar');
     const lbl=document.getElementById('midiCapLabel');
 
     for(const [id,s] of songs){
-        const url=s.file;
-        // Check if already cached
-        const existing=await cache.match(url);
-        if(existing){skipped++;cached++;continue}
-
-        try{
-            const r=await fetch(url);
-            if(r.ok){
-                await cache.put(url,r.clone());
-                cached++;
-            }
-        }catch(e){console.warn('cache miss:',url,e)}
-
-        // Update progress every 10 songs
-        if(cached%10===0||cached===total){
-            const pct=Math.round(cached/total*100);
-            t(`📦 缓存中… ${cached}/${total} (${pct}%)`);
+        if(await cache.match(s.file))continue;
+        try{const r=await fetch(s.file);if(r.ok){await cache.put(s.file,r.clone());cached++}}catch(e){console.warn('cache miss:',s.file,e)}
+        const done=skipped+cached;
+        if(cached%10===0||done===total){
+            const pct=Math.round(done/total*100);
+            t('📦 '+done+'/'+total+' ('+pct+'%)');
             if(bar){bar.style.width=pct+'%';bar.style.background='var(--accent)'}
-            if(lbl)lbl.textContent=`${cached}/${total} 已缓存`;
+            if(lbl)lbl.textContent=done+'/'+total;
         }
     }
-    t(`✅ 缓存完成！${cached} 首已缓存，可离线使用`);
+    t('缓存完成！+'+cached+' 首新增, '+skipped+' 首跳过, 共 '+total+' 首');
     if(bar){bar.style.width='0'}
     if(lbl)lbl.textContent='';
     showMidiCacheStatus();
@@ -1424,7 +1413,7 @@ document.getElementById('password').addEventListener('input',saveDrafts);
 })();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=46"></script>
+</script><script src="midi_stego.js?v=47"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
