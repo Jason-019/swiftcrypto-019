@@ -375,7 +375,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <label style="font-size:0.75rem;color:var(--dim)">密码提示（可选，不要直接填密码！）</label>
         <input type="text" id="shareHint" placeholder="例如：我们常用的那个密码…" oninput="updateShareLink()">
         <label style="font-size:0.75rem;color:var(--dim)">🎨 Eras 色块名片 — 截图发微信</label>
-        <div style="text-align:center"><canvas id="eraCardCanvas" style="width:100%;max-width:340px;border-radius:8px"></canvas></div>
+        <div style="overflow-y:auto;max-height:35vh;min-height:80px;border-radius:8px;background:rgba(0,0,0,0.15);padding:6px;text-align:center"><canvas id="eraCardCanvas" style="width:100%;max-width:340px;border-radius:8px"></canvas></div>
         <div id="shareLink">生成中…</div>
         <div class="modal-btns">
             <div class="btn-row">
