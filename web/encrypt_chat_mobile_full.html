@@ -312,12 +312,12 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
             <textarea id="chatInput" placeholder="输入消息…" rows="1"></textarea>
             <button class="btn btn-primary" onclick="chatSend()" style="flex:none">🔒 发送</button>
         </div>
-        <div id="chatCipherRow" style="display:none;margin-top:2px">
-            <div style="display:flex;gap:4px;align-items:center">
-                <code id="chatCipherText" style="flex:1;font-size:0.6rem;color:var(--accent);word-break:break-all;background:rgba(0,0,0,0.25);padding:5px 8px;border-radius:6px;max-height:30px;overflow:hidden"></code>
-                <button class="btn btn-copy" onclick="copyChatCipher()" style="flex:none;padding:4px 8px;font-size:0.65rem">📋</button>
-                <button class="btn btn-outline" onclick="shareChatCipher()" style="flex:none;padding:4px 6px;font-size:0.6rem">📤</button>
-                <button class="btn btn-outline" id="chatEmojiToggle" onclick="toggleChatEmoji()" style="flex:none;padding:4px 6px;font-size:0.6rem">🎭</button>
+        <div id="chatCipherRow" style="display:none;margin-top:4px">
+            <code id="chatCipherText" style="display:block;font-size:0.6rem;color:var(--accent);word-break:break-all;background:rgba(0,0,0,0.25);padding:6px 8px;border-radius:6px;margin-bottom:4px;max-height:28px;overflow:hidden;line-height:1.3"></code>
+            <div style="display:flex;gap:6px">
+                <button class="btn btn-copy" onclick="copyChatCipher()" style="flex:1;padding:6px 0;font-size:0.7rem">📋 复制</button>
+                <button class="btn btn-outline" onclick="shareChatCipher()" style="flex:1;padding:6px 0;font-size:0.7rem">📤 分享</button>
+                <button class="btn btn-outline" id="chatEmojiToggle" onclick="toggleChatEmoji()" style="flex:1;padding:6px 0;font-size:0.7rem">🎭 Emoji</button>
             </div>
         </div>
         <div class="chat-input-row" style="margin-top:6px">
@@ -1484,7 +1484,7 @@ document.getElementById('password').addEventListener('input',saveDrafts);
 })();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=51"></script>
+</script><script src="midi_stego.js?v=52"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
