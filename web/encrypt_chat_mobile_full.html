@@ -1167,7 +1167,7 @@ async function importChat(){
                 const pw=prompt('🔑 此文件已加密，请输入密码：');
                 if(!pw){t('⚠️ 已取消');return}
                 try{
-                    const k=await dk(pw),r=Uint8Array.from(atob(text.slice(21)),c=>c.charCodeAt(0));
+                    const k=await dk(pw),r=Uint8Array.from(atob(text.slice(20)),c=>c.charCodeAt(0));
                     const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));
                     json=JSON.parse(new TextDecoder().decode(pt));
                 }catch(e){
@@ -1180,7 +1180,7 @@ async function importChat(){
                 if(!pw){t('⚠️ 已取消');return}
                 // Same decryption logic for v1
                 try{
-                    const k=await dk(pw),r=Uint8Array.from(atob(text.slice(21)),c=>c.charCodeAt(0));
+                    const k=await dk(pw),r=Uint8Array.from(atob(text.slice(20)),c=>c.charCodeAt(0));
                     const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));
                     json=JSON.parse(new TextDecoder().decode(pt));
                 }catch(e){
