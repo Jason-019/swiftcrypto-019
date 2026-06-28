@@ -1,9 +1,10 @@
 {
-  "version": 3,
-  "mode": "velocity_lsb",
+  "version": 4,
+  "mode": "velocity_2lsb",
+  "bits_per_note": 2,
   "total_songs": 232,
-  "total_encodable_bits": 317720,
-  "avg_base64_per_song": 225,
+  "total_encodable_bits": 635440,
+  "avg_base64_per_song": 453,
   "songs": {
     "all_you_had_to_do_was_stay": {
       "name": "All You Had To Do Was Stay",
@@ -11,8 +12,8 @@
       "file": "midi/1989/All You Had To Do Was Stay.mid",
       "notes": 1406,
       "encodable": 1406,
-      "bits": 1406,
-      "base64_chars": 231
+      "bits": 2812,
+      "base64_chars": 466
     },
     "bad_blood": {
       "name": "Bad Blood",
@@ -20,8 +21,8 @@
       "file": "midi/1989/Bad Blood.mid",
       "notes": 1343,
       "encodable": 1343,
-      "bits": 1343,
-      "base64_chars": 221
+      "bits": 2686,
+      "base64_chars": 445
     },
     "blank_space": {
       "name": "Blank Space",
@@ -29,8 +30,8 @@
       "file": "midi/1989/Blank Space.mid",
       "notes": 1831,
       "encodable": 1831,
-      "bits": 1831,
-      "base64_chars": 302
+      "bits": 3662,
+      "base64_chars": 607
     },
     "clean": {
       "name": "Clean",
@@ -38,8 +39,8 @@
       "file": "midi/1989/Clean.mid",
       "notes": 1556,
       "encodable": 1556,
-      "bits": 1556,
-      "base64_chars": 256
+      "bits": 3112,
+      "base64_chars": 516
     },
     "how_you_get_the_girl": {
       "name": "How You Get The Girl",
@@ -47,8 +48,8 @@
       "file": "midi/1989/How You Get The Girl.mid",
       "notes": 1460,
       "encodable": 1460,
-      "bits": 1460,
-      "base64_chars": 240
+      "bits": 2920,
+      "base64_chars": 484
     },
     "i_know_places": {
       "name": "I Know Places",
@@ -56,8 +57,8 @@
       "file": "midi/1989/I Know Places.mid",
       "notes": 1149,
       "encodable": 1149,
-      "bits": 1149,
-      "base64_chars": 188
+      "bits": 2298,
+      "base64_chars": 380
     },
     "i_wish_you_would": {
       "name": "I Wish You Would",
@@ -65,8 +66,8 @@
       "file": "midi/1989/I Wish You Would.mid",
       "notes": 1582,
       "encodable": 1582,
-      "bits": 1582,
-      "base64_chars": 261
+      "bits": 3164,
+      "base64_chars": 524
     },
     "is_it_over_now": {
       "name": "Is It Over Now",
@@ -74,8 +75,8 @@
       "file": "midi/1989/Is It Over Now.mid",
       "notes": 1680,
       "encodable": 1680,
-      "bits": 1680,
-      "base64_chars": 277
+      "bits": 3360,
+      "base64_chars": 557
     },
     "new_romantics": {
       "name": "New Romantics",
@@ -83,8 +84,8 @@
       "file": "midi/1989/New Romantics.mid",
       "notes": 1360,
       "encodable": 1360,
-      "bits": 1360,
-      "base64_chars": 224
+      "bits": 2720,
+      "base64_chars": 450
     },
     "now_that_we_dont_talk": {
       "name": "Now That We Don't Talk",
@@ -92,8 +93,8 @@
       "file": "midi/1989/Now That We Don't Talk.mid",
       "notes": 1057,
       "encodable": 1057,
-      "bits": 1057,
-      "base64_chars": 173
+      "bits": 2114,
+      "base64_chars": 349
     },
     "out_of_the_woods": {
       "name": "Out Of The Woods",
@@ -101,8 +102,8 @@
       "file": "midi/1989/Out Of The Woods.mid",
       "notes": 1598,
       "encodable": 1598,
-      "bits": 1598,
-      "base64_chars": 263
+      "bits": 3196,
+      "base64_chars": 530
     },
     "say_dont_go": {
       "name": "Say Don't Go",
@@ -110,8 +111,8 @@
       "file": "midi/1989/Say Don't Go.mid",
       "notes": 1780,
       "encodable": 1780,
-      "bits": 1780,
-      "base64_chars": 294
+      "bits": 3560,
+      "base64_chars": 590
     },
     "shake_it_off": {
       "name": "Shake It Off",
@@ -119,8 +120,8 @@
       "file": "midi/1989/Shake It Off.mid",
       "notes": 1210,
       "encodable": 1210,
-      "bits": 1210,
-      "base64_chars": 199
+      "bits": 2420,
+      "base64_chars": 400
     },
     "slut": {
       "name": "Slut!",
@@ -128,8 +129,8 @@
       "file": "midi/1989/Slut!.mid",
       "notes": 1051,
       "encodable": 1051,
-      "bits": 1051,
-      "base64_chars": 172
+      "bits": 2102,
+      "base64_chars": 347
     },
     "style": {
       "name": "Style",
@@ -137,8 +138,8 @@
       "file": "midi/1989/Style.mid",
       "notes": 1166,
       "encodable": 1166,
-      "bits": 1166,
-      "base64_chars": 191
+      "bits": 2332,
+      "base64_chars": 386
     },
     "suburban_legends": {
       "name": "Suburban Legends",
@@ -146,8 +147,8 @@
       "file": "midi/1989/Suburban Legends.mid",
       "notes": 1389,
       "encodable": 1389,
-      "bits": 1389,
-      "base64_chars": 228
+      "bits": 2778,
+      "base64_chars": 460
     },
     "sweeter_than_fiction": {
       "name": "Sweeter Than Fiction",
@@ -155,8 +156,8 @@
       "file": "midi/1989/Sweeter Than Fiction.mid",
       "notes": 1753,
       "encodable": 1753,
-      "bits": 1753,
-      "base64_chars": 289
+      "bits": 3506,
+      "base64_chars": 581
     },
     "this_love": {
       "name": "This Love",
@@ -164,8 +165,8 @@
       "file": "midi/1989/This Love.mid",
       "notes": 1057,
       "encodable": 1057,
-      "bits": 1057,
-      "base64_chars": 173
+      "bits": 2114,
+      "base64_chars": 349
     },
     "welcome_to_new_york": {
       "name": "Welcome To New York",
@@ -173,8 +174,8 @@
       "file": "midi/1989/Welcome To New York.mid",
       "notes": 1279,
       "encodable": 1279,
-      "bits": 1279,
-      "base64_chars": 210
+      "bits": 2558,
+      "base64_chars": 423
     },
     "wildest_dreams": {
       "name": "Wildest Dreams",
@@ -182,8 +183,8 @@
       "file": "midi/1989/Wildest Dreams.mid",
       "notes": 1024,
       "encodable": 1024,
-      "bits": 1024,
-      "base64_chars": 168
+      "bits": 2048,
+      "base64_chars": 338
     },
     "wonderland": {
       "name": "Wonderland",
@@ -191,8 +192,8 @@
       "file": "midi/1989/Wonderland.mid",
       "notes": 1389,
       "encodable": 1389,
-      "bits": 1389,
-      "base64_chars": 228
+      "bits": 2778,
+      "base64_chars": 460
     },
     "you_are_in_love": {
       "name": "You Are In Love",
@@ -200,8 +201,8 @@
       "file": "midi/1989/You Are In Love.mid",
       "notes": 1529,
       "encodable": 1529,
-      "bits": 1529,
-      "base64_chars": 252
+      "bits": 3058,
+      "base64_chars": 507
     },
     "crazier": {
       "name": "Crazier",
@@ -209,8 +210,8 @@
       "file": "midi/Crazier/Crazier.mid",
       "notes": 910,
       "encodable": 910,
-      "bits": 910,
-      "base64_chars": 149
+      "bits": 1820,
+      "base64_chars": 300
     },
     "tis_the_damn_season": {
       "name": "'Tis the Damn Season",
@@ -218,8 +219,8 @@
       "file": "midi/Evermore/'Tis the Damn Season.mid",
       "notes": 1430,
       "encodable": 1430,
-      "bits": 1430,
-      "base64_chars": 235
+      "bits": 2860,
+      "base64_chars": 474
     },
     "champagne_problems": {
       "name": "Champagne Problems",
@@ -227,8 +228,8 @@
       "file": "midi/Evermore/Champagne Problems.mid",
       "notes": 1373,
       "encodable": 1373,
-      "bits": 1373,
-      "base64_chars": 226
+      "bits": 2746,
+      "base64_chars": 455
     },
     "closure": {
       "name": "Closure",
@@ -236,8 +237,8 @@
       "file": "midi/Evermore/Closure.mid",
       "notes": 873,
       "encodable": 873,
-      "bits": 873,
-      "base64_chars": 142
+      "bits": 1746,
+      "base64_chars": 288
     },
     "coney_island": {
       "name": "Coney Island",
@@ -245,8 +246,8 @@
       "file": "midi/Evermore/Coney Island.mid",
       "notes": 1681,
       "encodable": 1681,
-      "bits": 1681,
-      "base64_chars": 277
+      "bits": 3362,
+      "base64_chars": 557
     },
     "cowboy_like_me": {
       "name": "Cowboy like Me",
@@ -254,8 +255,8 @@
       "file": "midi/Evermore/Cowboy like Me.mid",
       "notes": 1080,
       "encodable": 1080,
-      "bits": 1080,
-      "base64_chars": 177
+      "bits": 2160,
+      "base64_chars": 357
     },
     "dorothea": {
       "name": "Dorothea",
@@ -263,8 +264,8 @@
       "file": "midi/Evermore/Dorothea.mid",
       "notes": 919,
       "encodable": 919,
-      "bits": 919,
-      "base64_chars": 150
+      "bits": 1838,
+      "base64_chars": 303
     },
     "evermore": {
       "name": "Evermore",
@@ -272,8 +273,8 @@
       "file": "midi/Evermore/Evermore.mid",
       "notes": 1024,
       "encodable": 1024,
-      "bits": 1024,
-      "base64_chars": 168
+      "bits": 2048,
+      "base64_chars": 338
     },
     "gold_rush": {
       "name": "Gold Rush",
@@ -281,8 +282,8 @@
       "file": "midi/Evermore/Gold Rush.mid",
       "notes": 1230,
       "encodable": 1230,
-      "bits": 1230,
-      "base64_chars": 202
+      "bits": 2460,
+      "base64_chars": 407
     },
     "happiness": {
       "name": "Happiness",
@@ -290,8 +291,8 @@
       "file": "midi/Evermore/Happiness.mid",
       "notes": 1404,
       "encodable": 1404,
-      "bits": 1404,
-      "base64_chars": 231
+      "bits": 2808,
+      "base64_chars": 465
     },
     "its_time_to_go": {
       "name": "It's Time to Go",
@@ -299,8 +300,8 @@
       "file": "midi/Evermore/It's Time to Go.mid",
       "notes": 1091,
       "encodable": 1091,
-      "bits": 1091,
-      "base64_chars": 179
+      "bits": 2182,
+      "base64_chars": 361
     },
     "ivy": {
       "name": "Ivy",
@@ -308,8 +309,8 @@
       "file": "midi/Evermore/Ivy.mid",
       "notes": 1301,
       "encodable": 1301,
-      "bits": 1301,
-      "base64_chars": 214
+      "bits": 2602,
+      "base64_chars": 431
     },
     "long_story_short": {
       "name": "Long Story Short",
@@ -317,8 +318,8 @@
       "file": "midi/Evermore/Long Story Short.mid",
       "notes": 1174,
       "encodable": 1174,
-      "bits": 1174,
-      "base64_chars": 193
+      "bits": 2348,
+      "base64_chars": 388
     },
     "marjorie": {
       "name": "Marjorie",
@@ -326,8 +327,8 @@
       "file": "midi/Evermore/Marjorie.mid",
       "notes": 1116,
       "encodable": 1116,
-      "bits": 1116,
-      "base64_chars": 183
+      "bits": 2232,
+      "base64_chars": 369
     },
     "no_body_no_crime": {
       "name": "No Body, No Crime",
@@ -335,8 +336,8 @@
       "file": "midi/Evermore/No Body, No Crime.mid",
       "notes": 1328,
       "encodable": 1328,
-      "bits": 1328,
-      "base64_chars": 218
+      "bits": 2656,
+      "base64_chars": 440
     },
     "right_where_you_left_me": {
       "name": "Right Where You Left Me",
@@ -344,8 +345,8 @@
       "file": "midi/Evermore/Right Where You Left Me.mid",
       "notes": 1381,
       "encodable": 1381,
-      "bits": 1381,
-      "base64_chars": 227
+      "bits": 2762,
+      "base64_chars": 457
     },
     "tolerate_it": {
       "name": "Tolerate It",
@@ -353,8 +354,8 @@
       "file": "midi/Evermore/Tolerate It.mid",
       "notes": 927,
       "encodable": 927,
-      "bits": 927,
-      "base64_chars": 151
+      "bits": 1854,
+      "base64_chars": 306
     },
     "willow": {
       "name": "Willow",
@@ -362,8 +363,8 @@
       "file": "midi/Evermore/Willow.mid",
       "notes": 1429,
       "encodable": 1429,
-      "bits": 1429,
-      "base64_chars": 235
+      "bits": 2858,
+      "base64_chars": 473
     },
     "breathe": {
       "name": "Breathe",
@@ -371,8 +372,8 @@
       "file": "midi/Fearless/Breathe.mid",
       "notes": 1122,
       "encodable": 1122,
-      "bits": 1122,
-      "base64_chars": 184
+      "bits": 2244,
+      "base64_chars": 371
     },
     "change": {
       "name": "Change",
@@ -380,8 +381,8 @@
       "file": "midi/Fearless/Change.mid",
       "notes": 1014,
       "encodable": 1014,
-      "bits": 1014,
-      "base64_chars": 166
+      "bits": 2028,
+      "base64_chars": 335
     },
     "come_in_with_the_rain": {
       "name": "Come In With The Rain",
@@ -389,8 +390,8 @@
       "file": "midi/Fearless/Come In With The Rain.mid",
       "notes": 998,
       "encodable": 998,
-      "bits": 998,
-      "base64_chars": 163
+      "bits": 1996,
+      "base64_chars": 330
     },
     "fearless": {
       "name": "Fearless",
@@ -398,8 +399,8 @@
       "file": "midi/Fearless/Fearless.mid",
       "notes": 1398,
       "encodable": 1398,
-      "bits": 1398,
-      "base64_chars": 230
+      "bits": 2796,
+      "base64_chars": 463
     },
     "fifteen": {
       "name": "Fifteen",
@@ -407,8 +408,8 @@
       "file": "midi/Fearless/Fifteen.mid",
       "notes": 1453,
       "encodable": 1453,
-      "bits": 1453,
-      "base64_chars": 239
+      "bits": 2906,
+      "base64_chars": 481
     },
     "forever__always": {
       "name": "Forever & Always",
@@ -416,8 +417,8 @@
       "file": "midi/Fearless/Forever & Always.mid",
       "notes": 1450,
       "encodable": 1450,
-      "bits": 1450,
-      "base64_chars": 239
+      "bits": 2900,
+      "base64_chars": 480
     },
     "hey_stephen": {
       "name": "Hey Stephen",
@@ -425,8 +426,8 @@
       "file": "midi/Fearless/Hey Stephen.mid",
       "notes": 1555,
       "encodable": 1555,
-      "bits": 1555,
-      "base64_chars": 256
+      "bits": 3110,
+      "base64_chars": 515
     },
     "jump_then_fall": {
       "name": "Jump Then Fall",
@@ -434,8 +435,8 @@
       "file": "midi/Fearless/Jump Then Fall.mid",
       "notes": 1086,
       "encodable": 1086,
-      "bits": 1086,
-      "base64_chars": 178
+      "bits": 2172,
+      "base64_chars": 359
     },
     "love_story": {
       "name": "Love Story",
@@ -443,8 +444,8 @@
       "file": "midi/Fearless/Love Story.mid",
       "notes": 1414,
       "encodable": 1414,
-      "bits": 1414,
-      "base64_chars": 233
+      "bits": 2828,
+      "base64_chars": 468
     },
     "superstar": {
       "name": "Superstar",
@@ -452,8 +453,8 @@
       "file": "midi/Fearless/Superstar.mid",
       "notes": 1159,
       "encodable": 1159,
-      "bits": 1159,
-      "base64_chars": 190
+      "bits": 2318,
+      "base64_chars": 383
     },
     "tell_me_why": {
       "name": "Tell Me Why",
@@ -461,8 +462,8 @@
       "file": "midi/Fearless/Tell Me Why.mid",
       "notes": 1061,
       "encodable": 1061,
-      "bits": 1061,
-      "base64_chars": 174
+      "bits": 2122,
+      "base64_chars": 351
     },
     "the_best_day": {
       "name": "The Best Day",
@@ -470,8 +471,8 @@
       "file": "midi/Fearless/The Best Day.mid",
       "notes": 830,
       "encodable": 830,
-      "bits": 830,
-      "base64_chars": 135
+      "bits": 1660,
+      "base64_chars": 274
     },
     "the_other_side_of_the_door": {
       "name": "The Other Side Of The Door",
@@ -479,8 +480,8 @@
       "file": "midi/Fearless/The Other Side Of The Door.mid",
       "notes": 1166,
       "encodable": 1166,
-      "bits": 1166,
-      "base64_chars": 191
+      "bits": 2332,
+      "base64_chars": 386
     },
     "the_way_i_loved_you": {
       "name": "The Way I Loved You",
@@ -488,8 +489,8 @@
       "file": "midi/Fearless/The Way I Loved You.mid",
       "notes": 1027,
       "encodable": 1027,
-      "bits": 1027,
-      "base64_chars": 168
+      "bits": 2054,
+      "base64_chars": 339
     },
     "today_was_a_fairytale": {
       "name": "Today Was A Fairytale",
@@ -497,8 +498,8 @@
       "file": "midi/Fearless/Today Was A Fairytale.mid",
       "notes": 1292,
       "encodable": 1292,
-      "bits": 1292,
-      "base64_chars": 212
+      "bits": 2584,
+      "base64_chars": 428
     },
     "untouchable": {
       "name": "Untouchable",
@@ -506,8 +507,8 @@
       "file": "midi/Fearless/Untouchable.mid",
       "notes": 1478,
       "encodable": 1478,
-      "bits": 1478,
-      "base64_chars": 243
+      "bits": 2956,
+      "base64_chars": 490
     },
     "white_horse": {
       "name": "White Horse",
@@ -515,8 +516,8 @@
       "file": "midi/Fearless/White Horse.mid",
       "notes": 1140,
       "encodable": 1140,
-      "bits": 1140,
-      "base64_chars": 187
+      "bits": 2280,
+      "base64_chars": 377
     },
     "you_belong_with_me": {
       "name": "You Belong With Me",
@@ -524,8 +525,8 @@
       "file": "midi/Fearless/You Belong With Me.mid",
       "notes": 1572,
       "encodable": 1572,
-      "bits": 1572,
-      "base64_chars": 259
+      "bits": 3144,
+      "base64_chars": 521
     },
     "youre_not_sorry": {
       "name": "You're Not Sorry",
@@ -533,8 +534,8 @@
       "file": "midi/Fearless/You're Not Sorry.mid",
       "notes": 1083,
       "encodable": 1083,
-      "bits": 1083,
-      "base64_chars": 177
+      "bits": 2166,
+      "base64_chars": 358
     },
     "august": {
       "name": "August",
@@ -542,8 +543,8 @@
       "file": "midi/Folklore/August.mid",
       "notes": 1154,
       "encodable": 1154,
-      "bits": 1154,
-      "base64_chars": 189
+      "bits": 2308,
+      "base64_chars": 382
     },
     "betty": {
       "name": "Betty",
@@ -551,8 +552,8 @@
       "file": "midi/Folklore/Betty.mid",
       "notes": 1611,
       "encodable": 1611,
-      "bits": 1611,
-      "base64_chars": 265
+      "bits": 3222,
+      "base64_chars": 534
     },
     "cardigan": {
       "name": "Cardigan",
@@ -560,8 +561,8 @@
       "file": "midi/Folklore/Cardigan.mid",
       "notes": 1041,
       "encodable": 1041,
-      "bits": 1041,
-      "base64_chars": 170
+      "bits": 2082,
+      "base64_chars": 344
     },
     "epiphany": {
       "name": "Epiphany",
@@ -569,8 +570,8 @@
       "file": "midi/Folklore/Epiphany.mid",
       "notes": 804,
       "encodable": 804,
-      "bits": 804,
-      "base64_chars": 131
+      "bits": 1608,
+      "base64_chars": 265
     },
     "exile": {
       "name": "Exile",
@@ -578,8 +579,8 @@
       "file": "midi/Folklore/Exile.mid",
       "notes": 1387,
       "encodable": 1387,
-      "bits": 1387,
-      "base64_chars": 228
+      "bits": 2774,
+      "base64_chars": 459
     },
     "hoax": {
       "name": "Hoax",
@@ -587,8 +588,8 @@
       "file": "midi/Folklore/Hoax.mid",
       "notes": 726,
       "encodable": 726,
-      "bits": 726,
-      "base64_chars": 118
+      "bits": 1452,
+      "base64_chars": 239
     },
     "illicit_affairs": {
       "name": "Illicit Affairs",
@@ -596,8 +597,8 @@
       "file": "midi/Folklore/Illicit Affairs.mid",
       "notes": 1151,
       "encodable": 1151,
-      "bits": 1151,
-      "base64_chars": 189
+      "bits": 2302,
+      "base64_chars": 381
     },
     "invisible_string": {
       "name": "Invisible String",
@@ -605,8 +606,8 @@
       "file": "midi/Folklore/Invisible String.mid",
       "notes": 1205,
       "encodable": 1205,
-      "bits": 1205,
-      "base64_chars": 198
+      "bits": 2410,
+      "base64_chars": 399
     },
     "mad_woman": {
       "name": "Mad Woman",
@@ -614,8 +615,8 @@
       "file": "midi/Folklore/Mad Woman.mid",
       "notes": 1445,
       "encodable": 1445,
-      "bits": 1445,
-      "base64_chars": 238
+      "bits": 2890,
+      "base64_chars": 479
     },
     "mirrorball": {
       "name": "Mirrorball",
@@ -623,8 +624,8 @@
       "file": "midi/Folklore/Mirrorball.mid",
       "notes": 1126,
       "encodable": 1126,
-      "bits": 1126,
-      "base64_chars": 185
+      "bits": 2252,
+      "base64_chars": 372
     },
     "my_tears_ricochet": {
       "name": "My Tears Ricochet",
@@ -632,8 +633,8 @@
       "file": "midi/Folklore/My Tears Ricochet.mid",
       "notes": 1059,
       "encodable": 1059,
-      "bits": 1059,
-      "base64_chars": 173
+      "bits": 2118,
+      "base64_chars": 350
     },
     "peace": {
       "name": "Peace",
@@ -641,8 +642,8 @@
       "file": "midi/Folklore/Peace.mid",
       "notes": 1148,
       "encodable": 1148,
-      "bits": 1148,
-      "base64_chars": 188
+      "bits": 2296,
+      "base64_chars": 380
     },
     "seven": {
       "name": "Seven",
@@ -650,8 +651,8 @@
       "file": "midi/Folklore/Seven.mid",
       "notes": 1111,
       "encodable": 1111,
-      "bits": 1111,
-      "base64_chars": 182
+      "bits": 2222,
+      "base64_chars": 367
     },
     "the_1": {
       "name": "The 1",
@@ -659,8 +660,8 @@
       "file": "midi/Folklore/The 1.mid",
       "notes": 968,
       "encodable": 968,
-      "bits": 968,
-      "base64_chars": 158
+      "bits": 1936,
+      "base64_chars": 320
     },
     "the_lakes": {
       "name": "The Lakes",
@@ -668,8 +669,8 @@
       "file": "midi/Folklore/The Lakes.mid",
       "notes": 970,
       "encodable": 970,
-      "bits": 970,
-      "base64_chars": 159
+      "bits": 1940,
+      "base64_chars": 320
     },
     "the_last_great_american_dynasty": {
       "name": "The Last Great American Dynasty",
@@ -677,8 +678,8 @@
       "file": "midi/Folklore/The Last Great American Dynasty.mid",
       "notes": 1383,
       "encodable": 1383,
-      "bits": 1383,
-      "base64_chars": 227
+      "bits": 2766,
+      "base64_chars": 458
     },
     "this_is_me_trying": {
       "name": "This Is Me Trying",
@@ -686,8 +687,8 @@
       "file": "midi/Folklore/This Is Me Trying.mid",
       "notes": 741,
       "encodable": 741,
-      "bits": 741,
-      "base64_chars": 120
+      "bits": 1482,
+      "base64_chars": 244
     },
     "i_knew_it_i_knew_you": {
       "name": "I Knew It, I Knew You",
@@ -695,8 +696,8 @@
       "file": "midi/I Knew It, I Knew You/I Knew It, I Knew You.mid",
       "notes": 1194,
       "encodable": 1194,
-      "bits": 1194,
-      "base64_chars": 196
+      "bits": 2388,
+      "base64_chars": 395
     },
     "afterglow": {
       "name": "Afterglow",
@@ -704,8 +705,8 @@
       "file": "midi/Lover Piano/Afterglow.mid",
       "notes": 1168,
       "encodable": 1168,
-      "bits": 1168,
-      "base64_chars": 192
+      "bits": 2336,
+      "base64_chars": 386
     },
     "cornelia_street": {
       "name": "Cornelia Street",
@@ -713,8 +714,8 @@
       "file": "midi/Lover Piano/Cornelia Street.mid",
       "notes": 1678,
       "encodable": 1678,
-      "bits": 1678,
-      "base64_chars": 277
+      "bits": 3356,
+      "base64_chars": 556
     },
     "cruel_summer": {
       "name": "Cruel Summer",
@@ -722,8 +723,8 @@
       "file": "midi/Lover Piano/Cruel Summer.mid",
       "notes": 1339,
       "encodable": 1339,
-      "bits": 1339,
-      "base64_chars": 220
+      "bits": 2678,
+      "base64_chars": 443
     },
     "daylight": {
       "name": "Daylight",
@@ -731,8 +732,8 @@
       "file": "midi/Lover Piano/Daylight.mid",
       "notes": 1686,
       "encodable": 1686,
-      "bits": 1686,
-      "base64_chars": 278
+      "bits": 3372,
+      "base64_chars": 559
     },
     "death_by_a_thousand_cuts": {
       "name": "Death By A Thousand Cuts",
@@ -740,8 +741,8 @@
       "file": "midi/Lover Piano/Death By A Thousand Cuts.mid",
       "notes": 1375,
       "encodable": 1375,
-      "bits": 1375,
-      "base64_chars": 226
+      "bits": 2750,
+      "base64_chars": 455
     },
     "false_god": {
       "name": "False God",
@@ -749,8 +750,8 @@
       "file": "midi/Lover Piano/False God.mid",
       "notes": 892,
       "encodable": 892,
-      "bits": 892,
-      "base64_chars": 146
+      "bits": 1784,
+      "base64_chars": 294
     },
     "i_forgot_that_you_existed": {
       "name": "I Forgot That You Existed",
@@ -758,8 +759,8 @@
       "file": "midi/Lover Piano/I Forgot That You Existed.mid",
       "notes": 1308,
       "encodable": 1308,
-      "bits": 1308,
-      "base64_chars": 215
+      "bits": 2616,
+      "base64_chars": 433
     },
     "i_think_he_knows": {
       "name": "I Think He Knows",
@@ -767,8 +768,8 @@
       "file": "midi/Lover Piano/I Think He Knows.mid",
       "notes": 1184,
       "encodable": 1184,
-      "bits": 1184,
-      "base64_chars": 194
+      "bits": 2368,
+      "base64_chars": 392
     },
     "its_nice_to_have_a_friend": {
       "name": "It's Nice To Have A Friend",
@@ -776,8 +777,8 @@
       "file": "midi/Lover Piano/It's Nice To Have A Friend.mid",
       "notes": 968,
       "encodable": 968,
-      "bits": 968,
-      "base64_chars": 158
+      "bits": 1936,
+      "base64_chars": 320
     },
     "london_boy": {
       "name": "London Boy",
@@ -785,8 +786,8 @@
       "file": "midi/Lover Piano/London Boy.mid",
       "notes": 1236,
       "encodable": 1236,
-      "bits": 1236,
-      "base64_chars": 203
+      "bits": 2472,
+      "base64_chars": 409
     },
     "lover": {
       "name": "Lover",
@@ -794,8 +795,8 @@
       "file": "midi/Lover Piano/Lover.mid",
       "notes": 1340,
       "encodable": 1340,
-      "bits": 1340,
-      "base64_chars": 220
+      "bits": 2680,
+      "base64_chars": 444
     },
     "me": {
       "name": "ME!",
@@ -803,8 +804,8 @@
       "file": "midi/Lover Piano/ME!.mid",
       "notes": 1397,
       "encodable": 1397,
-      "bits": 1397,
-      "base64_chars": 230
+      "bits": 2794,
+      "base64_chars": 463
     },
     "miss_americana__the_heartbreak_prince": {
       "name": "Miss Americana & The Heartbreak Prince",
@@ -812,8 +813,8 @@
       "file": "midi/Lover Piano/Miss Americana & The Heartbreak Prince.mid",
       "notes": 1325,
       "encodable": 1325,
-      "bits": 1325,
-      "base64_chars": 218
+      "bits": 2650,
+      "base64_chars": 439
     },
     "paper_rings": {
       "name": "Paper Rings",
@@ -821,8 +822,8 @@
       "file": "midi/Lover Piano/Paper Rings.mid",
       "notes": 1504,
       "encodable": 1504,
-      "bits": 1504,
-      "base64_chars": 248
+      "bits": 3008,
+      "base64_chars": 498
     },
     "soon_youll_get_better": {
       "name": "Soon You'll Get Better",
@@ -830,8 +831,8 @@
       "file": "midi/Lover Piano/Soon You'll Get Better.mid",
       "notes": 1240,
       "encodable": 1240,
-      "bits": 1240,
-      "base64_chars": 204
+      "bits": 2480,
+      "base64_chars": 410
     },
     "the_archer": {
       "name": "The Archer",
@@ -839,8 +840,8 @@
       "file": "midi/Lover Piano/The Archer.mid",
       "notes": 1222,
       "encodable": 1222,
-      "bits": 1222,
-      "base64_chars": 201
+      "bits": 2444,
+      "base64_chars": 404
     },
     "the_man": {
       "name": "The Man",
@@ -848,8 +849,8 @@
       "file": "midi/Lover Piano/The Man.mid",
       "notes": 1718,
       "encodable": 1718,
-      "bits": 1718,
-      "base64_chars": 283
+      "bits": 3436,
+      "base64_chars": 570
     },
     "you_need_to_calm_down": {
       "name": "You Need To Calm Down",
@@ -857,8 +858,8 @@
       "file": "midi/Lover Piano/You Need To Calm Down.mid",
       "notes": 1129,
       "encodable": 1129,
-      "bits": 1129,
-      "base64_chars": 185
+      "bits": 2258,
+      "base64_chars": 373
     },
     "antihero": {
       "name": "Anti-Hero",
@@ -866,8 +867,8 @@
       "file": "midi/Midnights/Anti-Hero.mid",
       "notes": 1180,
       "encodable": 1180,
-      "bits": 1180,
-      "base64_chars": 194
+      "bits": 2360,
+      "base64_chars": 390
     },
     "bejeweled": {
       "name": "Bejeweled",
@@ -875,8 +876,8 @@
       "file": "midi/Midnights/Bejeweled.mid",
       "notes": 1479,
       "encodable": 1479,
-      "bits": 1479,
-      "base64_chars": 243
+      "bits": 2958,
+      "base64_chars": 490
     },
     "bigger_than_the_whole_sky": {
       "name": "Bigger Than The Whole Sky",
@@ -884,8 +885,8 @@
       "file": "midi/Midnights/Bigger Than The Whole Sky.mid",
       "notes": 774,
       "encodable": 774,
-      "bits": 774,
-      "base64_chars": 126
+      "bits": 1548,
+      "base64_chars": 255
     },
     "dear_reader": {
       "name": "Dear Reader",
@@ -893,8 +894,8 @@
       "file": "midi/Midnights/Dear Reader.mid",
       "notes": 945,
       "encodable": 945,
-      "bits": 945,
-      "base64_chars": 154
+      "bits": 1890,
+      "base64_chars": 312
     },
     "glitch": {
       "name": "Glitch",
@@ -902,8 +903,8 @@
       "file": "midi/Midnights/Glitch.mid",
       "notes": 616,
       "encodable": 616,
-      "bits": 616,
-      "base64_chars": 100
+      "bits": 1232,
+      "base64_chars": 202
     },
     "high_infidelity": {
       "name": "High Infidelity",
@@ -911,8 +912,8 @@
       "file": "midi/Midnights/High Infidelity.mid",
       "notes": 1553,
       "encodable": 1553,
-      "bits": 1553,
-      "base64_chars": 256
+      "bits": 3106,
+      "base64_chars": 515
     },
     "hits_different": {
       "name": "Hits Different",
@@ -920,8 +921,8 @@
       "file": "midi/Midnights/Hits Different.mid",
       "notes": 1470,
       "encodable": 1470,
-      "bits": 1470,
-      "base64_chars": 242
+      "bits": 2940,
+      "base64_chars": 487
     },
     "karma": {
       "name": "Karma",
@@ -929,8 +930,8 @@
       "file": "midi/Midnights/Karma.mid",
       "notes": 1144,
       "encodable": 1144,
-      "bits": 1144,
-      "base64_chars": 188
+      "bits": 2288,
+      "base64_chars": 378
     },
     "labyrinth": {
       "name": "Labyrinth",
@@ -938,8 +939,8 @@
       "file": "midi/Midnights/Labyrinth.mid",
       "notes": 1070,
       "encodable": 1070,
-      "bits": 1070,
-      "base64_chars": 175
+      "bits": 2140,
+      "base64_chars": 354
     },
     "lavender_haze": {
       "name": "Lavender Haze",
@@ -947,8 +948,8 @@
       "file": "midi/Midnights/Lavender Haze.mid",
       "notes": 1135,
       "encodable": 1135,
-      "bits": 1135,
-      "base64_chars": 186
+      "bits": 2270,
+      "base64_chars": 375
     },
     "maroon": {
       "name": "Maroon",
@@ -956,8 +957,8 @@
       "file": "midi/Midnights/Maroon.mid",
       "notes": 1115,
       "encodable": 1115,
-      "bits": 1115,
-      "base64_chars": 183
+      "bits": 2230,
+      "base64_chars": 369
     },
     "mastermind": {
       "name": "Mastermind",
@@ -965,8 +966,8 @@
       "file": "midi/Midnights/Mastermind.mid",
       "notes": 1318,
       "encodable": 1318,
-      "bits": 1318,
-      "base64_chars": 217
+      "bits": 2636,
+      "base64_chars": 436
     },
     "midnight_rain": {
       "name": "Midnight Rain",
@@ -974,8 +975,8 @@
       "file": "midi/Midnights/Midnight Rain.mid",
       "notes": 725,
       "encodable": 725,
-      "bits": 725,
-      "base64_chars": 118
+      "bits": 1450,
+      "base64_chars": 239
     },
     "paris": {
       "name": "Paris",
@@ -983,8 +984,8 @@
       "file": "midi/Midnights/Paris.mid",
       "notes": 1093,
       "encodable": 1093,
-      "bits": 1093,
-      "base64_chars": 179
+      "bits": 2186,
+      "base64_chars": 361
     },
     "question": {
       "name": "Question",
@@ -992,8 +993,8 @@
       "file": "midi/Midnights/Question.mid",
       "notes": 1304,
       "encodable": 1304,
-      "bits": 1304,
-      "base64_chars": 214
+      "bits": 2608,
+      "base64_chars": 432
     },
     "snow_on_the_beach": {
       "name": "Snow On The Beach",
@@ -1001,8 +1002,8 @@
       "file": "midi/Midnights/Snow On The Beach.mid",
       "notes": 1130,
       "encodable": 1130,
-      "bits": 1130,
-      "base64_chars": 185
+      "bits": 2260,
+      "base64_chars": 374
     },
     "sweet_nothing": {
       "name": "Sweet Nothing",
@@ -1010,8 +1011,8 @@
       "file": "midi/Midnights/Sweet Nothing.mid",
       "notes": 1177,
       "encodable": 1177,
-      "bits": 1177,
-      "base64_chars": 193
+      "bits": 2354,
+      "base64_chars": 389
     },
     "the_great_war": {
       "name": "The Great War",
@@ -1019,8 +1020,8 @@
       "file": "midi/Midnights/The Great War.mid",
       "notes": 1615,
       "encodable": 1615,
-      "bits": 1615,
-      "base64_chars": 266
+      "bits": 3230,
+      "base64_chars": 535
     },
     "vigilante_shit": {
       "name": "Vigilante Shit",
@@ -1028,8 +1029,8 @@
       "file": "midi/Midnights/Vigilante Shit.mid",
       "notes": 895,
       "encodable": 895,
-      "bits": 895,
-      "base64_chars": 146
+      "bits": 1790,
+      "base64_chars": 295
     },
     "wouldve_couldve_shouldve": {
       "name": "Would've, Could've, Should've",
@@ -1037,8 +1038,8 @@
       "file": "midi/Midnights/Would've, Could've, Should've.mid",
       "notes": 1450,
       "encodable": 1450,
-      "bits": 1450,
-      "base64_chars": 239
+      "bits": 2900,
+      "base64_chars": 480
     },
     "youre_on_your_own_kid": {
       "name": "You're On Your Own, Kid",
@@ -1046,8 +1047,8 @@
       "file": "midi/Midnights/You're On Your Own, Kid.mid",
       "notes": 1135,
       "encodable": 1135,
-      "bits": 1135,
-      "base64_chars": 186
+      "bits": 2270,
+      "base64_chars": 375
     },
     "22": {
       "name": "22",
@@ -1055,8 +1056,8 @@
       "file": "midi/Red/22.mid",
       "notes": 1341,
       "encodable": 1341,
-      "bits": 1341,
-      "base64_chars": 220
+      "bits": 2682,
+      "base64_chars": 444
     },
     "all_too_well_10_minute_version": {
       "name": "All Too Well (10 Minute Version)",
@@ -1064,8 +1065,8 @@
       "file": "midi/Red/All Too Well (10 Minute Version).mid",
       "notes": 3255,
       "encodable": 3255,
-      "bits": 3255,
-      "base64_chars": 539
+      "bits": 6510,
+      "base64_chars": 1082
     },
     "all_too_well": {
       "name": "All Too Well",
@@ -1073,8 +1074,8 @@
       "file": "midi/Red/All Too Well.mid",
       "notes": 1705,
       "encodable": 1705,
-      "bits": 1705,
-      "base64_chars": 281
+      "bits": 3410,
+      "base64_chars": 565
     },
     "babe": {
       "name": "Babe",
@@ -1082,8 +1083,8 @@
       "file": "midi/Red/Babe.mid",
       "notes": 1060,
       "encodable": 1060,
-      "bits": 1060,
-      "base64_chars": 174
+      "bits": 2120,
+      "base64_chars": 350
     },
     "begin_again": {
       "name": "Begin Again",
@@ -1091,8 +1092,8 @@
       "file": "midi/Red/Begin Again.mid",
       "notes": 1233,
       "encodable": 1233,
-      "bits": 1233,
-      "base64_chars": 202
+      "bits": 2466,
+      "base64_chars": 408
     },
     "better_man": {
       "name": "Better Man",
@@ -1100,8 +1101,8 @@
       "file": "midi/Red/Better Man.mid",
       "notes": 1742,
       "encodable": 1742,
-      "bits": 1742,
-      "base64_chars": 287
+      "bits": 3484,
+      "base64_chars": 578
     },
     "come_backbe_here": {
       "name": "Come Back...Be Here",
@@ -1109,8 +1110,8 @@
       "file": "midi/Red/Come Back...Be Here.mid",
       "notes": 1032,
       "encodable": 1032,
-      "bits": 1032,
-      "base64_chars": 169
+      "bits": 2064,
+      "base64_chars": 341
     },
     "everything_has_changed_extended_wedding_version": {
       "name": "Everything Has Changed (Extended Wedding Version)",
@@ -1118,8 +1119,8 @@
       "file": "midi/Red/Everything Has Changed (Extended Wedding Version).mid",
       "notes": 3151,
       "encodable": 3151,
-      "bits": 3151,
-      "base64_chars": 522
+      "bits": 6302,
+      "base64_chars": 1047
     },
     "everything_has_changed": {
       "name": "Everything Has Changed",
@@ -1127,8 +1128,8 @@
       "file": "midi/Red/Everything Has Changed.mid",
       "notes": 1686,
       "encodable": 1686,
-      "bits": 1686,
-      "base64_chars": 278
+      "bits": 3372,
+      "base64_chars": 559
     },
     "eyes_open": {
       "name": "Eyes Open",
@@ -1136,8 +1137,8 @@
       "file": "midi/Red/Eyes Open.mid",
       "notes": 997,
       "encodable": 997,
-      "bits": 997,
-      "base64_chars": 163
+      "bits": 1994,
+      "base64_chars": 329
     },
     "forever_winter": {
       "name": "Forever Winter",
@@ -1145,8 +1146,8 @@
       "file": "midi/Red/Forever Winter.mid",
       "notes": 1768,
       "encodable": 1768,
-      "bits": 1768,
-      "base64_chars": 292
+      "bits": 3536,
+      "base64_chars": 586
     },
     "girl_at_home": {
       "name": "Girl At Home",
@@ -1154,8 +1155,8 @@
       "file": "midi/Red/Girl At Home.mid",
       "notes": 1548,
       "encodable": 1548,
-      "bits": 1548,
-      "base64_chars": 255
+      "bits": 3096,
+      "base64_chars": 513
     },
     "holy_ground": {
       "name": "Holy Ground",
@@ -1163,8 +1164,8 @@
       "file": "midi/Red/Holy Ground.mid",
       "notes": 1181,
       "encodable": 1181,
-      "bits": 1181,
-      "base64_chars": 194
+      "bits": 2362,
+      "base64_chars": 391
     },
     "i_almost_do": {
       "name": "I Almost Do",
@@ -1172,8 +1173,8 @@
       "file": "midi/Red/I Almost Do.mid",
       "notes": 1022,
       "encodable": 1022,
-      "bits": 1022,
-      "base64_chars": 167
+      "bits": 2044,
+      "base64_chars": 338
     },
     "i_bet_you_think_about_me": {
       "name": "I Bet You Think About Me",
@@ -1181,8 +1182,8 @@
       "file": "midi/Red/I Bet You Think About Me.mid",
       "notes": 1840,
       "encodable": 1840,
-      "bits": 1840,
-      "base64_chars": 304
+      "bits": 3680,
+      "base64_chars": 610
     },
     "i_knew_you_were_trouble": {
       "name": "I Knew You Were Trouble",
@@ -1190,8 +1191,8 @@
       "file": "midi/Red/I Knew You Were Trouble.mid",
       "notes": 1631,
       "encodable": 1631,
-      "bits": 1631,
-      "base64_chars": 269
+      "bits": 3262,
+      "base64_chars": 541
     },
     "message_in_a_bottle": {
       "name": "Message In A Bottle",
@@ -1199,8 +1200,8 @@
       "file": "midi/Red/Message In A Bottle.mid",
       "notes": 1406,
       "encodable": 1406,
-      "bits": 1406,
-      "base64_chars": 231
+      "bits": 2812,
+      "base64_chars": 466
     },
     "nothing_new": {
       "name": "Nothing New",
@@ -1208,8 +1209,8 @@
       "file": "midi/Red/Nothing New.mid",
       "notes": 1108,
       "encodable": 1108,
-      "bits": 1108,
-      "base64_chars": 182
+      "bits": 2216,
+      "base64_chars": 366
     },
     "red": {
       "name": "Red",
@@ -1217,8 +1218,8 @@
       "file": "midi/Red/Red.mid",
       "notes": 1017,
       "encodable": 1017,
-      "bits": 1017,
-      "base64_chars": 166
+      "bits": 2034,
+      "base64_chars": 336
     },
     "ronan": {
       "name": "Ronan",
@@ -1226,8 +1227,8 @@
       "file": "midi/Red/Ronan.mid",
       "notes": 1038,
       "encodable": 1038,
-      "bits": 1038,
-      "base64_chars": 170
+      "bits": 2076,
+      "base64_chars": 343
     },
     "run": {
       "name": "Run",
@@ -1235,8 +1236,8 @@
       "file": "midi/Red/Run.mid",
       "notes": 1641,
       "encodable": 1641,
-      "bits": 1641,
-      "base64_chars": 270
+      "bits": 3282,
+      "base64_chars": 544
     },
     "sad_beautiful_tragic": {
       "name": "Sad Beautiful Tragic",
@@ -1244,8 +1245,8 @@
       "file": "midi/Red/Sad Beautiful Tragic.mid",
       "notes": 1273,
       "encodable": 1273,
-      "bits": 1273,
-      "base64_chars": 209
+      "bits": 2546,
+      "base64_chars": 421
     },
     "safe__sound": {
       "name": "Safe & Sound",
@@ -1253,8 +1254,8 @@
       "file": "midi/Red/Safe & Sound.mid",
       "notes": 1111,
       "encodable": 1111,
-      "bits": 1111,
-      "base64_chars": 182
+      "bits": 2222,
+      "base64_chars": 367
     },
     "starlight": {
       "name": "Starlight",
@@ -1262,8 +1263,8 @@
       "file": "midi/Red/Starlight.mid",
       "notes": 1439,
       "encodable": 1439,
-      "bits": 1439,
-      "base64_chars": 237
+      "bits": 2878,
+      "base64_chars": 477
     },
     "state_of_grace": {
       "name": "State of Grace",
@@ -1271,8 +1272,8 @@
       "file": "midi/Red/State of Grace.mid",
       "notes": 1145,
       "encodable": 1145,
-      "bits": 1145,
-      "base64_chars": 188
+      "bits": 2290,
+      "base64_chars": 379
     },
     "stay_stay_stay": {
       "name": "Stay Stay Stay",
@@ -1280,8 +1281,8 @@
       "file": "midi/Red/Stay Stay Stay.mid",
       "notes": 1179,
       "encodable": 1179,
-      "bits": 1179,
-      "base64_chars": 193
+      "bits": 2358,
+      "base64_chars": 390
     },
     "the_last_time": {
       "name": "The Last Time",
@@ -1289,8 +1290,8 @@
       "file": "midi/Red/The Last Time.mid",
       "notes": 2134,
       "encodable": 2134,
-      "bits": 2134,
-      "base64_chars": 353
+      "bits": 4268,
+      "base64_chars": 708
     },
     "the_lucky_one": {
       "name": "The Lucky One",
@@ -1298,8 +1299,8 @@
       "file": "midi/Red/The Lucky One.mid",
       "notes": 1420,
       "encodable": 1420,
-      "bits": 1420,
-      "base64_chars": 234
+      "bits": 2840,
+      "base64_chars": 470
     },
     "the_moment_i_knew": {
       "name": "The Moment I Knew",
@@ -1307,8 +1308,8 @@
       "file": "midi/Red/The Moment I Knew.mid",
       "notes": 1363,
       "encodable": 1363,
-      "bits": 1363,
-      "base64_chars": 224
+      "bits": 2726,
+      "base64_chars": 451
     },
     "the_very_first_night": {
       "name": "The Very First Night",
@@ -1316,8 +1317,8 @@
       "file": "midi/Red/The Very First Night.mid",
       "notes": 1310,
       "encodable": 1310,
-      "bits": 1310,
-      "base64_chars": 215
+      "bits": 2620,
+      "base64_chars": 434
     },
     "treacherous": {
       "name": "Treacherous",
@@ -1325,8 +1326,8 @@
       "file": "midi/Red/Treacherous.mid",
       "notes": 1020,
       "encodable": 1020,
-      "bits": 1020,
-      "base64_chars": 167
+      "bits": 2040,
+      "base64_chars": 337
     },
     "we_are_never_ever_getting_back_together": {
       "name": "We Are Never Ever Getting Back Together",
@@ -1334,8 +1335,8 @@
       "file": "midi/Red/We Are Never Ever Getting Back Together.mid",
       "notes": 1166,
       "encodable": 1166,
-      "bits": 1166,
-      "base64_chars": 191
+      "bits": 2332,
+      "base64_chars": 386
     },
     "call_it_what_you_want": {
       "name": "Call It What You Want",
@@ -1343,8 +1344,8 @@
       "file": "midi/Reputation/Call It What You Want.mid",
       "notes": 1891,
       "encodable": 1891,
-      "bits": 1891,
-      "base64_chars": 312
+      "bits": 3782,
+      "base64_chars": 627
     },
     "dancing_with_our_hands_tied": {
       "name": "Dancing With Our Hands Tied",
@@ -1352,8 +1353,8 @@
       "file": "midi/Reputation/Dancing With Our Hands Tied.mid",
       "notes": 1645,
       "encodable": 1645,
-      "bits": 1645,
-      "base64_chars": 271
+      "bits": 3290,
+      "base64_chars": 545
     },
     "delicate": {
       "name": "Delicate",
@@ -1361,8 +1362,8 @@
       "file": "midi/Reputation/Delicate.mid",
       "notes": 2007,
       "encodable": 2007,
-      "bits": 2007,
-      "base64_chars": 331
+      "bits": 4014,
+      "base64_chars": 666
     },
     "dont_blame_me": {
       "name": "Don't Blame Me",
@@ -1370,8 +1371,8 @@
       "file": "midi/Reputation/Don't Blame Me.mid",
       "notes": 1859,
       "encodable": 1859,
-      "bits": 1859,
-      "base64_chars": 307
+      "bits": 3718,
+      "base64_chars": 617
     },
     "dress": {
       "name": "Dress",
@@ -1379,8 +1380,8 @@
       "file": "midi/Reputation/Dress.mid",
       "notes": 2284,
       "encodable": 2284,
-      "bits": 2284,
-      "base64_chars": 378
+      "bits": 4568,
+      "base64_chars": 758
     },
     "end_game": {
       "name": "End Game",
@@ -1388,8 +1389,8 @@
       "file": "midi/Reputation/End Game.mid",
       "notes": 2205,
       "encodable": 2205,
-      "bits": 2205,
-      "base64_chars": 364
+      "bits": 4410,
+      "base64_chars": 732
     },
     "getaway_car": {
       "name": "Getaway Car",
@@ -1397,8 +1398,8 @@
       "file": "midi/Reputation/Getaway Car.mid",
       "notes": 1424,
       "encodable": 1424,
-      "bits": 1424,
-      "base64_chars": 234
+      "bits": 2848,
+      "base64_chars": 472
     },
     "gorgeous": {
       "name": "Gorgeous",
@@ -1406,8 +1407,8 @@
       "file": "midi/Reputation/Gorgeous.mid",
       "notes": 1700,
       "encodable": 1700,
-      "bits": 1700,
-      "base64_chars": 280
+      "bits": 3400,
+      "base64_chars": 564
     },
     "i_did_something_bad": {
       "name": "I Did Something Bad",
@@ -1415,8 +1416,8 @@
       "file": "midi/Reputation/I Did Something Bad.mid",
       "notes": 1865,
       "encodable": 1865,
-      "bits": 1865,
-      "base64_chars": 308
+      "bits": 3730,
+      "base64_chars": 619
     },
     "king_of_my_heart": {
       "name": "King Of My Heart",
@@ -1424,8 +1425,8 @@
       "file": "midi/Reputation/King Of My Heart.mid",
       "notes": 1873,
       "encodable": 1873,
-      "bits": 1873,
-      "base64_chars": 309
+      "bits": 3746,
+      "base64_chars": 621
     },
     "look_what_you_made_me_do": {
       "name": "Look What You Made Me Do",
@@ -1433,8 +1434,8 @@
       "file": "midi/Reputation/Look What You Made Me Do.mid",
       "notes": 2036,
       "encodable": 2036,
-      "bits": 2036,
-      "base64_chars": 336
+      "bits": 4072,
+      "base64_chars": 676
     },
     "new_years_day": {
       "name": "New Year's Day",
@@ -1442,8 +1443,8 @@
       "file": "midi/Reputation/New Year's Day.mid",
       "notes": 2016,
       "encodable": 2016,
-      "bits": 2016,
-      "base64_chars": 333
+      "bits": 4032,
+      "base64_chars": 669
     },
     "so_it_goes": {
       "name": "So It Goes",
@@ -1451,8 +1452,8 @@
       "file": "midi/Reputation/So It Goes.mid",
       "notes": 1581,
       "encodable": 1581,
-      "bits": 1581,
-      "base64_chars": 260
+      "bits": 3162,
+      "base64_chars": 524
     },
     "this_is_why_we_cant_have_nice_things": {
       "name": "This Is Why We Can't Have Nice Things",
@@ -1460,8 +1461,8 @@
       "file": "midi/Reputation/This Is Why We Can't Have Nice Things.mid",
       "notes": 1594,
       "encodable": 1594,
-      "bits": 1594,
-      "base64_chars": 263
+      "bits": 3188,
+      "base64_chars": 528
     },
     "back_to_december": {
       "name": "Back To December",
@@ -1469,8 +1470,8 @@
       "file": "midi/Speak Now/Back To December.mid",
       "notes": 1600,
       "encodable": 1600,
-      "bits": 1600,
-      "base64_chars": 264
+      "bits": 3200,
+      "base64_chars": 530
     },
     "better_than_revenge": {
       "name": "Better Than Revenge",
@@ -1478,8 +1479,8 @@
       "file": "midi/Speak Now/Better Than Revenge.mid",
       "notes": 1352,
       "encodable": 1352,
-      "bits": 1352,
-      "base64_chars": 222
+      "bits": 2704,
+      "base64_chars": 448
     },
     "dear_john": {
       "name": "Dear John",
@@ -1487,8 +1488,8 @@
       "file": "midi/Speak Now/Dear John.mid",
       "notes": 1533,
       "encodable": 1533,
-      "bits": 1533,
-      "base64_chars": 252
+      "bits": 3066,
+      "base64_chars": 508
     },
     "enchanted": {
       "name": "Enchanted",
@@ -1496,8 +1497,8 @@
       "file": "midi/Speak Now/Enchanted.mid",
       "notes": 1840,
       "encodable": 1840,
-      "bits": 1840,
-      "base64_chars": 304
+      "bits": 3680,
+      "base64_chars": 610
     },
     "haunted": {
       "name": "Haunted",
@@ -1505,8 +1506,8 @@
       "file": "midi/Speak Now/Haunted.mid",
       "notes": 1236,
       "encodable": 1236,
-      "bits": 1236,
-      "base64_chars": 203
+      "bits": 2472,
+      "base64_chars": 409
     },
     "if_this_was_a_movie": {
       "name": "If This Was A Movie",
@@ -1514,8 +1515,8 @@
       "file": "midi/Speak Now/If This Was A Movie.mid",
       "notes": 1503,
       "encodable": 1503,
-      "bits": 1503,
-      "base64_chars": 247
+      "bits": 3006,
+      "base64_chars": 498
     },
     "innocent": {
       "name": "Innocent",
@@ -1523,8 +1524,8 @@
       "file": "midi/Speak Now/Innocent.mid",
       "notes": 1305,
       "encodable": 1305,
-      "bits": 1305,
-      "base64_chars": 214
+      "bits": 2610,
+      "base64_chars": 432
     },
     "last_kiss": {
       "name": "Last Kiss",
@@ -1532,8 +1533,8 @@
       "file": "midi/Speak Now/Last Kiss.mid",
       "notes": 1871,
       "encodable": 1871,
-      "bits": 1871,
-      "base64_chars": 309
+      "bits": 3742,
+      "base64_chars": 621
     },
     "long_live": {
       "name": "Long Live",
@@ -1541,8 +1542,8 @@
       "file": "midi/Speak Now/Long Live.mid",
       "notes": 1906,
       "encodable": 1906,
-      "bits": 1906,
-      "base64_chars": 315
+      "bits": 3812,
+      "base64_chars": 632
     },
     "mean": {
       "name": "Mean",
@@ -1550,8 +1551,8 @@
       "file": "midi/Speak Now/Mean.mid",
       "notes": 1324,
       "encodable": 1324,
-      "bits": 1324,
-      "base64_chars": 218
+      "bits": 2648,
+      "base64_chars": 438
     },
     "mine": {
       "name": "Mine",
@@ -1559,8 +1560,8 @@
       "file": "midi/Speak Now/Mine.mid",
       "notes": 1647,
       "encodable": 1647,
-      "bits": 1647,
-      "base64_chars": 271
+      "bits": 3294,
+      "base64_chars": 546
     },
     "never_grow_up": {
       "name": "Never Grow Up",
@@ -1568,8 +1569,8 @@
       "file": "midi/Speak Now/Never Grow Up.mid",
       "notes": 1529,
       "encodable": 1529,
-      "bits": 1529,
-      "base64_chars": 252
+      "bits": 3058,
+      "base64_chars": 507
     },
     "ours": {
       "name": "Ours",
@@ -1577,8 +1578,8 @@
       "file": "midi/Speak Now/Ours.mid",
       "notes": 1352,
       "encodable": 1352,
-      "bits": 1352,
-      "base64_chars": 222
+      "bits": 2704,
+      "base64_chars": 448
     },
     "sparks_fly": {
       "name": "Sparks Fly",
@@ -1586,8 +1587,8 @@
       "file": "midi/Speak Now/Sparks Fly.mid",
       "notes": 1766,
       "encodable": 1766,
-      "bits": 1766,
-      "base64_chars": 291
+      "bits": 3532,
+      "base64_chars": 586
     },
     "speak_now": {
       "name": "Speak Now",
@@ -1595,8 +1596,8 @@
       "file": "midi/Speak Now/Speak Now.mid",
       "notes": 2399,
       "encodable": 2399,
-      "bits": 2399,
-      "base64_chars": 397
+      "bits": 4798,
+      "base64_chars": 797
     },
     "superman": {
       "name": "Superman",
@@ -1604,8 +1605,8 @@
       "file": "midi/Speak Now/Superman.mid",
       "notes": 1695,
       "encodable": 1695,
-      "bits": 1695,
-      "base64_chars": 279
+      "bits": 3390,
+      "base64_chars": 562
     },
     "the_story_of_us": {
       "name": "The Story Of Us",
@@ -1613,8 +1614,8 @@
       "file": "midi/Speak Now/The Story Of Us.mid",
       "notes": 1560,
       "encodable": 1560,
-      "bits": 1560,
-      "base64_chars": 257
+      "bits": 3120,
+      "base64_chars": 517
     },
     "a_perfectly_good_heart": {
       "name": "A Perfectly Good Heart",
@@ -1622,8 +1623,8 @@
       "file": "midi/T.S. Debut/A Perfectly Good Heart.mid",
       "notes": 969,
       "encodable": 969,
-      "bits": 969,
-      "base64_chars": 158
+      "bits": 1938,
+      "base64_chars": 320
     },
     "cold_as_you": {
       "name": "Cold as You",
@@ -1631,8 +1632,8 @@
       "file": "midi/T.S. Debut/Cold as You.mid",
       "notes": 1138,
       "encodable": 1138,
-      "bits": 1138,
-      "base64_chars": 187
+      "bits": 2276,
+      "base64_chars": 376
     },
     "i鈥檓_only_me_when_i鈥檓_with_you": {
       "name": "I鈥檓 Only Me When I鈥檓 With You",
@@ -1640,8 +1641,8 @@
       "file": "midi/T.S. Debut/I鈥檓 Only Me When I鈥檓 With You.mid",
       "notes": 1462,
       "encodable": 1462,
-      "bits": 1462,
-      "base64_chars": 241
+      "bits": 2924,
+      "base64_chars": 484
     },
     "mary鈥檚_song_oh_my_my_my": {
       "name": "Mary鈥檚 Song (Oh My My My)",
@@ -1649,8 +1650,8 @@
       "file": "midi/T.S. Debut/Mary鈥檚 Song (Oh My My My).mid",
       "notes": 1076,
       "encodable": 1076,
-      "bits": 1076,
-      "base64_chars": 176
+      "bits": 2152,
+      "base64_chars": 356
     },
     "our_song": {
       "name": "Our Song",
@@ -1658,8 +1659,8 @@
       "file": "midi/T.S. Debut/Our Song.mid",
       "notes": 1272,
       "encodable": 1272,
-      "bits": 1272,
-      "base64_chars": 209
+      "bits": 2544,
+      "base64_chars": 421
     },
     "picture_to_burn": {
       "name": "Picture to Burn",
@@ -1667,8 +1668,8 @@
       "file": "midi/T.S. Debut/Picture to Burn.mid",
       "notes": 1229,
       "encodable": 1229,
-      "bits": 1229,
-      "base64_chars": 202
+      "bits": 2458,
+      "base64_chars": 407
     },
     "should鈥檝e_said_no": {
       "name": "Should鈥檝e Said No",
@@ -1676,8 +1677,8 @@
       "file": "midi/T.S. Debut/Should鈥檝e Said No.mid",
       "notes": 1334,
       "encodable": 1334,
-      "bits": 1334,
-      "base64_chars": 219
+      "bits": 2668,
+      "base64_chars": 442
     },
     "stay_beautiful": {
       "name": "Stay Beautiful",
@@ -1685,8 +1686,8 @@
       "file": "midi/T.S. Debut/Stay Beautiful.mid",
       "notes": 1251,
       "encodable": 1251,
-      "bits": 1251,
-      "base64_chars": 205
+      "bits": 2502,
+      "base64_chars": 414
     },
     "tied_together_with_a_smile": {
       "name": "Tied Together with a Smile",
@@ -1694,8 +1695,8 @@
       "file": "midi/T.S. Debut/Tied Together with a Smile.mid",
       "notes": 1279,
       "encodable": 1279,
-      "bits": 1279,
-      "base64_chars": 210
+      "bits": 2558,
+      "base64_chars": 423
     },
     "tim_mcgraw": {
       "name": "Tim McGraw",
@@ -1703,8 +1704,8 @@
       "file": "midi/T.S. Debut/Tim McGraw.mid",
       "notes": 1073,
       "encodable": 1073,
-      "bits": 1073,
-      "base64_chars": 176
+      "bits": 2146,
+      "base64_chars": 355
     },
     "actually_romantic": {
       "name": "Actually Romantic",
@@ -1712,8 +1713,8 @@
       "file": "midi/The Life of a Showgirl/Actually Romantic.mid",
       "notes": 1037,
       "encodable": 1037,
-      "bits": 1037,
-      "base64_chars": 170
+      "bits": 2074,
+      "base64_chars": 343
     },
     "cancelled": {
       "name": "CANCELLED!",
@@ -1721,8 +1722,8 @@
       "file": "midi/The Life of a Showgirl/CANCELLED!.mid",
       "notes": 1660,
       "encodable": 1660,
-      "bits": 1660,
-      "base64_chars": 274
+      "bits": 3320,
+      "base64_chars": 550
     },
     "eldest_daughter": {
       "name": "Eldest Daughter",
@@ -1730,8 +1731,8 @@
       "file": "midi/The Life of a Showgirl/Eldest Daughter.mid",
       "notes": 1871,
       "encodable": 1871,
-      "bits": 1871,
-      "base64_chars": 309
+      "bits": 3742,
+      "base64_chars": 621
     },
     "elizabeth_taylor": {
       "name": "Elizabeth Taylor",
@@ -1739,8 +1740,8 @@
       "file": "midi/The Life of a Showgirl/Elizabeth Taylor.mid",
       "notes": 1479,
       "encodable": 1479,
-      "bits": 1479,
-      "base64_chars": 243
+      "bits": 2958,
+      "base64_chars": 490
     },
     "father_figure": {
       "name": "Father Figure",
@@ -1748,8 +1749,8 @@
       "file": "midi/The Life of a Showgirl/Father Figure.mid",
       "notes": 1551,
       "encodable": 1551,
-      "bits": 1551,
-      "base64_chars": 255
+      "bits": 3102,
+      "base64_chars": 514
     },
     "honey": {
       "name": "Honey",
@@ -1757,8 +1758,8 @@
       "file": "midi/The Life of a Showgirl/Honey.mid",
       "notes": 1480,
       "encodable": 1480,
-      "bits": 1480,
-      "base64_chars": 244
+      "bits": 2960,
+      "base64_chars": 490
     },
     "opalite": {
       "name": "Opalite",
@@ -1766,8 +1767,8 @@
       "file": "midi/The Life of a Showgirl/Opalite.mid",
       "notes": 1834,
       "encodable": 1834,
-      "bits": 1834,
-      "base64_chars": 303
+      "bits": 3668,
+      "base64_chars": 608
     },
     "ruin_the_friendship": {
       "name": "Ruin The Friendship",
@@ -1775,8 +1776,8 @@
       "file": "midi/The Life of a Showgirl/Ruin The Friendship.mid",
       "notes": 1545,
       "encodable": 1545,
-      "bits": 1545,
-      "base64_chars": 254
+      "bits": 3090,
+      "base64_chars": 512
     },
     "the_fate_of_ophelia": {
       "name": "The Fate of Ophelia",
@@ -1784,8 +1785,8 @@
       "file": "midi/The Life of a Showgirl/The Fate of Ophelia.mid",
       "notes": 1805,
       "encodable": 1805,
-      "bits": 1805,
-      "base64_chars": 298
+      "bits": 3610,
+      "base64_chars": 599
     },
     "the_life_of_a_showgirl": {
       "name": "The Life of a Showgirl",
@@ -1793,8 +1794,8 @@
       "file": "midi/The Life of a Showgirl/The Life of a Showgirl.mid",
       "notes": 2020,
       "encodable": 2020,
-      "bits": 2020,
-      "base64_chars": 334
+      "bits": 4040,
+      "base64_chars": 670
     },
     "wih_lit": {
       "name": "Wi$h Li$t",
@@ -1802,8 +1803,8 @@
       "file": "midi/The Life of a Showgirl/Wi$h Li$t.mid",
       "notes": 1552,
       "encodable": 1552,
-      "bits": 1552,
-      "base64_chars": 256
+      "bits": 3104,
+      "base64_chars": 514
     },
     "wood": {
       "name": "Wood",
@@ -1811,8 +1812,8 @@
       "file": "midi/The Life of a Showgirl/Wood.mid",
       "notes": 1118,
       "encodable": 1118,
-      "bits": 1118,
-      "base64_chars": 183
+      "bits": 2236,
+      "base64_chars": 370
     },
     "but_daddy_i_love_him": {
       "name": "But Daddy I Love Him",
@@ -1820,8 +1821,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/But Daddy I Love Him.mid",
       "notes": 1739,
       "encodable": 1739,
-      "bits": 1739,
-      "base64_chars": 287
+      "bits": 3478,
+      "base64_chars": 577
     },
     "cassandra": {
       "name": "Cassandra",
@@ -1829,8 +1830,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/Cassandra.mid",
       "notes": 1497,
       "encodable": 1497,
-      "bits": 1497,
-      "base64_chars": 246
+      "bits": 2994,
+      "base64_chars": 496
     },
     "chloe_or_sam_or_sophia_or_marcus": {
       "name": "Chloe or Sam or Sophia or Marcus",
@@ -1838,8 +1839,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/Chloe or Sam or Sophia or Marcus.mid",
       "notes": 1216,
       "encodable": 1216,
-      "bits": 1216,
-      "base64_chars": 200
+      "bits": 2432,
+      "base64_chars": 402
     },
     "clara_bow": {
       "name": "Clara Bow",
@@ -1847,8 +1848,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/Clara Bow.mid",
       "notes": 1099,
       "encodable": 1099,
-      "bits": 1099,
-      "base64_chars": 180
+      "bits": 2198,
+      "base64_chars": 363
     },
     "down_bad": {
       "name": "Down Bad",
@@ -1856,8 +1857,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/Down Bad.mid",
       "notes": 1555,
       "encodable": 1555,
-      "bits": 1555,
-      "base64_chars": 256
+      "bits": 3110,
+      "base64_chars": 515
     },
     "florida": {
       "name": "Florida!!!",
@@ -1865,8 +1866,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/Florida!!!.mid",
       "notes": 1346,
       "encodable": 1346,
-      "bits": 1346,
-      "base64_chars": 221
+      "bits": 2692,
+      "base64_chars": 446
     },
     "fortnight": {
       "name": "Fortnight",
@@ -1874,8 +1875,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/Fortnight.mid",
       "notes": 1428,
       "encodable": 1428,
-      "bits": 1428,
-      "base64_chars": 235
+      "bits": 2856,
+      "base64_chars": 473
     },
     "fresh_out_the_slammer": {
       "name": "Fresh Out The Slammer",
@@ -1883,8 +1884,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/Fresh Out The Slammer.mid",
       "notes": 897,
       "encodable": 897,
-      "bits": 897,
-      "base64_chars": 146
+      "bits": 1794,
+      "base64_chars": 296
     },
     "guilty_as_sin": {
       "name": "Guilty as Sin",
@@ -1892,8 +1893,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/Guilty as Sin.mid",
       "notes": 1269,
       "encodable": 1269,
-      "bits": 1269,
-      "base64_chars": 208
+      "bits": 2538,
+      "base64_chars": 420
     },
     "how_did_it_end": {
       "name": "How Did It End",
@@ -1901,8 +1902,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/How Did It End.mid",
       "notes": 1671,
       "encodable": 1671,
-      "bits": 1671,
-      "base64_chars": 275
+      "bits": 3342,
+      "base64_chars": 554
     },
     "i_can_do_it_with_a_broken_heart": {
       "name": "I Can Do It With A Broken Heart",
@@ -1910,8 +1911,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/I Can Do It With A Broken Heart.mid",
       "notes": 1135,
       "encodable": 1135,
-      "bits": 1135,
-      "base64_chars": 186
+      "bits": 2270,
+      "base64_chars": 375
     },
     "i_can_fix_him_no_really_i_can": {
       "name": "I Can Fix Him (No Really I Can)",
@@ -1919,8 +1920,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/I Can Fix Him (No Really I Can).mid",
       "notes": 764,
       "encodable": 764,
-      "bits": 764,
-      "base64_chars": 124
+      "bits": 1528,
+      "base64_chars": 252
     },
     "i_hate_it_here": {
       "name": "I Hate It Here",
@@ -1928,8 +1929,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/I Hate It Here.mid",
       "notes": 1329,
       "encodable": 1329,
-      "bits": 1329,
-      "base64_chars": 218
+      "bits": 2658,
+      "base64_chars": 440
     },
     "i_look_in_people鈥檚_windows": {
       "name": "I Look in People鈥檚 Windows",
@@ -1937,8 +1938,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/I Look in People鈥檚 Windows.mid",
       "notes": 582,
       "encodable": 582,
-      "bits": 582,
-      "base64_chars": 94
+      "bits": 1164,
+      "base64_chars": 191
     },
     "imgonnagetyouback": {
       "name": "imgonnagetyouback",
@@ -1946,8 +1947,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/imgonnagetyouback.mid",
       "notes": 1532,
       "encodable": 1532,
-      "bits": 1532,
-      "base64_chars": 252
+      "bits": 3064,
+      "base64_chars": 508
     },
     "loml": {
       "name": "loml",
@@ -1955,8 +1956,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/loml.mid",
       "notes": 1414,
       "encodable": 1414,
-      "bits": 1414,
-      "base64_chars": 233
+      "bits": 2828,
+      "base64_chars": 468
     },
     "my_boy_only_breaks_his_favorite_toys": {
       "name": "My Boy Only Breaks His Favorite Toys",
@@ -1964,8 +1965,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/My Boy Only Breaks His Favorite Toys.mid",
       "notes": 1250,
       "encodable": 1250,
-      "bits": 1250,
-      "base64_chars": 205
+      "bits": 2500,
+      "base64_chars": 414
     },
     "peter": {
       "name": "Peter",
@@ -1973,8 +1974,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/Peter.mid",
       "notes": 1834,
       "encodable": 1834,
-      "bits": 1834,
-      "base64_chars": 303
+      "bits": 3668,
+      "base64_chars": 608
     },
     "robin": {
       "name": "Robin",
@@ -1982,8 +1983,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/Robin.mid",
       "notes": 1481,
       "encodable": 1481,
-      "bits": 1481,
-      "base64_chars": 244
+      "bits": 2962,
+      "base64_chars": 491
     },
     "so_high_school": {
       "name": "So High School",
@@ -1991,8 +1992,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/So High School.mid",
       "notes": 1669,
       "encodable": 1669,
-      "bits": 1669,
-      "base64_chars": 275
+      "bits": 3338,
+      "base64_chars": 553
     },
     "so_long_london": {
       "name": "So Long, London",
@@ -2000,8 +2001,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/So Long, London.mid",
       "notes": 1667,
       "encodable": 1667,
-      "bits": 1667,
-      "base64_chars": 275
+      "bits": 3334,
+      "base64_chars": 553
     },
     "thank_you_aimee": {
       "name": "thanK you aIMee",
@@ -2009,8 +2010,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/thanK you aIMee.mid",
       "notes": 1737,
       "encodable": 1737,
-      "bits": 1737,
-      "base64_chars": 286
+      "bits": 3474,
+      "base64_chars": 576
     },
     "the_albatross": {
       "name": "The Albatross",
@@ -2018,8 +2019,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/The Albatross.mid",
       "notes": 984,
       "encodable": 984,
-      "bits": 984,
-      "base64_chars": 161
+      "bits": 1968,
+      "base64_chars": 325
     },
     "the_alchemy": {
       "name": "The Alchemy",
@@ -2027,8 +2028,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/The Alchemy.mid",
       "notes": 1113,
       "encodable": 1113,
-      "bits": 1113,
-      "base64_chars": 182
+      "bits": 2226,
+      "base64_chars": 368
     },
     "the_black_dog": {
       "name": "The Black Dog",
@@ -2036,8 +2037,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/The Black Dog.mid",
       "notes": 1197,
       "encodable": 1197,
-      "bits": 1197,
-      "base64_chars": 196
+      "bits": 2394,
+      "base64_chars": 396
     },
     "the_bolter": {
       "name": "The Bolter",
@@ -2045,8 +2046,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/The Bolter.mid",
       "notes": 1322,
       "encodable": 1322,
-      "bits": 1322,
-      "base64_chars": 217
+      "bits": 2644,
+      "base64_chars": 438
     },
     "the_manuscript": {
       "name": "The Manuscript",
@@ -2054,8 +2055,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/The Manuscript.mid",
       "notes": 1091,
       "encodable": 1091,
-      "bits": 1091,
-      "base64_chars": 179
+      "bits": 2182,
+      "base64_chars": 361
     },
     "the_prophecy": {
       "name": "The Prophecy",
@@ -2063,8 +2064,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/The Prophecy.mid",
       "notes": 1613,
       "encodable": 1613,
-      "bits": 1613,
-      "base64_chars": 266
+      "bits": 3226,
+      "base64_chars": 535
     },
     "the_smallest_man_who_ever_lived": {
       "name": "The Smallest Man Who Ever Lived",
@@ -2072,8 +2073,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/The Smallest Man Who Ever Lived.mid",
       "notes": 1407,
       "encodable": 1407,
-      "bits": 1407,
-      "base64_chars": 231
+      "bits": 2814,
+      "base64_chars": 466
     },
     "the_tortured_poets_department": {
       "name": "The Tortured Poets Department",
@@ -2081,8 +2082,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/The Tortured Poets Department.mid",
       "notes": 2122,
       "encodable": 2122,
-      "bits": 2122,
-      "base64_chars": 351
+      "bits": 4244,
+      "base64_chars": 704
     },
     "who鈥檚_afraid_of_little_old_me": {
       "name": "Who鈥檚 Afraid of Little Old Me",
@@ -2090,8 +2091,8 @@
       "file": "midi/The Tortured Poets Department (The Anthology)/Who鈥檚 Afraid of Little Old Me.mid",
       "notes": 1491,
       "encodable": 1491,
-      "bits": 1491,
-      "base64_chars": 245
+      "bits": 2982,
+      "base64_chars": 494
     }
   }
 }
