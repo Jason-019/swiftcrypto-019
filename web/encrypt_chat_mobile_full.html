@@ -208,13 +208,13 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <input type="password" id="password" placeholder="共享密码…" autocomplete="off" oninput="updatePwdStrength()" style="flex:1">
         <button class="icon-btn" id="togglePwd" onclick="togglePwd()">👁</button>
         <button class="icon-btn" onclick="clearPassword()" title="清除密码" style="color:var(--dim);font-size:0.75rem">✕</button>
-        <button class="icon-btn" onclick="copyPassword()" title="复制密码" style="color:#22c55e;font-size:0.8rem">📋</button>
     </div>
     <div style="display:flex;gap:6px;width:100%;align-items:center">
         <select id="pwdHistorySelect" onchange="usePwdFromSelect()" style="flex:1;padding:6px 8px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);font-size:0.7rem;outline:none;min-width:0;color-scheme:dark">
             <option value="">🕐 历史密码…</option>
         </select>
         <button class="icon-btn" onclick="genPwd()" title="生成随机密码" style="color:#fbbf24;flex-shrink:0">🎲</button>
+        <button class="icon-btn" onclick="copyPassword()" title="复制密码" style="color:#22c55e;flex-shrink:0">📋</button>
         <button class="icon-btn" onclick="openLyricPicker()" title="从歌词挑选" style="color:var(--accent);flex-shrink:0">📜</button>
     </div>
 </div>
