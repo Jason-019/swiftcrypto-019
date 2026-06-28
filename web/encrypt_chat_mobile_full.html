@@ -200,6 +200,11 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <span class="switch"></span>
         <span style="color:var(--dim)">👻</span>
     </label>
+    <label class="incog-toggle" title="保留草稿：刷新后恢复输入框内容">
+        <input type="checkbox" id="draftMode" onchange="toggleDraft()">
+        <span class="switch"></span>
+        <span style="color:var(--dim)">📝</span>
+    </label>
     <span class="badge">AES-256</span>
 </div>
 
@@ -636,16 +641,46 @@ let incogMode=false;
 function toggleIncog(){
     const cb=document.getElementById('incogMode');
     if(cb.checked){
-        // Turning ON: confirm before clearing all records
         if(!confirm('👻 开启隐身模式将清除所有聊天记录和密码历史，确定继续？')){cb.checked=false;return}
         incogMode=true;clearChat(true);clearPwdHistory();
+        localStorage.setItem('swiftcrypto_incog','1');
         t('👻 隐身模式已开启：关闭页面后不留痕迹');
     }else{
         incogMode=false;
+        localStorage.removeItem('swiftcrypto_incog');
         t('📝 正常模式：记录已恢复保存');
     }
 }
 function isIncog(){return incogMode}
+
+// ---- 📝 Draft mode ----
+function toggleDraft(){
+    const cb=document.getElementById('draftMode');
+    if(cb.checked){
+        localStorage.setItem('swiftcrypto_draft','1');
+        t('📝 草稿模式已开启');
+    }else{
+        localStorage.removeItem('swiftcrypto_draft');
+        localStorage.removeItem('swiftcrypto_draft_plain');
+        localStorage.removeItem('swiftcrypto_draft_cipher');
+        t('🗑 草稿已清除');
+    }
+}
+function isDraft(){return !!localStorage.getItem('swiftcrypto_draft')}
+function saveDrafts(){
+    if(isIncog()||!isDraft())return;
+    localStorage.setItem('swiftcrypto_draft_plain',document.getElementById('plainInput').value);
+    localStorage.setItem('swiftcrypto_draft_cipher',document.getElementById('cipherInput').value);
+}
+function loadDrafts(){
+    if(isIncog())return;
+    if(!isDraft())return;
+    const p=localStorage.getItem('swiftcrypto_draft_plain');
+    const c=localStorage.getItem('swiftcrypto_draft_cipher');
+    if(p) document.getElementById('plainInput').value=p;
+    if(c) document.getElementById('cipherInput').value=c;
+    if(p||c) t('📝 草稿已恢复');
+}
 
 // Password history (last 20, dropdown)
 function loadPwdHistory(){try{return JSON.parse(localStorage.getItem('swiftcrypto_pwds')||'[]')}catch{return[]}}
@@ -1292,16 +1327,33 @@ function decodeEraGrid(){
 }
 // ---- 👻 Incognito cleanup on exit ----
 window.addEventListener('beforeunload',function(){
-    saveChat(); // Always persist chat before closing
+    saveChat();
+    saveDrafts();
     if(isIncog()){localStorage.clear()}
 });
 
+// Auto-save drafts on input
+document.getElementById('plainInput').addEventListener('input',saveDrafts);
+document.getElementById('cipherInput').addEventListener('input',saveDrafts);
+
 // Init
-loadChat();checkShareLink();initDeviceName();setTheme();updateBgOpacity(75);uc();renderPwdHistory();
-handleIncomingShare();
+(function init(){
+    // Restore incognito state
+    if(localStorage.getItem('swiftcrypto_incog')){
+        incogMode=true;
+        document.getElementById('incogMode').checked=true;
+    }
+    // Restore draft state
+    if(localStorage.getItem('swiftcrypto_draft')){
+        document.getElementById('draftMode').checked=true;
+    }
+    loadDrafts();
+    loadChat();checkShareLink();initDeviceName();setTheme();updateBgOpacity(75);uc();renderPwdHistory();
+    handleIncomingShare();
+})();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=41"></script>
+</script><script src="midi_stego.js?v=42"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
