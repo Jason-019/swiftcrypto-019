@@ -643,6 +643,13 @@ function toggleIncog(){
         if(!confirm('👻 开启隐身模式将清除所有聊天记录和密码历史，确定继续？')){cb.checked=false;return}
         incogMode=true;clearChat(true);clearPwdHistory();
         localStorage.setItem('swiftcrypto_incog','1');
+        // 隐身模式下草稿不生效，自动关闭
+        if(isDraft()){
+            document.getElementById('draftMode').checked=false;
+            localStorage.removeItem('swiftcrypto_draft');
+            localStorage.removeItem('swiftcrypto_draft_plain');
+            localStorage.removeItem('swiftcrypto_draft_cipher');
+        }
         t('👻 隐身模式已开启：关闭页面后不留痕迹');
     }else{
         incogMode=false;
@@ -656,6 +663,7 @@ function isIncog(){return incogMode}
 function toggleDraft(){
     const cb=document.getElementById('draftMode');
     if(cb.checked){
+        if(isIncog()){cb.checked=false;t('⚠️ 隐身模式下无法开启草稿');return}
         localStorage.setItem('swiftcrypto_draft','1');
         t('📝 草稿模式已开启');
     }else{
@@ -1352,7 +1360,7 @@ document.getElementById('cipherInput').addEventListener('input',saveDrafts);
 })();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=42"></script>
+</script><script src="midi_stego.js?v=43"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
