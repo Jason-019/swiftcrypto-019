@@ -395,7 +395,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     <div class="sheet" style="max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:20px 18px">
         <h3 style="font-size:0.95rem;text-align:center;margin:0">🎨 Eras 色块名片解码</h3>
         <div id="eraLinkHint" style="display:none;font-size:0.7rem;color:#fbbf24;background:rgba(251,191,36,0.1);padding:8px 12px;border-radius:8px;text-align:center;line-height:1.4"></div>
-        <div id="eraScrollArea" style="overflow-y:auto;max-height:85vh;min-height:50vh;border-radius:8px;background:rgba(0,0,0,0.15);padding:8px">
+        <div id="eraScrollArea" style="overflow-y:auto;max-height:85vh;min-height:35vh;border-radius:8px;background:rgba(0,0,0,0.15);padding:8px">
             <div style="text-align:center;margin:4px 0">
                 <canvas id="eraLinkCardCanvas" style="width:100%;max-width:340px;border-radius:6px;background:#000;display:none"></canvas>
             </div>
@@ -406,7 +406,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <div class="btn-row">
             <button class="btn btn-primary" onclick="eraLinkDecrypt()">🔓 解密</button>
         </div>
-        <textarea id="eraLinkPlain" placeholder="解密后的明文…" readonly style="width:100%;box-sizing:border-box;min-height:60px"></textarea>
+        <textarea id="eraLinkPlain" placeholder="解密后的明文…" readonly style="width:100%;box-sizing:border-box;min-height:100px"></textarea>
         <div class="btn-row">
             <button class="btn btn-copy" onclick="copyText('eraLinkPlain')">📋 复制明文</button>
             <button class="btn btn-outline" onclick="closeEraModal()">✕ 关闭</button>
