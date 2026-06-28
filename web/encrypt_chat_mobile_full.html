@@ -730,15 +730,15 @@ async function handlePastedMidi(){
 }
 function uc(){document.getElementById('cipherCount').textContent='密文: '+document.getElementById('cipherOutput').value.length+' 字';document.getElementById('plainCount').textContent='明文: '+document.getElementById('plainOutput').value.length+' 字'}
 function genPwd(){
-    // 从 Taylor Swift 歌词中提取 5-12 字母的单词
+    // 从 Taylor Swift 歌词中提取 5-14 字母的单词
     const text=LYRIC_DATA.replace(/\|/g,' ').replace(/\n/g,' ').replace(/[^a-zA-Z ]/g,'');
-    const words=[...new Set(text.split(/\s+/).filter(w=>w.length>=5&&w.length<=12
+    const words=[...new Set(text.split(/\s+/).filter(w=>w.length>=5&&w.length<=14
         &&!/^(the|this|that|these|those|there|their|they|what|when|where|which|would|could|should|about|every|never|always|with|from|have|been|were|your|some|only|into|over|them|then|than|just|like|dont|know|back|down|come)/i.test(w)))];
     // 随机选两个不同的
     const i=Math.floor(Math.random()*words.length);
     let j;do{j=Math.floor(Math.random()*words.length)}while(j===i);
-    // {1,2,3,8,9} 随机排列成 5 位数
-    const digs=[1,2,3,8,9].sort(()=>Math.random()-0.5).join('');
+    // {1,2,1,3,1,9,8,9,5,7} 随机排列
+    const digs=[1,2,1,3,1,9,8,9,5,7].sort(()=>Math.random()-0.5).join('');
     const p=words[i]+'-'+digs+'-'+words[j];
     document.getElementById('password').value=p;document.getElementById('password').type='text';
     document.getElementById('togglePwd').textContent='🙈';t('🎲 '+p);updatePwdStrength();
@@ -1274,7 +1274,7 @@ loadChat();checkShareLink();initDeviceName();setTheme();updateBgOpacity(75);uc()
 handleIncomingShare();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=36"></script>
+</script><script src="midi_stego.js?v=37"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
