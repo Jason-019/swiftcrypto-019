@@ -664,6 +664,9 @@ function toggleDraft(){
     const cb=document.getElementById('draftMode');
     if(cb.checked){
         if(isIncog()){cb.checked=false;t('⚠️ 隐身模式下无法开启草稿');return}
+        if(!confirm('📝 开启草稿模式后：\n\n• 加密区的明文和密文输入框内容会自动保存\n• 刷新或关闭页面后，内容不会丢失\n• 数据仅存储在您的浏览器本地\n\n确定开启？')){
+            cb.checked=false;return;
+        }
         localStorage.setItem('swiftcrypto_draft','1');
         t('📝 草稿模式已开启');
     }else{
@@ -1360,7 +1363,7 @@ document.getElementById('cipherInput').addEventListener('input',saveDrafts);
 })();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=43"></script>
+</script><script src="midi_stego.js?v=44"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
