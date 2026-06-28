@@ -73,12 +73,12 @@ function midiPickAlbum(el){
     
     const songs=[];
     for(const [id,s] of Object.entries(_midiMeta.songs)){
-        if(s.album===v)songs.push({id,name:s.name,encodable:s.encodable,base64:s.base64_chars});
+        if(s.album===v)songs.push({id,name:s.name,bits:s.bits,base64:s.base64_chars});
     }
     songs.sort((a,b)=>a.name.localeCompare(b.name));
     o.innerHTML=songs.map(s=>{
         const cn=Math.max(0,Math.floor((s.base64*3/4-28)/3));
-        return `<div class="lcs-opt" data-v="${eh(s.id)}" data-name="${eh(s.name)}" data-enc="${s.encodable}" data-b64="${s.base64}" onclick="midiPickSong(this)">${eh(s.name)} (${s.encodable}bit ≈${cn}汉字)</div>`;
+        return `<div class="lcs-opt" data-v="${eh(s.id)}" data-name="${eh(s.name)}" data-bits="${s.bits}" data-b64="${s.base64}" onclick="midiPickSong(this)">${eh(s.name)} (${s.bits}bit ≈${cn}汉字)</div>`;
     }).join('');
     
     _midiPendingSong=null;
@@ -89,12 +89,12 @@ function midiPickSong(el){
     _midiPendingSong={
         id:el.dataset.v,
         name:el.dataset.name,
-        encodable:parseInt(el.dataset.enc),
+        bits:parseInt(el.dataset.bits),
         base64:parseInt(el.dataset.b64)
     };
     document.getElementById('midiTrigSong').textContent=_midiPendingSong.name;
     document.getElementById('midiPickerPreview').textContent=
-        `📊 ${_midiPendingSong.encodable} bit | ≈${_midiPendingSong.base64} B64字符 | ≈${Math.max(0,Math.floor((_midiPendingSong.base64*3/4-28)/3))} 汉字`;
+        `📊 ${_midiPendingSong.bits} bit | ≈${_midiPendingSong.base64} B64字符 | ≈${Math.max(0,Math.floor((_midiPendingSong.base64*3/4-28)/3))} 汉字`;
     document.getElementById('midiConfirmBtn').disabled=false;
     midiToggleCS('midiCsSong');
 }
@@ -103,7 +103,7 @@ function confirmMidiPick(){
     const s=_midiPendingSong;
     document.getElementById('midiSongSelect').value=s.id;
     document.getElementById('midiSongInfo').textContent=
-        `📊 ${s.encodable} bit | ≈${s.base64} B64字符 | ≈${Math.max(0,Math.floor((s.base64*3/4-28)/3))} 汉字 | ${s.name}`;
+        `📊 ${s.bits} bit | ≈${s.base64} B64字符 | ≈${Math.max(0,Math.floor((s.base64*3/4-28)/3))} 汉字 | ${s.name}`;
     closeMidiPicker();
     updateMidiCapacity();
 }
@@ -122,7 +122,7 @@ function _updateMidiCapacityNow(){
     if(!songId||!_midiMeta||!_midiMeta.songs[songId]){
         bar.style.width='0';lbl.textContent='';return;
     }
-    const totalBits=_midiMeta.songs[songId].encodable;
+    const totalBits=_midiMeta.songs[songId].bits;
     const totalB64=_midiMeta.songs[songId].base64_chars;
     // Empty text → show 0 usage, full remaining
     if(!plain.trim()){
@@ -230,10 +230,11 @@ function midiEncode(buf,bits){
                 const pitch=bytes[pos++];
                 const velPos=pos;
                 const vel=bytes[pos++];
-                if(vel>1&&bitIdx<bits.length){
-                    const newVel=((vel&0xFE)|bits[bitIdx])||1;
+                if(vel>3&&bitIdx<bits.length){
+                    const b0=bits[bitIdx],b1=(bitIdx+1<bits.length)?bits[bitIdx+1]:0;
+                    const newVel=((vel&0xFC)|(b0|(b1<<1)))||0x03;
                     bytes[velPos]=newVel;
-                    bitIdx++;
+                    bitIdx+=2;
                 }
             }else if(cmd===0xC0||cmd===0xD0){pos++}
             else if(cmd===0xF0){
@@ -251,7 +252,10 @@ function midiDecode(buf){
     const notes=parseMidiNotes(buf);
     const bits=[];
     for(const n of notes){
-        if(n.velocity>1)bits.push(n.velocity&1);
+        if(n.velocity>3){
+            bits.push(n.velocity&1);
+            bits.push((n.velocity>>1)&1);
+        }
     }
     return bits;
 }
@@ -286,8 +290,8 @@ async function midiEncodeAndShare(){
         for(let j=15; j>=0; j--) headerBits.push((headerLen >> j) & 1);
         const fullBits = headerBits.concat(bits);
 
-        if(fullBits.length>song.encodable){
-            status.textContent=`⚠️ 密文+头需要 ${fullBits.length} bits，歌曲只有 ${song.encodable} bits`;
+        if(fullBits.length>song.bits){
+            status.textContent=`⚠️ 密文+头需要 ${fullBits.length} bits，歌曲只有 ${song.bits} bits`;
             return;
         }
         status.textContent='🎹 正在加载原始 MIDI…';
