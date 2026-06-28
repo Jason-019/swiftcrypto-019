@@ -11,6 +11,7 @@ async function initMidiTab(){
         const r=await fetch(_midiMetaUrl);
         if(!r.ok)throw new Error('HTTP '+r.status);
         _midiMeta=await r.json();
+        if(typeof showMidiCacheStatus==='function') showMidiCacheStatus();
     }catch(e){console.warn('initMidiTab:',e)}
 }
 
@@ -157,7 +158,13 @@ function _updateMidiCapacityNow(){
 async function loadMidiOriginal(songId){
     if(!_midiMeta||!_midiMeta.songs[songId])throw new Error('未知歌曲');
     const s=_midiMeta.songs[songId];
-    const r=await fetch(s.file);
+    // Try cache first
+    const cache=await caches.open('swiftcrypto-midi-v1');
+    let r=await cache.match(s.file);
+    if(!r){
+        r=await fetch(s.file);
+        if(r.ok) cache.put(s.file, r.clone());
+    }
     if(!r.ok)throw new Error('MIDI加载失败: '+r.status);
     return await r.arrayBuffer();
 }

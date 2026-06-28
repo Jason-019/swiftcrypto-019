@@ -198,12 +198,12 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     <label class="incog-toggle" title="隐身模式：不保存任何记录">
         <input type="checkbox" id="incogMode" onchange="toggleIncog()">
         <span class="switch"></span>
-        <span style="color:var(--dim)">👻</span>
+        <span style="color:var(--dim);font-size:0.6rem">👻 隐身</span>
     </label>
-    <label class="incog-toggle" title="保留草稿：刷新后恢复输入框内容">
+    <label class="incog-toggle" title="保留草稿：刷新后恢复输入框和密码内容">
         <input type="checkbox" id="draftMode" onchange="toggleDraft()">
         <span class="switch"></span>
-        <span style="color:var(--dim)">📝</span>
+        <span style="color:var(--dim);font-size:0.6rem">📝 草稿</span>
     </label>
 </div>
 
@@ -324,9 +324,11 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         </div>
     </div>
     <div class="panel" id="panelMidi">
-        <div style="display:flex;gap:6px;align-items:center">
+        <div style="display:flex;gap:4px;align-items:center">
             <button class="icon-btn" onclick="openMidiPicker()" title="挑选MIDI" style="flex:1;width:auto;font-size:0.8rem;gap:6px">🎹 挑选MIDI…</button>
+            <button class="icon-btn" onclick="cacheAllMidi()" title="预缓存全部MIDI，纯离线可用" style="font-size:0.65rem;padding:4px 6px;flex-shrink:0">📦</button>
         </div>
+        <div id="midiCacheStatus" style="font-size:0.5rem;color:var(--dim);text-align:right;min-height:10px;line-height:1.1"></div>
         <input type="hidden" id="midiSongSelect" value="">
         <div style="font-size:0.65rem;color:var(--dim);padding:2px 0" id="midiSongInfo"></div>
         <textarea id="midiPlainInput" placeholder="输入要隐藏的明文…" oninput="updateMidiCapacity()" onkeyup="updateMidiCapacity()" onpaste="setTimeout(updateMidiCapacity,0)" oncut="setTimeout(updateMidiCapacity,0)"></textarea>
@@ -649,6 +651,7 @@ function toggleIncog(){
             localStorage.removeItem('swiftcrypto_draft');
             localStorage.removeItem('swiftcrypto_draft_plain');
             localStorage.removeItem('swiftcrypto_draft_cipher');
+            localStorage.removeItem('swiftcrypto_draft_pwd');
         }
         t('👻 隐身模式已开启：关闭页面后不留痕迹');
     }else{
@@ -664,7 +667,7 @@ function toggleDraft(){
     const cb=document.getElementById('draftMode');
     if(cb.checked){
         if(isIncog()){cb.checked=false;t('⚠️ 隐身模式下无法开启草稿');return}
-        if(!confirm('📝 开启草稿模式后：\n\n• 加密区的明文和密文输入框内容会自动保存\n• 刷新或关闭页面后，内容不会丢失\n• 数据仅存储在您的浏览器本地\n\n确定开启？')){
+        if(!confirm('📝 开启草稿模式后：\n\n• 密码框、明文和密文输入框内容会自动保存\n• 刷新或关闭页面后，内容不会丢失\n• 数据仅存储在您的浏览器本地\n\n确定开启？')){
             cb.checked=false;return;
         }
         localStorage.setItem('swiftcrypto_draft','1');
@@ -681,15 +684,21 @@ function saveDrafts(){
     if(isIncog()||!isDraft())return;
     localStorage.setItem('swiftcrypto_draft_plain',document.getElementById('plainInput').value);
     localStorage.setItem('swiftcrypto_draft_cipher',document.getElementById('cipherInput').value);
+    localStorage.setItem('swiftcrypto_draft_pwd',document.getElementById('password').value);
 }
 function loadDrafts(){
     if(isIncog())return;
     if(!isDraft())return;
-    const p=localStorage.getItem('swiftcrypto_draft_plain');
-    const c=localStorage.getItem('swiftcrypto_draft_cipher');
-    if(p) document.getElementById('plainInput').value=p;
-    if(c) document.getElementById('cipherInput').value=c;
-    if(p||c) t('📝 草稿已恢复');
+    const p=document.getElementById('plainInput'), c=document.getElementById('cipherInput');
+    const pw=document.getElementById('password');
+    const dp=localStorage.getItem('swiftcrypto_draft_plain');
+    const dc=localStorage.getItem('swiftcrypto_draft_cipher');
+    const dw=localStorage.getItem('swiftcrypto_draft_pwd');
+    let restored=false;
+    if(dp){p.value=dp;restored=true}
+    if(dc){c.value=dc;restored=true}
+    if(dw){pw.value=dw;pw.type='text';document.getElementById('togglePwd').textContent='🙈';updatePwdStrength();restored=true}
+    if(restored) t('📝 草稿已恢复');
 }
 
 // Password history (last 20, dropdown)
@@ -743,6 +752,57 @@ function clearDecrypt(){
     uc();
 }
 function clearArea(id){document.getElementById(id).value='';uc();if(id==='midiPlainInput')updateMidiCapacity()}
+
+// ---- 💾 MIDI 文件缓存 ----
+const MIDI_CACHE='swiftcrypto-midi-v1';
+async function showMidiCacheStatus(){
+    const el=document.getElementById('midiCacheStatus');if(!el)return;
+    try{
+        const cache=await caches.open(MIDI_CACHE);
+        const keys=await cache.keys();
+        if(keys.length===0){el.textContent='';return}
+        el.textContent=`${keys.length}首已缓存，可离线使用`;
+    }catch(e){el.textContent=''}
+}
+async function cacheAllMidi(){
+    if(!_midiMeta||!_midiMeta.songs){t('⚠️ 请等待歌曲列表加载');return}
+    const songs=Object.entries(_midiMeta.songs);
+    const total=songs.length;
+    const cache=await caches.open(MIDI_CACHE);
+    let cached=0,skipped=0;
+
+    // Show progress
+    t(`� 正在缓存 ${total} 首 MIDI…`);
+    const bar=document.getElementById('midiCapBar');
+    const lbl=document.getElementById('midiCapLabel');
+
+    for(const [id,s] of songs){
+        const url=s.file;
+        // Check if already cached
+        const existing=await cache.match(url);
+        if(existing){skipped++;cached++;continue}
+
+        try{
+            const r=await fetch(url);
+            if(r.ok){
+                await cache.put(url,r.clone());
+                cached++;
+            }
+        }catch(e){console.warn('cache miss:',url,e)}
+
+        // Update progress every 10 songs
+        if(cached%10===0||cached===total){
+            const pct=Math.round(cached/total*100);
+            t(`📦 缓存中… ${cached}/${total} (${pct}%)`);
+            if(bar){bar.style.width=pct+'%';bar.style.background='var(--accent)'}
+            if(lbl)lbl.textContent=`${cached}/${total} 已缓存`;
+        }
+    }
+    t(`✅ 缓存完成！${cached} 首已缓存，可离线使用`);
+    if(bar){bar.style.width='0'}
+    if(lbl)lbl.textContent='';
+    showMidiCacheStatus();
+}
 async function copyText(id){let v;if(id==='cipherOutput'&&emojiMode){v=document.getElementById('emojiCipher').textContent}else{v=document.getElementById(id).value}if(!v)return t('⚠️ 无内容');try{await navigator.clipboard.writeText(v);t('✅ 已复制')}catch{document.getElementById(id).select();document.execCommand('copy');t('✅ 已复制')}}
 async function shareCipher(){
     const b64=document.getElementById('cipherOutput').value;
@@ -1345,6 +1405,7 @@ window.addEventListener('beforeunload',function(){
 // Auto-save drafts on input
 document.getElementById('plainInput').addEventListener('input',saveDrafts);
 document.getElementById('cipherInput').addEventListener('input',saveDrafts);
+document.getElementById('password').addEventListener('input',saveDrafts);
 
 // Init
 (function init(){
@@ -1363,7 +1424,7 @@ document.getElementById('cipherInput').addEventListener('input',saveDrafts);
 })();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=44"></script>
+</script><script src="midi_stego.js?v=46"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
