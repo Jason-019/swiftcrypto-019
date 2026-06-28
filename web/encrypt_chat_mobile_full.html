@@ -390,6 +390,24 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     </div>
 </div>
 
+<!-- 🔐 密码输入弹窗（导出/导入用） -->
+<div id="pwdPromptModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);justify-content:center;align-items:center">
+    <div class="sheet" style="max-width:340px;text-align:center;display:flex;flex-direction:column;gap:14px;padding:20px 18px">
+        <h3 id="pwdPromptTitle" style="font-size:1rem;margin:0">🔐 请输入密码</h3>
+        <p id="pwdPromptHint" style="font-size:0.7rem;color:var(--dim);margin:0;line-height:1.4"></p>
+        <div style="display:flex;gap:6px">
+            <input type="password" id="pwdPromptInput" placeholder="输入密码…" style="flex:1;padding:10px;font-size:0.85rem" onkeydown="if(event.key==='Enter')confirmPwdPrompt()">
+            <button class="icon-btn" id="pwdPromptToggle" onclick="togglePwdPrompt()" style="flex-shrink:0">👁</button>
+        </div>
+        <div class="modal-btns" style="margin-top:4px">
+            <div class="btn-row">
+                <button class="btn btn-outline" onclick="cancelPwdPrompt()">取消</button>
+                <button class="btn btn-primary" onclick="confirmPwdPrompt()">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="lyricModal">
     <div class="sheet">
         <h3>📜 挑选歌词作密码</h3>
@@ -1008,6 +1026,35 @@ function openShareModal(){
     document.getElementById('shareModal').classList.add('show');
 }
 function closeShareModal(){document.getElementById('shareModal').classList.remove('show')}
+// ---- 🔐 密码输入弹窗（导出/导入） ----
+let _pwdPromptResolve=null;
+function promptPassword(title,hint){
+    return new Promise(resolve=>{
+        _pwdPromptResolve=resolve;
+        document.getElementById('pwdPromptTitle').textContent=title||'🔐 请输入密码';
+        document.getElementById('pwdPromptHint').textContent=hint||'';
+        document.getElementById('pwdPromptInput').value='';
+        document.getElementById('pwdPromptInput').type='password';
+        document.getElementById('pwdPromptToggle').textContent='👁';
+        document.getElementById('pwdPromptModal').style.display='flex';
+        document.getElementById('pwdPromptInput').focus();
+    });
+}
+function confirmPwdPrompt(){
+    const v=document.getElementById('pwdPromptInput').value.trim();
+    document.getElementById('pwdPromptModal').style.display='none';
+    if(_pwdPromptResolve){_pwdPromptResolve(v);_pwdPromptResolve=null;}
+}
+function cancelPwdPrompt(){
+    document.getElementById('pwdPromptModal').style.display='none';
+    if(_pwdPromptResolve){_pwdPromptResolve(null);_pwdPromptResolve=null;}
+}
+function togglePwdPrompt(){
+    const e=document.getElementById('pwdPromptInput'),b=document.getElementById('pwdPromptToggle');
+    if(e.type==='password'){e.type='text';b.textContent='🙈'}else{e.type='password';b.textContent='👁'}
+}
+// Close on background click
+document.getElementById('pwdPromptModal').addEventListener('click',function(e){if(e.target===this)cancelPwdPrompt()});
 async function copyShareLink(){
     const url=document.getElementById('shareLink').textContent;
     if(!url||url==='生成中…')return;
@@ -1137,10 +1184,9 @@ async function exportChat(){
     // Ask for encryption
     const wantEnc=confirm('🔐 是否加密导出聊天记录？\n\n• 取消 = 导出明文 JSON（任何人可查看）\n• 确定 = 设置密码加密（需密码才能导入）');
     if(wantEnc){
-        const pw=prompt('🔑 请设置加密密码（务必记住！）');
-        if(!pw){t('⚠️ 已取消');return}
-        try{
-            const k=await dk(pw),n=crypto.getRandomValues(new Uint8Array(NS));
+        const expPw=await promptPassword('🔐 设置导出密码','请牢记此密码，导入时需要它来解密');
+        if(expPw) try{
+            const k=await dk(expPw),n=crypto.getRandomValues(new Uint8Array(NS));
             const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(json));
             const m=new Uint8Array(n.length+ct.byteLength);m.set(n);m.set(new Uint8Array(ct),n.length);
             let b64='';for(const b of m)b64+=String.fromCharCode(b);b64=btoa(b64);
@@ -1148,13 +1194,14 @@ async function exportChat(){
             const a=document.createElement('a');a.download='swiftcrypto-chat-encrypted-'+new Date().toISOString().slice(0,10)+'.txt';
             a.href=URL.createObjectURL(blob);a.click();
             t('🔐 已加密导出 '+chatMsgs.length+' 条消息（需密码导入）');
-        }catch(e){t('❌ 加密失败: '+e.message)}
-    }else{
-        const blob=new Blob([json],{type:'application/json'});
-        const a=document.createElement('a');a.download='swiftcrypto-chat-'+new Date().toISOString().slice(0,10)+'.json';
-        a.href=URL.createObjectURL(blob);a.click();
-        t('📤 已导出 '+chatMsgs.length+' 条消息（明文JSON）');
+            return;
+        }catch(e){t('❌ 加密失败: '+e.message);return}
     }
+    // Plain export
+    const blob=new Blob([json],{type:'application/json'});
+    const a=document.createElement('a');a.download='swiftcrypto-chat-'+new Date().toISOString().slice(0,10)+'.json';
+    a.href=URL.createObjectURL(blob);a.click();
+    t('📤 已导出 '+chatMsgs.length+' 条消息（明文JSON）');
 }
 async function importChat(){
     const input=document.createElement('input');input.type='file';input.accept='.json,.txt';
@@ -1164,7 +1211,7 @@ async function importChat(){
             const text=await f.text();let json;
             // Detect encrypted format
             if(text.startsWith('SWIFTCRYPTO_CHAT_V2:')){
-                const pw=prompt('🔑 此文件已加密，请输入密码：');
+                const pw=await promptPassword('🔐 解密聊天记录','请输入导出时设置的密码');
                 if(!pw){t('⚠️ 已取消');return}
                 try{
                     const k=await dk(pw),r=Uint8Array.from(atob(text.slice(20)),c=>c.charCodeAt(0));
@@ -1175,8 +1222,7 @@ async function importChat(){
                     throw e;
                 }
             }else if(text.startsWith('SWIFTCRYPTO_CHAT_V1:')){
-                // Legacy v1 support
-                const pw=prompt('🔑 此文件已加密（旧版），请输入密码：');
+                const pw=await promptPassword('🔐 解密旧版聊天记录','请输入导出时设置的密码');
                 if(!pw){t('⚠️ 已取消');return}
                 // Same decryption logic for v1
                 try{
@@ -1533,7 +1579,7 @@ document.getElementById('password').addEventListener('input',saveDrafts);
 })();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=55"></script>
+</script><script src="midi_stego.js?v=57"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
