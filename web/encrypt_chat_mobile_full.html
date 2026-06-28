@@ -1170,7 +1170,7 @@ async function chatSend(){
         const sdExp=sdm?parseInt(sdm.match(/^🔥(\d+)\|/)?.[1]||'0'):0;
         chatMsgs.push({role:'me',text,cipher:b64,time:Date.now(),device:getDeviceId(),sd:!!sdm,sdExpiry:sdExp});
         saveChat();renderChat();input.value='';input.style.height='auto';
-        _lastChatB64=b64;chatEmojiMode=false;document.getElementById('chatEmojiToggle').textContent='🎭';document.getElementById('chatEmojiToggle').style.color='';
+        _lastChatB64=b64;chatEmojiMode=false;document.getElementById('chatEmojiToggle').textContent='🎭 Emoji';document.getElementById('chatEmojiToggle').style.color='';
         document.getElementById('chatCipherText').textContent=b64;
         document.getElementById('chatCipherRow').style.display='';
         document.getElementById('cipherOutput').value=b64;uc();updateEmojiDisplay();
@@ -1210,8 +1210,8 @@ let _lastChatB64='',chatEmojiMode=false;
 function toggleChatEmoji(){
     chatEmojiMode=!chatEmojiMode;
     const el=document.getElementById('chatCipherText'),btn=document.getElementById('chatEmojiToggle');
-    if(chatEmojiMode){el.textContent=cipherToEmoji(_lastChatB64);btn.textContent='🔤';btn.style.color='#fbbf24'}
-    else{el.textContent=_lastChatB64;btn.textContent='🎭';btn.style.color=''}
+    if(chatEmojiMode){el.textContent=cipherToEmoji(_lastChatB64);btn.textContent='🔤 原文';btn.style.color='#fbbf24'}
+    else{el.textContent=_lastChatB64;btn.textContent='🎭 Emoji';btn.style.color=''}
 }
 async function copyChatCipher(){
     const v=document.getElementById('chatCipherText').textContent;
@@ -1484,7 +1484,7 @@ document.getElementById('password').addEventListener('input',saveDrafts);
 })();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=52"></script>
+</script><script src="midi_stego.js?v=53"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
