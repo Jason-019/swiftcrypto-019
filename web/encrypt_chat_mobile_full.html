@@ -208,6 +208,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <input type="password" id="password" placeholder="共享密码…" autocomplete="off" oninput="updatePwdStrength()" style="flex:1">
         <button class="icon-btn" id="togglePwd" onclick="togglePwd()">👁</button>
         <button class="icon-btn" onclick="clearPassword()" title="清除密码" style="color:var(--dim);font-size:0.75rem">✕</button>
+        <button class="icon-btn" onclick="copyPassword()" title="复制密码" style="color:#22c55e;font-size:0.8rem">📋</button>
     </div>
     <div style="display:flex;gap:6px;width:100%;align-items:center">
         <select id="pwdHistorySelect" onchange="usePwdFromSelect()" style="flex:1;padding:6px 8px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);font-size:0.7rem;outline:none;min-width:0;color-scheme:dark">
@@ -674,6 +675,10 @@ function clearPassword(){
     document.getElementById('togglePwd').textContent='👁';
     updatePwdStrength();
     t('🔓 密码已清除');
+}
+function copyPassword(){
+    const p=gp();if(!p){t('⚠️ 无密码可复制');return}
+    navigator.clipboard.writeText(p).then(()=>t('📋 密码已复制')).catch(()=>t('⚠️ 复制失败'));
 }
 function autoSavePwd(){const p=gp();if(p)savePwdHistory(p);}
 function togglePwd(){const e=document.getElementById('password'),b=document.getElementById('togglePwd');if(e.type==='password'){e.type='text';b.textContent='🙈'}else{e.type='password';b.textContent='👁'}}
@@ -1296,7 +1301,7 @@ loadChat();checkShareLink();initDeviceName();setTheme();updateBgOpacity(75);uc()
 handleIncomingShare();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=40"></script>
+</script><script src="midi_stego.js?v=41"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
