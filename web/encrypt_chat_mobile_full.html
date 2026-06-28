@@ -276,9 +276,9 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     <div class="panel" id="panelDec">
         <textarea id="cipherInput" placeholder="粘贴密文…"></textarea>
         <div style="display:flex;gap:6px;align-items:center">
-            <span style="font-size:0.6rem;color:var(--dim)">🎨 或上传Era色块图:</span>
+            <span style="font-size:0.6rem;color:var(--dim)">🎨 或上传 Eras 色块图:</span>
             <input type="file" id="eraFileInput" accept="image/*" onchange="decodeEraGrid()" style="flex:1;font-size:0.6rem;color:var(--dim)">
-            <button class="icon-btn" onclick="clearFileInput('eraFileInput')" title="清除图片" style="font-size:0.6rem;flex-shrink:0">✕</button>
+            <button class="icon-btn" onclick="clearFileInput('eraFileInput')" title="清除图片" style="font-size:1.0rem;flex-shrink:0">✕</button>
         </div>
         <div class="btn-row">
             <button class="btn btn-primary" onclick="doDecrypt()">🔓 解密</button>
