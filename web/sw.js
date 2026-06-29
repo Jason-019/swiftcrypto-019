@@ -1,5 +1,6 @@
 // SwiftCrypto Service Worker — PWA + Share Target
-const CACHE_NAME = 'swiftcrypto-v4';
+const CACHE_NAME = 'swiftcrypto-v5';
+const SALAMANDER = './lib/salamander/';
 const SHARED_FILE_KEY = 'swiftcrypto_shared_midi';
 const ASSETS = [
   './encrypt_chat_mobile_full.html',
@@ -64,6 +65,22 @@ self.addEventListener('fetch', event => {
     return;
   }
   
+  // ── Salamander 钢琴采样：缓存优先 ──
+  if (url.pathname.includes('/lib/salamander/')) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(cache =>
+        cache.match(event.request).then(cached => {
+          if (cached) return cached;
+          return fetch(event.request).then(response => {
+            if (response.ok) cache.put(event.request, response.clone());
+            return response;
+          });
+        })
+      )
+    );
+    return;
+  }
+
   // ── 常规请求：缓存优先 ──
   if (event.request.method !== 'GET') return;
   event.respondWith(

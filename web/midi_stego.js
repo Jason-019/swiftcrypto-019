@@ -507,11 +507,19 @@ function compareArrayBuffers(a,b){
 // 🎧 MIDI 轻量播放 (Tone.js + Salamander 钢琴采样)
 // ═══════════════════════════════════════════════════════════════
 let _midiSynth=null,_midiPlaying=false,_midiPlayBuf=null;
+let _midiAutoStop=null;
 
 async function initMidiSynth(){
     if(_midiSynth)return _midiSynth;
-    if(typeof Tone==='undefined'){t('⚠️ Tone.js 未加载，无法播放');return null}
-    await Tone.start();
+    if(typeof Tone==='undefined'){t('⚠️ Tone.js 未加载');return null}
+    try{
+        await Tone.start();
+        // 确保 AudioContext 已激活
+        if(Tone.getContext().rawContext.state!=='running'){
+            await Tone.getContext().rawContext.resume();
+            t('🔊 音频已激活');
+        }
+    }catch(e){t('⚠️ 音频初始化失败，请点击页面任意位置后重试');return null}
     _midiSynth=new Tone.Sampler({
         urls:{
             A0:'A0.mp3',C1:'C1.mp3','D#1':'Ds1.mp3','F#1':'Fs1.mp3',
@@ -524,8 +532,12 @@ async function initMidiSynth(){
             A7:'A7.mp3',C8:'C8.mp3'
         },
         release:1,
-        baseUrl:'https://tonejs.github.io/audio/salamander/'
+        baseUrl:'./lib/salamander/',
+        onload:()=>{t('🎹 钢琴音源就绪')},
+        onerror:()=>{t('⚠️ 音源加载失败，请检查网络')}
     }).toDestination();
+    // 等待采样器完全加载
+    await Tone.loaded();
     return _midiSynth;
 }
 
@@ -566,53 +578,71 @@ async function toggleMidiPlay(){
             buf=await loadMidiOriginal(songId);
             _midiPlayBuf=buf;
         }
-        const {events,division}=parseMidiTimedEvents(_midiPlayBuf);
+        const {events,division}=parseMidiTimedEvents(buf);
         if(!events.length){t('⚠️ 无音符事件');return}
-        // Find tempo
         let tempo=500000;
         for(const e of events){if(e.type==='tempo'){tempo=e.tempo;break}}
-        const secPerTick=tempo/1000000/division;
-        // Cancel previous and schedule with Transport
-        Tone.Transport.stop();
-        Tone.Transport.cancel();
-        Tone.Transport.position=0;
-        const partEvents=[];
-        for(const e of events){
-            const t=e.tick*secPerTick;
-            if(e.type==='on'){
-                partEvents.push({time:t,note:Tone.Frequency(e.pitch,'midi').toNote(),velocity:e.velocity/127,duration:0});
-            }
-        }
-        // Use a Part for scheduled note events
-        const totalSec=events[events.length-1].tick*secPerTick;
-        let lastNote={};
-        const part=new Tone.Part((time,evt)=>{
-            synth.triggerAttackRelease(evt.note,'8n',time,evt.velocity);
-        },partEvents).start(0);
-        // Stop callback
-        Tone.Transport.schedule(()=>{
-            Tone.Transport.stop();
-            Tone.Transport.cancel();
-            part.dispose();
+        synth.volume.value=0;
+        const totalSec=scheduleMidiPlayback(synth,events,division,tempo);
+        if(!totalSec){t('⚠️ 无可播放音符');return}
+        // 自动停止
+        if(_midiAutoStop)clearTimeout(_midiAutoStop);
+        _midiAutoStop=setTimeout(()=>{
             _midiPlaying=false;
             btn.textContent='▶ 试听';
             btn.style.color='';
-        },totalSec+0.5);
-        Tone.Transport.start();
+            _midiAutoStop=null;
+        },totalSec*1000+500);
         _midiPlaying=true;
         btn.textContent='⏹ 停止';
         btn.style.color='#ef4444';
     }catch(e){t('❌ 播放失败: '+e.message)}
 }
 
-function stopMidiPlay(){
+let _midiPart=null; // 当前播放的Part，用于停止
+
+function scheduleMidiPlayback(synth,events,division,tempo){
+    const pending={},partEvts=[];
+    for(const e of events){
+        if(e.type==='on'){
+            pending[e.pitch]=e;
+        }else if(e.type==='off'&&pending[e.pitch]){
+            const on=pending[e.pitch];
+            const durTicks=Math.max(e.tick-on.tick,1);
+            const secPerTick=tempo/1000000/division;
+            const dur=durTicks*secPerTick;
+            if(dur<0.01)continue; // 过滤<10ms
+            partEvts.push({
+                time:on.tick*secPerTick,
+                note:Tone.Frequency(on.pitch,'midi').toNote(),
+                duration:dur,
+                velocity:on.velocity/127
+            });
+            delete pending[e.pitch];
+        }
+    }
+    if(!partEvts.length)return 0;
+    const totalSec=partEvts[partEvts.length-1].time+partEvts[partEvts.length-1].duration;
     Tone.Transport.stop();
     Tone.Transport.cancel();
+    Tone.Transport.position=0;
+    const part=new Tone.Part((time,evt)=>{
+        synth.triggerAttackRelease(evt.note,evt.duration,time,evt.velocity);
+    },partEvts).start(0);
+    _midiPart=part;
+    Tone.Transport.start();
+    return totalSec;
+}
+
+function stopMidiPlay(){
+    if(_midiAutoStop){clearTimeout(_midiAutoStop);_midiAutoStop=null}
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+    if(_midiPart){_midiPart.dispose();_midiPart=null}
     if(_midiSynth){_midiSynth.releaseAll()}
     _midiPlaying=false;
-    const btn=document.getElementById('midiPlayBtn');
-    btn.textContent='▶ 试听';
-    btn.style.color='';
+    document.getElementById('midiPlayBtn').textContent='▶ 试听';
+    document.getElementById('midiPlayBtn').style.color='';
 }
 
 // ─── 📥 接收文件独立试听 ───
@@ -627,31 +657,26 @@ async function toggleRecvPlay(){
         if(!events.length){t('⚠️ 无音符事件');return}
         let tempo=500000;
         for(const e of events){if(e.type==='tempo'){tempo=e.tempo;break}}
-        const secPerTick=tempo/1000000/division;
-        Tone.Transport.stop();Tone.Transport.cancel();Tone.Transport.position=0;
-        const partEvents=[];
-        for(const e of events){
-            if(e.type==='on') partEvents.push({time:e.tick*secPerTick,note:Tone.Frequency(e.pitch,'midi').toNote(),velocity:e.velocity/127,duration:0});
-        }
-        const totalSec=events[events.length-1].tick*secPerTick;
-        const part=new Tone.Part((time,evt)=>{
-            synth.triggerAttackRelease(evt.note,'8n',time,evt.velocity);
-        },partEvents).start(0);
-        Tone.Transport.schedule(()=>{
-            Tone.Transport.stop();Tone.Transport.cancel();part.dispose();
-            _midiRecvPlaying=false;btn.textContent='▶ 试听收到的文件';btn.style.color='';
-        },totalSec+0.5);
-        Tone.Transport.start();
+        synth.volume.value=0;
+        const totalSec=scheduleMidiPlayback(synth,events,division,tempo);
+        if(!totalSec){t('⚠️ 无可播放音符');return}
+        if(_midiAutoStop)clearTimeout(_midiAutoStop);
+        _midiAutoStop=setTimeout(()=>{
+            _midiRecvPlaying=false;
+            btn.textContent='▶ 试听收到的文件';btn.style.color='';
+            _midiAutoStop=null;
+        },totalSec*1000+500);
         _midiRecvPlaying=true;
-        btn.textContent='⏹ 停止';
-        btn.style.color='#ef4444';
+        btn.textContent='⏹ 停止';btn.style.color='#ef4444';
     }catch(e){t('❌ 播放失败: '+e.message)}
 }
 function stopRecvPlay(){
-    Tone.Transport.stop();Tone.Transport.cancel();
+    if(_midiAutoStop){clearTimeout(_midiAutoStop);_midiAutoStop=null}
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+    if(_midiPart){_midiPart.dispose();_midiPart=null}
     if(_midiSynth){_midiSynth.releaseAll()}
     _midiRecvPlaying=false;
-    const btn=document.getElementById('midiRecvPlayBtn');
-    btn.textContent='▶ 试听收到的文件';
-    btn.style.color='';
+    document.getElementById('midiRecvPlayBtn').textContent='▶ 试听收到的文件';
+    document.getElementById('midiRecvPlayBtn').style.color='';
 }
