@@ -220,7 +220,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     </label>
 </div>
 
-<div id="hsPanel" style="display:none;padding:8px 10px;margin:0 10px;border-radius:8px;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.15);font-size:0.7rem;color:var(--dim);display:flex;flex-direction:column;gap:6px">
+<div id="hsPanel" style="display:none;padding:8px 10px;margin:0 10px;border-radius:8px;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.15);font-size:0.7rem;color:var(--dim);flex-direction:column;gap:6px">
     <!-- 我的身份码行 -->
     <div style="display:flex;align-items:center;gap:5px">
         <span style="flex-shrink:0;font-size:0.6rem;white-space:nowrap">📢 我的</span>
@@ -577,7 +577,7 @@ async function doDecrypt(){
         chatMsgs.push({role:'them',text,cipher:b,time:Date.now(),device:senderId,sd:sd.wasSD,sdExpiry:sd.expiry});
         saveChat();if(document.getElementById('panelChat').classList.contains('active'))renderChat();
         if(sd.wasSD)startChatSDWatch();
-        t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功')}catch(e){t(e.name==='OperationError'?'❌ 密码错误':'❌ '+e.message)}
+        t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功')}catch(e){const hint=localStorage.getItem('swiftcrypto_hs')?'（高安全模式已开启，请确认双方已交换身份码）':'';t(e.name==='OperationError'?'❌ 密码错误'+hint:'❌ '+e.message)}
 }
 function gp(){return document.getElementById('password').value}
 // ---- ⌨️ Typewriter effect for decryption ----
@@ -1287,7 +1287,7 @@ async function eraLinkDecrypt(){
         const display=senderId?senderId+': '+text:text;
         document.getElementById('eraLinkPlain').value=display;
         t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功！');
-    }catch(e){t(e.name==='OperationError'?'❌ 密码错误':'❌ '+e.message)}
+    }catch(e){const hint=localStorage.getItem('swiftcrypto_hs')?'（高安全模式已开启，请确认双方已交换身份码）':'';t(e.name==='OperationError'?'❌ 密码错误'+hint:'❌ '+e.message)}
 }
 async function handlePastedMidi(){
     try{
@@ -1747,7 +1747,7 @@ async function chatReceive(){
         saveChat();renderChat();document.getElementById('chatRecvInput').value='';
         if(sd.wasSD)startChatSDWatch();
         autoSavePwd();t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功！');
-    }catch(e){t(e.name==='OperationError'?'❌ 密码错误，对方用的密码和你不同':'❌ '+e.message)}
+    }catch(e){const hint=localStorage.getItem('swiftcrypto_hs')?'（高安全模式已开启，请确认双方已交换身份码）':'';t(e.name==='OperationError'?'❌ 密码错误'+hint:'❌ '+e.message)}
 }
 function clearChat(skipConfirm){if(skipConfirm||confirm('确定清除所有聊天记录？')){chatMsgs=[];saveChat();renderChat();t('🗑 聊天记录已清除')}}
 let _lastChatB64='',chatEmojiMode=false;
