@@ -499,8 +499,9 @@ async function doDecrypt(){
         const senderName=m2?m2[1]:'';
         const senderId=m2?m2[2]:'未知';
         const text=m2?sd.message.slice(m2[0].length):sd.message;
-        typewriterOutput('plainOutput',text,()=>{
-            if(sd.wasSD)startDecryptCountdown(sd.expiry,text);
+        const displayText=senderId!=='未知'?senderId+': '+text:text;
+        typewriterOutput('plainOutput',displayText,()=>{
+            if(sd.wasSD)startDecryptCountdown(sd.expiry,displayText);
         });
         uc();autoSavePwd();
         // 同步到密聊
@@ -966,9 +967,15 @@ async function eraLinkDecrypt(){
     try{
         const k=await dk(pw),r=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
         const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));
-        const plain=new TextDecoder().decode(p);
-        document.getElementById('eraLinkPlain').value=plain;
-        t('✅ 解密成功！');
+        let plain=new TextDecoder().decode(p);
+        const sd=checkSelfDestruct(plain);
+        if(!sd.valid){document.getElementById('eraLinkPlain').value=sd.message;t('🔥 '+sd.message);return}
+        const m2=sd.message.match(/^\[(.+?)\|(.+?)\]/);
+        const senderId=m2?m2[2]:'';
+        const text=m2?sd.message.slice(m2[0].length):sd.message;
+        const display=senderId?senderId+': '+text:text;
+        document.getElementById('eraLinkPlain').value=display;
+        t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功！');
     }catch(e){t(e.name==='OperationError'?'❌ 密码错误':'❌ '+e.message)}
 }
 async function handlePastedMidi(){
@@ -1216,6 +1223,7 @@ function setDeviceNickname(devId,nick){const nicks=getNicknames();nicks[devId]=n
 function promptNickname(devId){const cur=getDeviceNickname(devId);const nick=prompt('为设备 '+devId+' 设置备注:',cur||'');if(nick!==null)setDeviceNickname(devId,nick.trim())}
 function getChatKey(){return 'swiftcrypto_chat_all'} // All messages in one chat, distinguished by device ID
 function loadChat(){
+    if(isIncog()){chatMsgs=[];return} // 隐身模式下不加载聊天记录
     try{
         const d=localStorage.getItem(getChatKey());
         if(d){const parsed=JSON.parse(d);if(Array.isArray(parsed))chatMsgs=parsed;else chatMsgs=[]}
