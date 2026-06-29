@@ -221,18 +221,18 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 </div>
 
 <div id="hsPanel" style="display:none;padding:8px 10px;margin:0 10px;border-radius:8px;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.15);font-size:0.7rem;color:var(--dim);display:flex;flex-direction:column;gap:6px">
-    <!-- 我的公钥行 -->
-    <div style="display:flex;align-items:center;gap:6px">
-        <span style="flex-shrink:0;font-size:0.65rem">📢 我的身份码</span>
-        <code id="hsMyPubKey" style="flex:1;background:rgba(0,0,0,0.2);padding:4px 6px;border-radius:4px;font-size:0.55rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</code>
+    <!-- 我的身份码行 -->
+    <div style="display:flex;align-items:center;gap:5px">
+        <span style="flex-shrink:0;font-size:0.6rem;white-space:nowrap">📢 我的</span>
+        <code id="hsMyPubKey" style="flex:1;min-width:0;background:rgba(0,0,0,0.2);padding:4px 6px;border-radius:4px;font-size:0.55rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</code>
         <button onclick="copyHSPubKey()" title="复制身份码" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);cursor:pointer;flex-shrink:0;line-height:1">📋</button>
         <button onclick="showQRModal()" title="身份码二维码" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);cursor:pointer;flex-shrink:0;line-height:1">📱</button>
         <button onclick="resetHSKeys()" title="重新生成" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);color:#f87171;cursor:pointer;flex-shrink:0;line-height:1">🔄</button>
     </div>
-    <!-- 对方公钥行 -->
-    <div style="display:flex;align-items:center;gap:6px">
-        <span style="flex-shrink:0;font-size:0.65rem">📥 对方身份码</span>
-        <input id="hsPeerPubKey" placeholder="粘贴对方身份码…" style="flex:1;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:rgba(0,0,0,0.2);color:var(--text);font-size:0.6rem;outline:none;height:36px;box-sizing:border-box">
+    <!-- 对方身份码行 -->
+    <div style="display:flex;align-items:center;gap:5px">
+        <span style="flex-shrink:0;font-size:0.6rem;white-space:nowrap">📥 对方</span>
+        <input id="hsPeerPubKey" placeholder="粘贴对方身份码…" style="flex:1;min-width:0;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:rgba(0,0,0,0.2);color:var(--text);font-size:0.6rem;outline:none;height:36px;box-sizing:border-box">
         <button onclick="startScan()" title="扫码导入" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);cursor:pointer;flex-shrink:0;line-height:1">📷</button>
         <button onclick="importHSPeerKey()" title="导入身份码" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(167,139,250,0.2);color:#c4b5fd;cursor:pointer;flex-shrink:0;line-height:1">✅</button>
     </div>
