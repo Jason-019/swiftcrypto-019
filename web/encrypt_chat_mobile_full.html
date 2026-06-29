@@ -485,7 +485,7 @@ async function doEncrypt(){
         const sdExp=sdm?parseInt(sdm.match(/^🔥(\d+)\|/)?.[1]||'0'):0;
         chatMsgs.push({role:'me',text:p.replace(/^🔥\d+\|/,''),cipher:b64,time:Date.now(),device:getDeviceId(),sd:!!sdm,sdExpiry:sdExp});
         saveChat();if(document.getElementById('panelChat').classList.contains('active'))renderChat();
-        t(sdm?'� 开启焚毁程序 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 加密完成')}catch(e){t('❌ '+e.message)}
+        t(sdm?'🔥 开启焚毁程序 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 加密完成')}catch(e){t('❌ '+e.message)}
 }
 async function doDecrypt(){
     let b=document.getElementById('cipherInput').value.trim();if(!b)return t('请输入密文');

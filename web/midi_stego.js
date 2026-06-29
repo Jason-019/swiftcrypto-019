@@ -3,6 +3,7 @@
 // 🎵 MIDI 隐写传输 (Velocity LSB 编码)
 // ═══════════════════════════════════════════════════════════════
 let _midiMeta=null;
+let _midiSDTimer=null; // MIDI decrypt countdown
 const _midiMetaUrl='midi_meta.json?v=3';
 
 async function initMidiTab(){
@@ -341,7 +342,7 @@ async function midiEncodeAndShare(){
         }else{
             midiDownloadFallback(blob,fileName,status,encodedBits,song);
         }
-        status.textContent=`✅ 编码完成 — ${encodedBits} bits 已嵌入 "${song.name}"`+(sdm?' � 开启焚毁程序':'');
+        status.textContent=`✅ 编码完成 — ${encodedBits} bits 已嵌入 "${song.name}"`+(sdm?' 🔥 开启焚毁程序':'');
         // 同步密聊
         if(typeof chatMsgs!=='undefined'){
             const sdExp=sdm?parseInt(sdm.match(/^🔥(\d+)\|/)?.[1]||'0'):0;
@@ -425,7 +426,17 @@ function midiDecodeFromFile(){
             const senderName=m2?m2[1]:'';
             const senderId=m2?m2[2]:'未知';
             const displayText=m2?sd.message.slice(m2[0].length):sd.message;
-            document.getElementById('midiPlainOutput').value=sd.message;
+            document.getElementById('midiPlainOutput').value=displayText;
+            // SD 倒计时
+            if(sd.wasSD){
+                if(typeof _midiSDTimer!=='undefined'&&_midiSDTimer)clearInterval(_midiSDTimer);
+                _midiSDTimer=setInterval(()=>{
+                    const r=sd.expiry-Date.now();
+                    const po=document.getElementById('midiPlainOutput');
+                    if(r<=0){po.value='💨 此消息已过期焚毁';clearInterval(_midiSDTimer);_midiSDTimer=null;return}
+                    po.value=displayText+'\n\n⏳ 剩余 '+ (typeof fmtRemaining==='function'?fmtRemaining(r):Math.ceil(r/1000)+'秒') +' 后焚毁';
+                },500);
+            }
             // 同步密聊
             if(typeof chatMsgs!=='undefined'){
                 const songName=_midiMeta&&_midiMeta.songs[songId]?_midiMeta.songs[songId].name:songId;
