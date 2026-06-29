@@ -461,6 +461,10 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
             <button class="btn btn-outline" onclick="downloadEraWithPlain()">📥 下载带明文</button>
             <button class="btn btn-outline" onclick="closeEraModal()">✕ 关闭</button>
         </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.65rem;color:var(--dim);cursor:pointer">
+            <input type="checkbox" id="eraNoPopup" onchange="toggleEraNoPopup()">
+            🔕 下次不再自动弹出
+        </label>
     </div>
 </div>
 
@@ -1241,11 +1245,11 @@ function handleIncomingShare(){
     // ── Eras 名片链接 ──
     const hash=location.hash.slice(1);
     if(hash.startsWith('era=1')){
+        if(localStorage.getItem('swiftcrypto_nopop_eras')){t('🔕 已跳过自动弹出（Eras）');return}
         const hp=new URLSearchParams(hash);
         const cipher=hp.get('c'),hint=hp.get('h');
         if(cipher){
             document.getElementById('eraLinkCipher').value=cipher;
-            // Also render the Eras color grid from the cipher
             document.getElementById('cipherOutput').value=cipher;
             renderEraCard();
             const srcCanvas=document.getElementById('eraCardCanvas');
@@ -1264,8 +1268,18 @@ function handleIncomingShare(){
     // ── 链接分享：密文参数 ──
     const shared=params.get('text')||params.get('title')||'';
     if(shared&&shared.length>10&&B64.indexOf(shared[0])>=0){
+        if(localStorage.getItem('swiftcrypto_nopop_text')){t('🔕 已跳过自动解密（文本）');return}
         document.getElementById('cipherInput').value=shared;
         switchTab('dec');setTimeout(()=>doDecrypt(),400);
+    }
+}
+
+function toggleEraNoPopup(){
+    if(document.getElementById('eraNoPopup').checked){
+        localStorage.setItem('swiftcrypto_nopop_eras','1');
+        t('🔕 已设置：Eras 链接不再自动弹出');
+    }else{
+        localStorage.removeItem('swiftcrypto_nopop_eras');
     }
 }
 
