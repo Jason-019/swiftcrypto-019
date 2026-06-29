@@ -456,12 +456,12 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
             <button class="btn btn-primary" onclick="eraLinkDecrypt()">🔓 解密</button>
         </div>
         <textarea id="eraLinkPlain" placeholder="解密后的明文…" readonly style="width:100%;box-sizing:border-box;min-height:100px"></textarea>
-        <div class="btn-row">
-            <button class="btn btn-copy" onclick="copyText('eraLinkPlain')">📋 复制明文</button>
-            <button class="btn btn-outline" onclick="downloadEraWithPlain()">📥 下载带明文</button>
-            <button class="btn btn-outline" onclick="closeEraModal()">✕ 关闭</button>
+        <div class="btn-row" style="flex-wrap:nowrap">
+            <button class="btn btn-copy" onclick="copyText('eraLinkPlain')" style="flex:1;font-size:0.7rem">📋 复制明文</button>
+            <button class="btn btn-outline" onclick="downloadEraWithPlain()" style="flex:1;font-size:0.7rem">📥 下载</button>
+            <button class="btn btn-outline" onclick="closeEraModal()" style="flex:1;font-size:0.7rem">✕ 关闭</button>
         </div>
-        <label style="display:flex;align-items:center;gap:6px;font-size:0.65rem;color:var(--dim);cursor:pointer">
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--dim);cursor:pointer;justify-content:center">
             <input type="checkbox" id="eraNoPopup" onchange="toggleEraNoPopup()">
             🔕 下次不再自动弹出
         </label>
