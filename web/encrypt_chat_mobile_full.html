@@ -296,7 +296,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <div style="display:flex;align-items:center;gap:6px;padding:0 0 4px 0">
             <span style="font-size:0.65rem;color:var(--dim)">📱</span>
             <input id="deviceName" placeholder="设备名" onchange="saveDeviceName()" style="flex:1;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.7rem;outline:none;max-width:80px">
-            <code id="deviceIdLabel" style="font-size:0.6rem;color:var(--dim);background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;cursor:pointer" onclick="editDeviceId()" title="点击设置跨浏览器统一设备ID"></code>
+            <code id="deviceIdLabel" style="font-size:0.6rem;color:var(--dim);background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px"></code>
         </div>
         <div style="display:flex;gap:4px;align-items:center;padding:0 0 4px 0">
             <input id="chatSearch" placeholder="🔍 搜索消息…" oninput="renderChat()" style="flex:1;padding:3px 6px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.6rem;outline:none">
@@ -1201,25 +1201,10 @@ document.getElementById('shareModal').addEventListener('click',function(e){if(e.
 let chatMsgs=[],_deviceName='',_deviceId='';
 function getDeviceId(){
     if(!_deviceId){
-        // 优先读取用户自定义的设备ID
-        const custom=localStorage.getItem('swiftcrypto_devid_custom');
-        if(custom&&custom.length>=2){_deviceId=custom}
-        else{
-            _deviceId=localStorage.getItem('swiftcrypto_devid');
-            if(!_deviceId||_deviceId.length<8){_deviceId='D'+Math.random().toString(16).slice(2,10).toUpperCase();localStorage.setItem('swiftcrypto_devid',_deviceId)}
-        }
+        _deviceId=localStorage.getItem('swiftcrypto_devid');
+        if(!_deviceId||_deviceId.length<8){_deviceId='D'+Math.random().toString(16).slice(2,10).toUpperCase();localStorage.setItem('swiftcrypto_devid',_deviceId)}
     }
     return _deviceId;
-}
-function editDeviceId(){
-    const cur=getDeviceId();
-    const id=prompt('🔑 设置跨浏览器统一设备ID\n\n同一设备不同浏览器设置相同ID即可统一识别\n留空则使用随机ID',cur);
-    if(id!==null){
-        const v=id.trim();
-        if(v&&v.length>=2){localStorage.setItem('swiftcrypto_devid_custom',v);_deviceId=v}
-        else{localStorage.removeItem('swiftcrypto_devid_custom');_deviceId=localStorage.getItem('swiftcrypto_devid')||('D'+Math.random().toString(16).slice(2,10).toUpperCase());localStorage.setItem('swiftcrypto_devid',_deviceId)}
-        initDeviceName();
-    }
 }
 function getDeviceName(){
     if(!_deviceName){_deviceName=localStorage.getItem('swiftcrypto_devname')||('设备'+Math.floor(Math.random()*900+100));saveDeviceName()}
