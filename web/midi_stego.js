@@ -611,7 +611,7 @@ function scheduleMidiPlayback(synth,events,division,tempo){
             const durTicks=Math.max(e.tick-on.tick,1);
             const secPerTick=tempo/1000000/division;
             const dur=durTicks*secPerTick;
-            if(dur<0.01)continue; // 过滤<10ms
+            if(dur<0.025)continue; // 过滤<25ms
             partEvts.push({
                 time:on.tick*secPerTick,
                 note:Tone.Frequency(on.pitch,'midi').toNote(),
