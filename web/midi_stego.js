@@ -341,7 +341,7 @@ async function midiEncodeAndShare(){
         }else{
             midiDownloadFallback(blob,fileName,status,encodedBits,song);
         }
-        status.textContent=`✅ 编码完成 — ${encodedBits} bits 已嵌入 "${song.name}"`+(sdm?' 🔥 定时焚毁已激活':'');
+        status.textContent=`✅ 编码完成 — ${encodedBits} bits 已嵌入 "${song.name}"`+(sdm?' � 开启焚毁程序':'');
         // 同步密聊
         if(typeof chatMsgs!=='undefined'){
             const sdExp=sdm?parseInt(sdm.match(/^🔥(\d+)\|/)?.[1]||'0'):0;
