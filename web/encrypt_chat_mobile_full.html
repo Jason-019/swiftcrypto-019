@@ -506,6 +506,25 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 </div>
 
 <script>
+// ═══ localStorage 降级（微信内置浏览器可能不可用）═══
+(function(){
+    try{const k='__swift_test__';localStorage.setItem(k,k);localStorage.removeItem(k)}catch(e){
+        const _mem={},_ls=localStorage;
+        // 透明替换 localStorage 为内存存储
+        Object.defineProperty(window,'localStorage',{value:{
+            getItem:k=>_mem[k]||null,
+            setItem:(k,v)=>{_mem[k]=v},
+            removeItem:k=>{delete _mem[k]},
+            clear:()=>{for(const k in _mem)delete _mem[k]},
+            get length(){return Object.keys(_mem).length},
+            key:i=>Object.keys(_mem)[i]||null
+        },writable:false,configurable:true});
+        console.warn('⚠ localStorage 不可用，已切换内存存储（刷新后数据丢失）');
+        // 延迟提示（等 t() 函数就绪）
+        setTimeout(()=>{if(typeof t==='function')t('⚠️ 当前浏览器不支持本地存储，刷新后数据将丢失')},500);
+    }
+})();
+
 // Crypto
 const NS=12,KS=256,IT=600000,ST=new TextEncoder().encode('SCMobile_v1');
 async function dk(p){
