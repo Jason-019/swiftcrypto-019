@@ -213,6 +213,30 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <span class="switch"></span>
         <span style="color:var(--dim);font-size:0.6rem">📝 草稿</span>
     </label>
+    <label class="incog-toggle" title="高安全模式：ECDH密钥交换+密码双重加密">
+        <input type="checkbox" id="hsMode" onchange="toggleHS()">
+        <span class="switch"></span>
+        <span style="color:var(--dim);font-size:0.6rem">🛡 高安全</span>
+    </label>
+</div>
+
+<div id="hsPanel" style="display:none;padding:8px 10px;margin:0 10px;border-radius:8px;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.15);font-size:0.7rem;color:var(--dim);display:flex;flex-direction:column;gap:6px">
+    <!-- 我的公钥行 -->
+    <div style="display:flex;align-items:center;gap:6px">
+        <span style="flex-shrink:0;font-size:0.65rem">📢 我的身份码</span>
+        <code id="hsMyPubKey" style="flex:1;background:rgba(0,0,0,0.2);padding:4px 6px;border-radius:4px;font-size:0.55rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</code>
+        <button onclick="copyHSPubKey()" title="复制身份码" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);cursor:pointer;flex-shrink:0;line-height:1">📋</button>
+        <button onclick="showQRModal()" title="身份码二维码" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);cursor:pointer;flex-shrink:0;line-height:1">📱</button>
+        <button onclick="resetHSKeys()" title="重新生成" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);color:#f87171;cursor:pointer;flex-shrink:0;line-height:1">🔄</button>
+    </div>
+    <!-- 对方公钥行 -->
+    <div style="display:flex;align-items:center;gap:6px">
+        <span style="flex-shrink:0;font-size:0.65rem">📥 对方身份码</span>
+        <input id="hsPeerPubKey" placeholder="粘贴对方身份码…" style="flex:1;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:rgba(0,0,0,0.2);color:var(--text);font-size:0.6rem;outline:none;height:36px;box-sizing:border-box">
+        <button onclick="startScan()" title="扫码导入" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);cursor:pointer;flex-shrink:0;line-height:1">📷</button>
+        <button onclick="importHSPeerKey()" title="导入身份码" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(167,139,250,0.2);color:#c4b5fd;cursor:pointer;flex-shrink:0;line-height:1">✅</button>
+    </div>
+    <div id="hsPeerStatus" style="font-size:0.55rem;color:#fbbf24;display:none;line-height:1.3;text-align:center"></div>
 </div>
 
 <div class="pwd-row" style="flex-direction:column;gap:6px">
@@ -484,7 +508,21 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 <script>
 // Crypto
 const NS=12,KS=256,IT=600000,ST=new TextEncoder().encode('SCMobile_v1');
-async function dk(p){const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:ST,iterations:IT,hash:'SHA-256'},m,{name:'AES-GCM',length:KS},false,['encrypt','decrypt'])}
+async function dk(p){
+    let km=p;
+    // High security mode: ECDH + password hybrid
+    if(_hsMode&&_hsKeyPair){
+        if(_hsPeerPubKey){
+            try{
+                const shared=await crypto.subtle.deriveBits({name:'ECDH',public:_hsPeerPubKey},_hsKeyPair.privateKey,256);
+                const hex=Array.from(new Uint8Array(shared)).map(b=>b.toString(16).padStart(2,'0')).join('');
+                km=hex+'::'+p;
+            }catch(e){console.warn('ECDH deriveBits failed, falling back to password only:',e)}
+        }
+    }
+    const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(km),'PBKDF2',false,['deriveKey']);
+    return crypto.subtle.deriveKey({name:'PBKDF2',salt:ST,iterations:IT,hash:'SHA-256'},m,{name:'AES-GCM',length:KS},false,['encrypt','decrypt']);
+}
 async function doEncrypt(){
     let p=document.getElementById('plainInput').value;if(!p)return t('请输入明文');
     if(!gp())return t('请先输入共享密码');
@@ -778,7 +816,197 @@ function toggleIncog(){
 }
 function isIncog(){return incogMode}
 
-// ---- 📝 Draft mode ----
+// ---- � High Security mode (ECDH + Password hybrid) ----
+let _hsMode=false,_hsKeyPair=null,_hsPeerPubKey=null;
+
+async function toggleHS(){
+    const cb=document.getElementById('hsMode'),panel=document.getElementById('hsPanel');
+    if(cb.checked){
+        if(!confirm('🛡 开启高安全模式？\n\n开启后，你和对方各有一个"数字身份"。\n消息 = 你的密码 + 双方身份 → 双重加密。\n\n操作很简单：\n① 点 📋 复制你的身份码发给对方\n② 把对方的身份码粘贴进来导入\n③ 完成！之后的加密自动双重保护\n\n即使密码意外泄露，没有身份码也解不开。\n\n确定开启？')){
+            cb.checked=false;return;
+        }
+        _hsMode=true;localStorage.setItem('swiftcrypto_hs','1');
+        panel.style.display='flex';
+        await ensureHSKeyPair();
+        displayMyPubKey();
+        const pk=localStorage.getItem('swiftcrypto_hs_peer');
+        if(pk)document.getElementById('hsPeerPubKey').value=pk;
+        updateHSPeerStatus();
+        t('🛡 高安全模式已开启');
+    }else{
+        _hsMode=false;localStorage.removeItem('swiftcrypto_hs');
+        panel.style.display='none';
+        t('🔓 已切换为普通模式');
+    }
+}
+function isHS(){return _hsMode}
+
+async function ensureHSKeyPair(){
+    if(_hsKeyPair)return;
+    const stored=localStorage.getItem('swiftcrypto_hs_key');
+    if(stored){
+        try{
+            const jwk=JSON.parse(stored);
+            _hsKeyPair={
+                privateKey:await crypto.subtle.importKey('jwk',jwk.privateKey,{name:'ECDH',namedCurve:'P-256'},false,['deriveBits']),
+                publicKey:await crypto.subtle.importKey('jwk',jwk.publicKey,{name:'ECDH',namedCurve:'P-256'},true,[])
+            };
+            return;
+        }catch(e){console.warn('HS key restore failed, regenerating:',e)}
+    }
+    // Generate new key pair
+    _hsKeyPair=await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveBits']);
+    const privJwk=await crypto.subtle.exportKey('jwk',_hsKeyPair.privateKey);
+    const pubJwk=await crypto.subtle.exportKey('jwk',_hsKeyPair.publicKey);
+    localStorage.setItem('swiftcrypto_hs_key',JSON.stringify({privateKey:privJwk,publicKey:pubJwk}));
+}
+
+function getMyPubKeyB64(){
+    // Read from stored JWK and return compact base64
+    const stored=localStorage.getItem('swiftcrypto_hs_key');
+    if(!stored)return '';
+    const jwk=JSON.parse(stored);
+    return btoa(JSON.stringify({kty:jwk.publicKey.kty,crv:jwk.publicKey.crv,x:jwk.publicKey.x,y:jwk.publicKey.y}));
+}
+
+function displayMyPubKey(){
+    const pk=getMyPubKeyB64();
+    const el=document.getElementById('hsMyPubKey');
+    if(pk){el.textContent=pk.slice(0,16)+'…';el.title='点击复制完整公钥'}
+}
+
+async function resetHSKeys(){
+    if(!confirm('🔄 重新生成身份码后，对方需要重新导入。确定？'))return;
+    _hsKeyPair=null;_hsPeerPubKey=null;
+    localStorage.removeItem('swiftcrypto_hs_key');
+    localStorage.removeItem('swiftcrypto_hs_peer');
+    document.getElementById('hsPeerPubKey').value='';
+    await ensureHSKeyPair();
+    displayMyPubKey();
+    updateHSPeerStatus();
+    t('🔄 身份码已重新生成');
+}
+
+// ─── 📱 QR 码 & 📷 扫码 ───
+function showQRModal(){
+    const pk=getMyPubKeyB64();
+    if(!pk)return t('⚠️ 密钥尚未生成');
+    document.getElementById('qrPubKeyPreview').textContent=pk.slice(0,40)+'…';
+    const container=document.getElementById('qrContainer');
+    container.innerHTML=''; // 清除旧QR码
+    // qrcodejs库渲染到div
+    if(typeof QRCode!=='undefined'){
+        new QRCode(container,{text:pk,width:240,height:240,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+    }else{
+        container.textContent='QR库未加载，请用📋复制';
+    }
+    document.getElementById('qrModal').style.display='flex';
+}
+function closeQRModal(){document.getElementById('qrModal').style.display='none'}
+function saveQRImage(){
+    const container=document.getElementById('qrContainer');
+    const img=container.querySelector('img');
+    if(!img)return t('⚠️ QR码未生成');
+    const a=document.createElement('a');
+    a.download='swiftcrypto_pubkey.png';
+    a.href=img.src;
+    a.click();t('📥 已保存公钥二维码');
+}
+
+let _scanStream=null,_scanTimer=null;
+async function startScan(){
+    document.getElementById('scanModal').style.display='flex';
+    document.getElementById('scanStatus').textContent='📷 正在启动摄像头…';
+    try{
+        const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+        _scanStream=stream;
+        const video=document.getElementById('scanVideo');
+        video.srcObject=stream;
+        document.getElementById('scanStatus').textContent='📷 将二维码对准框内…';
+        // Start scanning loop
+        const cv=document.getElementById('scanCanvas');
+        const ctx=cv.getContext('2d');
+        _scanTimer=setInterval(()=>{
+            if(video.readyState!==video.HAVE_ENOUGH_DATA)return;
+            cv.width=video.videoWidth;cv.height=video.videoHeight;
+            ctx.drawImage(video,0,0,cv.width,cv.height);
+            const imgData=ctx.getImageData(0,0,cv.width,cv.height);
+            if(typeof jsQR!=='undefined'){
+                const code=jsQR(imgData.data,cv.width,cv.height);
+                if(code&&code.data){
+                    // Got a QR code!
+                    document.getElementById('hsPeerPubKey').value=code.data;
+                    document.getElementById('scanStatus').textContent='✅ 识别成功！';
+                    importHSPeerKey();
+                    setTimeout(stopScan,500);
+                }
+            }
+        },200);
+    }catch(e){
+        document.getElementById('scanStatus').textContent='⚠️ 摄像头不可用，请手动粘贴对方公钥';
+        stopScan();
+        t('📷 摄像头不可用，请手动粘贴身份码');
+    }
+}
+function stopScan(){
+    if(_scanTimer){clearInterval(_scanTimer);_scanTimer=null}
+    if(_scanStream){_scanStream.getTracks().forEach(t=>t.stop());_scanStream=null}
+    document.getElementById('scanModal').style.display='none';
+}
+
+function copyHSPubKey(){
+    const pk=getMyPubKeyB64();
+    if(!pk)return t('⚠️ 密钥尚未生成');
+    navigator.clipboard.writeText(pk).then(()=>t('📋 身份码已复制，发给对方即可')).catch(()=>{prompt('手动复制：',pk)});
+}
+
+async function importHSPeerKey(){
+    const raw=document.getElementById('hsPeerPubKey').value.trim();
+    if(!raw)return t('⚠️ 请粘贴对方公钥');
+    try{
+        const jwk=JSON.parse(atob(raw));
+        if(!jwk.kty||!jwk.crv||!jwk.x||!jwk.y)throw new Error('格式无效');
+        _hsPeerPubKey=await crypto.subtle.importKey('jwk',jwk,{name:'ECDH',namedCurve:'P-256'},true,[]);
+        localStorage.setItem('swiftcrypto_hs_peer',raw);
+        updateHSPeerStatus();
+        t('✅ 对方身份码已导入');
+    }catch(e){t('❌ 身份码格式无效: '+e.message)}
+}
+
+function updateHSPeerStatus(){
+    const el=document.getElementById('hsPeerStatus');
+    const stored=localStorage.getItem('swiftcrypto_hs_peer');
+    if(stored){
+        el.style.display='block';
+        el.textContent='✅ 已导入对方身份码 — 双重加密生效中';
+        el.style.color='#4ade80';
+    }else{
+        el.style.display='block';
+        el.textContent='⚠️ 未导入对方身份码 — 加密将降级为纯密码模式';
+        el.style.color='#fbbf24';
+    }
+}
+
+// Initialize HS on load
+(function(){
+    if(localStorage.getItem('swiftcrypto_hs')==='1'){
+        _hsMode=true;
+        document.getElementById('hsMode').checked=true;
+        document.getElementById('hsPanel').style.display='flex';
+        ensureHSKeyPair().then(()=>{displayMyPubKey();updateHSPeerStatus()});
+        const pk=localStorage.getItem('swiftcrypto_hs_peer');
+        if(pk){
+            document.getElementById('hsPeerPubKey').value=pk;
+            // Import peer key as CryptoKey
+            try{
+                const jwk=JSON.parse(atob(pk));
+                crypto.subtle.importKey('jwk',jwk,{name:'ECDH',namedCurve:'P-256'},true,[]).then(k=>{_hsPeerPubKey=k});
+            }catch(e){console.warn('HS peer key import on load failed:',e)}
+        }
+    }
+})();
+
+// ---- �📝 Draft mode ----
 function toggleDraft(){
     const cb=document.getElementById('draftMode');
     if(cb.checked){
@@ -1798,7 +2026,18 @@ function decodeEraGrid(){
 window.addEventListener('beforeunload',function(){
     saveChat();
     saveDrafts();
-    if(isIncog()){const devid=getDeviceId();localStorage.clear();localStorage.setItem('swiftcrypto_incog','1');localStorage.setItem('swiftcrypto_devid',devid)}
+    if(isIncog()){
+        const devid=getDeviceId();
+        const hsKey=localStorage.getItem('swiftcrypto_hs_key');
+        const hsPeer=localStorage.getItem('swiftcrypto_hs_peer');
+        const hsOn=localStorage.getItem('swiftcrypto_hs');
+        localStorage.clear();
+        localStorage.setItem('swiftcrypto_incog','1');
+        localStorage.setItem('swiftcrypto_devid',devid);
+        if(hsOn)localStorage.setItem('swiftcrypto_hs',hsOn);
+        if(hsKey)localStorage.setItem('swiftcrypto_hs_key',hsKey);
+        if(hsPeer)localStorage.setItem('swiftcrypto_hs_peer',hsPeer);
+    }
 });
 
 // Auto-save drafts on input
@@ -1823,6 +2062,9 @@ document.getElementById('password').addEventListener('input',saveDrafts);
 })();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
+</script>
+<script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
 </script><script src="midi_stego.js?v=64"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
@@ -1842,6 +2084,28 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
             <button class="btn btn-primary" id="midiConfirmBtn" onclick="confirmMidiPick()" disabled style="flex:1;justify-content:center">🎹 确认</button>
         </div>
     </div>
+</div>
+
+<!-- 📱 我的公钥二维码弹窗 -->
+<div id="qrModal" style="display:none;position:fixed;inset:0;z-index:110;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);justify-content:center;align-items:center">
+    <div class="sheet" style="text-align:center;max-width:340px;padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:16px">
+        <h3 style="margin:0;font-size:1.05rem">📱 我的身份码</h3>
+        <div id="qrContainer" style="width:256px;height:256px;border-radius:10px;background:#fff;padding:8px;box-sizing:border-box;flex-shrink:0"></div>
+        <p style="font-size:0.7rem;color:var(--dim);margin:0;line-height:1.4">让对方用 SwiftCrypto 扫码<br>或截图识别后导入</p>
+        <code id="qrPubKeyPreview" style="font-size:0.55rem;color:rgba(255,255,255,0.25);word-break:break-all;max-width:100%;line-height:1.3"></code>
+        <div class="btn-row">
+            <button class="btn btn-outline" onclick="closeQRModal()">关闭</button>
+            <button class="btn btn-primary" onclick="saveQRImage()">📥 保存图片</button>
+        </div>
+    </div>
+</div>
+
+<!-- 📷 扫码对方公钥弹窗 -->
+<div id="scanModal" style="display:none;position:fixed;inset:0;z-index:110;background:#000;justify-content:center;align-items:center;flex-direction:column">
+    <video id="scanVideo" autoplay playsinline style="width:100%;max-width:400px;border-radius:8px"></video>
+    <canvas id="scanCanvas" style="display:none"></canvas>
+    <p id="scanStatus" style="color:#fff;font-size:0.8rem;margin:12px 0">📷 将二维码对准框内…</p>
+    <button class="btn btn-outline" onclick="stopScan()" style="color:#fff;border-color:rgba(255,255,255,0.3)">关闭</button>
 </div>
 
 </body>
