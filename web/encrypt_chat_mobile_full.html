@@ -463,7 +463,16 @@ async function dk(p){const m=await crypto.subtle.importKey('raw',new TextEncoder
 async function doEncrypt(){
     let p=document.getElementById('plainInput').value;if(!p)return t('请输入明文');
     const sdm=getSDMeta();if(sdm)p=sdm+p;
-    try{const k=await dk(gp()),n=crypto.getRandomValues(new Uint8Array(NS)),c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(p)),m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);document.getElementById('cipherOutput').value=btoa(String.fromCharCode(...m));uc();updateEmojiDisplay();autoSavePwd();t(sdm?'🔥 定时焚毁密文已生成 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 加密完成')}catch(e){t('❌ '+e.message)}
+    // 附加设备标识
+    const payload='['+getDeviceName()+'|'+getDeviceId()+']'+p;
+    try{const k=await dk(gp()),n=crypto.getRandomValues(new Uint8Array(NS)),c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(payload)),m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);
+        const b64=btoa(String.fromCharCode(...m));
+        document.getElementById('cipherOutput').value=b64;uc();updateEmojiDisplay();autoSavePwd();
+        // 同步到密聊
+        const sdExp=sdm?parseInt(sdm.match(/^🔥(\d+)\|/)?.[1]||'0'):0;
+        chatMsgs.push({role:'me',text:p.replace(/^🔥\d+\|/,''),cipher:b64,time:Date.now(),device:getDeviceId(),sd:!!sdm,sdExpiry:sdExp});
+        saveChat();if(document.getElementById('panelChat').classList.contains('active'))renderChat();
+        t(sdm?'🔥 定时焚毁密文已生成 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 加密完成')}catch(e){t('❌ '+e.message)}
 }
 async function doDecrypt(){
     let b=document.getElementById('cipherInput').value.trim();if(!b)return t('请输入密文');
@@ -472,10 +481,20 @@ async function doDecrypt(){
     try{const k=await dk(gp()),r=Uint8Array.from(atob(b),c=>c.charCodeAt(0)),p=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));let pt=new TextDecoder().decode(p);
         const sd=checkSelfDestruct(pt);
         if(!sd.valid){document.getElementById('plainOutput').value=sd.message;uc();t('🔥 '+sd.message);return}
-        typewriterOutput('plainOutput',sd.message,()=>{
-            if(sd.wasSD)startDecryptCountdown(sd.expiry,sd.message);
+        // 解析设备标识: [发送方|设备ID]消息
+        const m2=sd.message.match(/^\[(.+?)\|(.+?)\]/);
+        const senderName=m2?m2[1]:'';
+        const senderId=m2?m2[2]:'未知';
+        const text=m2?sd.message.slice(m2[0].length):sd.message;
+        typewriterOutput('plainOutput',text,()=>{
+            if(sd.wasSD)startDecryptCountdown(sd.expiry,text);
         });
-        uc();autoSavePwd();t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功')}catch(e){t(e.name==='OperationError'?'❌ 密码错误':'❌ '+e.message)}
+        uc();autoSavePwd();
+        // 同步到密聊
+        chatMsgs.push({role:'them',text,cipher:b,time:Date.now(),device:senderId,senderName,sd:sd.wasSD,sdExpiry:sd.expiry});
+        saveChat();if(document.getElementById('panelChat').classList.contains('active'))renderChat();
+        if(sd.wasSD)startChatSDWatch();
+        t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功')}catch(e){t(e.name==='OperationError'?'❌ 密码错误':'❌ '+e.message)}
 }
 function gp(){return document.getElementById('password').value}
 // ---- ⌨️ Typewriter effect for decryption ----
