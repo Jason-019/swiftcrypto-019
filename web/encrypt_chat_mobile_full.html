@@ -1212,7 +1212,9 @@ function getDeviceId(){
             fp+=navigator.platform+screen.width+'x'+screen.height+navigator.hardwareConcurrency;
             let h=0;for(let i=0;i<fp.length;i++){h=((h<<5)-h)+fp.charCodeAt(i);h|=0}
             const hwHex=Math.abs(h).toString(16).toUpperCase().slice(0,6);
-            const sf=Math.random().toString(16).slice(2,8).toUpperCase();
+            // 后缀也用哈希(反向遍历),确保跨浏览器一致
+            let h2=0;for(let i=fp.length-1;i>=0;i--){h2=((h2<<5)-h2)+fp.charCodeAt(i);h2|=0}
+            const sf=Math.abs(h2).toString(16).toUpperCase().slice(0,6);
             _deviceId=hwHex+'-'+sf;
             localStorage.setItem('swiftcrypto_devid',_deviceId);
         }
