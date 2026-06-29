@@ -183,6 +183,12 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 .sd-row .sd-time input{width:34px;padding:3px;border-radius:4px;border:1px solid var(--border);background:rgba(0,0,0,0.25);color:var(--text);font-size:0.7rem;text-align:center;outline:none;color-scheme:dark}
 .sd-row .sd-time input:focus{border-color:var(--accent)}
 .sd-badge{display:inline-block;font-size:0.55rem;background:#f97316;color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
+/* Share dropdown */
+.share-dropdown{position:relative;display:inline-flex}
+.share-dropdown .share-menu{display:none;position:absolute;bottom:100%;right:0;margin-bottom:4px;background:rgba(30,30,50,0.95);border:1px solid var(--border);border-radius:8px;overflow:hidden;z-index:10;min-width:120px;box-shadow:0 4px 16px rgba(0,0,0,0.4)}
+.share-dropdown.open .share-menu{display:block}
+.share-dropdown .share-menu button{display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:var(--text);font-size:0.75rem;cursor:pointer;text-align:left;white-space:nowrap}
+.share-dropdown .share-menu button:hover{background:rgba(167,139,250,0.15)}
 .sd-countdown{font-size:0.55rem;color:#f97316;margin-left:4px}
 /* Auto-paste toggle (standalone, not inside sd-row) */
 .chat-auto-toggle{display:flex;align-items:center;cursor:pointer}
@@ -270,7 +276,13 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <div class="btn-row">
             <button class="btn btn-copy" onclick="copyText('cipherOutput')">📋 复制密文</button>
             <button class="btn btn-outline" id="emojiToggle" onclick="toggleEmojiMode()">🎭 Emoji</button>
-            <button class="btn btn-outline" onclick="shareCipher()">📤 快捷分享</button>
+            <div class="share-dropdown" id="shareDropdown">
+                <button class="btn btn-outline" onclick="toggleShareMenu()">📤 快捷分享 ▾</button>
+                <div class="share-menu">
+                    <button onclick="shareAsEras()">🎨 Eras码</button>
+                    <button onclick="shareAsText()">📝 纯文字</button>
+                </div>
+            </div>
             <button class="btn btn-outline" onclick="openShareModal()">🔗 链接</button>
         </div>
         <div class="char-count" id="cipherCount">密文: 0 字</div>
@@ -901,12 +913,46 @@ async function cacheAllMidi(){
     showMidiCacheStatus();
 }
 async function copyText(id){let v;if(id==='cipherOutput'&&emojiMode){v=document.getElementById('emojiCipher').textContent}else{v=document.getElementById(id).value}if(!v)return t('⚠️ 无内容');try{await navigator.clipboard.writeText(v);t('✅ 已复制')}catch{document.getElementById(id).select();document.execCommand('copy');t('✅ 已复制')}}
-async function shareCipher(){
+function toggleShareMenu(){
+    const dd=document.getElementById('shareDropdown');
     const b64=document.getElementById('cipherOutput').value;
     if(!b64)return t('⚠️ 请先生成密文');
+    dd.classList.toggle('open');
+}
+async function shareAsText(){
+    document.getElementById('shareDropdown').classList.remove('open');
+    const b64=document.getElementById('cipherOutput').value;
     if(!navigator.share)return copyText('cipherOutput'),t('📋 已复制（此浏览器不支持分享）');
     try{await navigator.share({title:'SwiftCrypto 密文',text:b64});t('✅ 已分享')}catch(e){if(e.name!=='AbortError')copyText('cipherOutput'),t('📋 已复制（分享取消，已备选复制）')}
 }
+async function shareAsEras(){
+    document.getElementById('shareDropdown').classList.remove('open');
+    const b64=document.getElementById('cipherOutput').value;
+    if(!b64)return t('⚠️ 请先生成密文');
+    renderEraCard();
+    const cv=document.getElementById('eraCardCanvas');
+    if(!cv||!cv.width)return t('⚠️ Eras码生成失败');
+    try{
+        const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+        if(!blob||blob.size<100)throw new Error('empty');
+        if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],'swiftcrypto_eras.png',{type:'image/png'})]})){
+            await navigator.share({title:'SwiftCrypto Eras',files:[new File([blob],'swiftcrypto_eras.png',{type:'image/png'})]});
+            t('✅ 已分享 Eras 名片');
+        }else{
+            await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+            t('✅ Eras名片已复制，去微信/QQ粘贴');
+        }
+    }catch(e){
+        if(e.name==='AbortError'){t('👋 已取消分享');return}
+        console.warn('Eras share failed:',e);
+        try{await navigator.clipboard.write([new ClipboardItem({'image/png':await new Promise(r=>cv.toBlob(r,'image/png'))})]);t('📋 Eras名片已复制（分享不支持，已备选复制）')}catch{t('⚠️ 分享失败，请尝试复制密文')}
+    }
+}
+// Close dropdown on outside click
+document.addEventListener('click',function(e){
+    const dd=document.getElementById('shareDropdown');
+    if(dd&&!dd.contains(e.target))dd.classList.remove('open');
+});
 function handleIncomingShare(){
     const params=new URLSearchParams(location.search);
     // ── PWA Share Target: 微信分享 .mid 文件 ──
@@ -1777,7 +1823,7 @@ document.getElementById('password').addEventListener('input',saveDrafts);
 })();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script><script src="midi_stego.js?v=63"></script>
+</script><script src="midi_stego.js?v=64"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
