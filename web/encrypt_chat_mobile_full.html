@@ -372,6 +372,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     <div class="panel" id="panelMidi">
         <div style="display:flex;gap:4px;align-items:center">
             <button class="icon-btn" onclick="openMidiPicker()" title="挑选MIDI" style="flex:1;width:auto;font-size:0.8rem;gap:6px">🎹 挑选MIDI…</button>
+            <button class="icon-btn" id="midiPlayBtn" onclick="toggleMidiPlay()" title="试听原曲" disabled style="font-size:0.7rem;padding:4px 8px;flex-shrink:0;white-space:nowrap;width:auto">▶ 试听</button>
             <button class="icon-btn" onclick="cacheAllMidi()" title="预缓存全部 MIDI，纯离线可用" style="font-size:0.65rem;padding:4px 8px;flex-shrink:0;white-space:nowrap;width:auto">📦 预缓存MIDI(可离线)</button>
         </div>
         <div id="midiCacheStatus" style="font-size:0.5rem;color:var(--dim);text-align:right;min-height:10px;line-height:1.1"></div>
@@ -2143,9 +2144,11 @@ document.getElementById('password').addEventListener('input',saveDrafts);
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
 </script>
+<script src="lib/tone.min.js"></script>
+<script src="lib/midi.bundle.js"></script>
 <script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
-</script><script src="midi_stego.js?v=64"></script>
+</script><script src="midi_stego.js?v=65"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">

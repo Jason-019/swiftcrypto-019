@@ -1,11 +1,13 @@
 // SwiftCrypto Service Worker — PWA + Share Target
-const CACHE_NAME = 'swiftcrypto-v3';
+const CACHE_NAME = 'swiftcrypto-v4';
 const SHARED_FILE_KEY = 'swiftcrypto_shared_midi';
 const ASSETS = [
   './encrypt_chat_mobile_full.html',
   './manifest.json',
   './midi_stego.js',
-  './icon.svg'
+  './icon.svg',
+  './lib/tone.min.js',
+  './lib/midi.bundle.js'
 ];
 
 // Install: cache all assets

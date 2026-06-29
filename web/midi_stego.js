@@ -126,6 +126,10 @@ function confirmMidiPick(){
         `📊 ${s.bits} bit | ≈${s.base64} B64字符 | ≈${Math.max(0,Math.floor((s.base64*3/4-28)/3))} 汉字 | ${s.name}`;
     closeMidiPicker();
     updateMidiCapacity();
+    // 启用播放按钮，清除缓存
+    document.getElementById('midiPlayBtn').disabled=false;
+    _midiPlayBuf=null;
+    document.getElementById('midiSongSelect').dataset.playId='';
 }
 
 // ─── 📊 剩余容量进度条 ───
@@ -481,4 +485,114 @@ function compareArrayBuffers(a,b){
     const ua=new Uint8Array(a),ub=new Uint8Array(b);
     for(let i=0;i<ua.length;i++)if(ua[i]!==ub[i])return false;
     return true;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🎧 MIDI 轻量播放 (Tone.js + Salamander 钢琴采样)
+// ═══════════════════════════════════════════════════════════════
+let _midiSynth=null,_midiPlaying=false,_midiPlayBuf=null;
+
+async function initMidiSynth(){
+    if(_midiSynth)return _midiSynth;
+    if(typeof Tone==='undefined'){t('⚠️ Tone.js 未加载，无法播放');return null}
+    await Tone.start();
+    _midiSynth=new Tone.Sampler({
+        urls:{
+            A0:'A0.mp3',C1:'C1.mp3','D#1':'Ds1.mp3','F#1':'Fs1.mp3',
+            A1:'A1.mp3',C2:'C2.mp3','D#2':'Ds2.mp3','F#2':'Fs2.mp3',
+            A2:'A2.mp3',C3:'C3.mp3','D#3':'Ds3.mp3','F#3':'Fs3.mp3',
+            A3:'A3.mp3',C4:'C4.mp3','D#4':'Ds4.mp3','F#4':'Fs4.mp3',
+            A4:'A4.mp3',C5:'C5.mp3','D#5':'Ds5.mp3','F#5':'Fs5.mp3',
+            A5:'A5.mp3',C6:'C6.mp3','D#6':'Ds6.mp3','F#6':'Fs6.mp3',
+            A6:'A6.mp3',C7:'C7.mp3','D#7':'Ds7.mp3','F#7':'Fs7.mp3',
+            A7:'A7.mp3',C8:'C8.mp3'
+        },
+        release:1,
+        baseUrl:'https://tonejs.github.io/audio/salamander/'
+    }).toDestination();
+    return _midiSynth;
+}
+
+function parseMidiTimedEvents(buf){
+    const midi=new ToneMidi.Midi(buf);
+    const events=[];
+    let tick=0,lastTick=0;
+    for(const track of midi.tracks){
+        tick=0;
+        for(const note of track.notes){
+            events.push({type:'on',pitch:note.midi,velocity:Math.round(note.velocity*127),tick:note.ticks});
+            events.push({type:'off',pitch:note.midi,tick:note.ticks+note.durationTicks});
+        }
+        // Also get tempo from track if available
+        if(track.tempos)for(const t of track.tempos){
+            events.push({type:'tempo',tempo:Math.round(t.bpm*1000),tick:t.ticks});
+        }
+    }
+    // Convert BPM-based tempo to microseconds per quarter
+    for(const e of events){
+        if(e.type==='tempo') e.tempo=Math.round(60000000/e.tempo);
+    }
+    events.sort((a,b)=>a.tick-b.tick);
+    return {events,division:midi.header.ppq||384};
+}
+
+async function toggleMidiPlay(){
+    const btn=document.getElementById('midiPlayBtn');
+    if(_midiPlaying){stopMidiPlay();return}
+    const songId=document.getElementById('midiSongSelect').value;
+    if(!songId){t('⚠️ 请先挑选歌曲');return}
+    const synth=await initMidiSynth();
+    if(!synth)return;
+    try{
+        if(!_midiPlayBuf||document.getElementById('midiSongSelect').dataset.playId!==songId){
+            _midiPlayBuf=await loadMidiOriginal(songId);
+            document.getElementById('midiSongSelect').dataset.playId=songId;
+        }
+        const {events,division}=parseMidiTimedEvents(_midiPlayBuf);
+        if(!events.length){t('⚠️ 无音符事件');return}
+        // Find tempo
+        let tempo=500000;
+        for(const e of events){if(e.type==='tempo'){tempo=e.tempo;break}}
+        const secPerTick=tempo/1000000/division;
+        // Cancel previous and schedule with Transport
+        Tone.Transport.stop();
+        Tone.Transport.cancel();
+        Tone.Transport.position=0;
+        const partEvents=[];
+        for(const e of events){
+            const t=e.tick*secPerTick;
+            if(e.type==='on'){
+                partEvents.push({time:t,note:Tone.Frequency(e.pitch,'midi').toNote(),velocity:e.velocity/127,duration:0});
+            }
+        }
+        // Use a Part for scheduled note events
+        const totalSec=events[events.length-1].tick*secPerTick;
+        let lastNote={};
+        const part=new Tone.Part((time,evt)=>{
+            synth.triggerAttackRelease(evt.note,'8n',time,evt.velocity);
+        },partEvents).start(0);
+        // Stop callback
+        Tone.Transport.schedule(()=>{
+            Tone.Transport.stop();
+            Tone.Transport.cancel();
+            part.dispose();
+            _midiPlaying=false;
+            btn.textContent='▶ 试听';
+            btn.style.color='';
+        },totalSec+0.5);
+        Tone.Transport.start();
+        _midiPlaying=true;
+        btn.textContent='⏹ 停止';
+        btn.style.color='#ef4444';
+    }catch(e){t('❌ 播放失败: '+e.message)}
+}
+
+function stopMidiPlay(){
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+    if(_midiSynth){_midiSynth.releaseAll()}
+    _midiPlaying=false;
+    const btn=document.getElementById('midiPlayBtn');
+    btn.textContent='▶ 试听';
+    btn.style.color='';
 }
