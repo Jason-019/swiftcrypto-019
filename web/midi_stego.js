@@ -297,7 +297,7 @@ async function midiEncodeAndShare(){
         const n=crypto.getRandomValues(new Uint8Array(NS));
         // 附加设备标识 + 定时焚毁
         const sdm=typeof getMidiSDMeta==='function'?getMidiSDMeta():'';
-        const payload=sdm+'['+getDeviceName()+'|'+getDeviceId()+']'+plain;
+        const payload=sdm+'['+getDeviceId()+']'+plain;
         const c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(payload));
         const m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);
         const b64=btoa(String.fromCharCode(...m));
@@ -440,10 +440,9 @@ function midiDecodeFromFile(){
             let pt=new TextDecoder().decode(p);
             const sd=checkSelfDestruct(pt);
             if(!sd.valid){document.getElementById('midiPlainOutput').value=sd.message;status.textContent='❌ 消息已过期';t(sd.message);return}
-            // 解析设备标识: [发送方|设备ID]消息
-            const m2=sd.message.match(/^\[(.+?)\|(.+?)\]/);
-            const senderName=m2?m2[1]:'';
-            const senderId=m2?m2[2]:'未知';
+            // 解析设备标识: [设备ID]消息
+            const m2=sd.message.match(/^\[(.+?)\]/);
+            const senderId=m2?m2[1]:'未知';
             const displayText=m2?sd.message.slice(m2[0].length):sd.message;
             const showText=senderId!=='未知'?senderId+': '+displayText:displayText;
             document.getElementById('midiPlainOutput').value=showText;
@@ -460,7 +459,7 @@ function midiDecodeFromFile(){
             // 同步密聊
             if(typeof chatMsgs!=='undefined'){
                 const songName=_midiMeta&&_midiMeta.songs[songId]?_midiMeta.songs[songId].name:songId;
-                chatMsgs.push({role:'them',text:displayText,cipher:b64,time:Date.now(),device:senderId,senderName,midi:true,songName,sd:sd.wasSD,sdExpiry:sd.expiry});
+                chatMsgs.push({role:'them',text:displayText,cipher:b64,time:Date.now(),device:senderId,midi:true,songName,sd:sd.wasSD,sdExpiry:sd.expiry});
                 if(typeof saveChat==='function')saveChat();
                 if(document.getElementById('panelChat')&&document.getElementById('panelChat').classList.contains('active')&&typeof renderChat==='function')renderChat();
                 if(sd.wasSD&&typeof startChatSDWatch==='function')startChatSDWatch();
