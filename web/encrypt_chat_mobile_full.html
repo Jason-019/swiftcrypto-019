@@ -409,6 +409,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <textarea id="eraLinkPlain" placeholder="解密后的明文…" readonly style="width:100%;box-sizing:border-box;min-height:100px"></textarea>
         <div class="btn-row">
             <button class="btn btn-copy" onclick="copyText('eraLinkPlain')">📋 复制明文</button>
+            <button class="btn btn-outline" onclick="downloadEraWithPlain()">📥 下载带明文</button>
             <button class="btn btn-outline" onclick="closeEraModal()">✕ 关闭</button>
         </div>
     </div>
@@ -1516,6 +1517,42 @@ function saveEraCard(){
     const a=document.createElement('a');a.download='swiftcrypto-'+ts+'.png';
     a.href=cv.toDataURL('image/png');a.click();
     t('🎴 名片已保存');
+}
+function downloadEraWithPlain(){
+    const srcCv=document.getElementById('eraLinkCardCanvas');
+    const plain=document.getElementById('eraLinkPlain').value;
+    if(!srcCv||!srcCv.width)return t('⚠️ 缺少 Eras 码图片');
+    if(!plain)return t('⚠️ 请先解密得到明文');
+    const text=plain.length>200?plain.slice(0,200)+'…':plain;
+    const cardW=srcCv.width,cardH=srcCv.height;
+    // 计算文字区域高度
+    const tc=document.createElement('canvas');const tctx=tc.getContext('2d');
+    tctx.font='14px -apple-system,sans-serif';
+    const maxW=cardW-40;
+    const lines=[];let cur='';
+    for(const ch of text){
+        const test=cur+ch;
+        if(tctx.measureText(test).width>maxW&&cur.length>0){lines.push(cur);cur=ch}
+        else cur=test;
+    }
+    if(cur)lines.push(cur);
+    const textH=lines.length*22+40;
+    const totalH=cardH+textH;
+    // 绘制
+    const cv=document.createElement('canvas');cv.width=cardW;cv.height=totalH;
+    const ctx=cv.getContext('2d');
+    ctx.drawImage(srcCv,0,0);
+    ctx.fillStyle='#1a1a2e';ctx.fillRect(0,cardH,cardW,textH);
+    ctx.strokeStyle='rgba(167,139,250,0.3)';ctx.lineWidth=1;
+    ctx.strokeRect(2,cardH+2,cardW-4,textH-4);
+    ctx.fillStyle='#e0e0e0';ctx.font='13px -apple-system,sans-serif';ctx.textAlign='left';
+    for(let i=0;i<lines.length;i++)ctx.fillText(lines[i],20,cardH+28+i*22);
+    ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='10px monospace';ctx.textAlign='right';
+    ctx.fillText('— SwiftCrypto 解密 —',cardW-16,cardH+textH-10);
+    const ts=new Date().toISOString().replace(/[-:]/g,'').slice(0,15);
+    const a=document.createElement('a');a.download='swiftcrypto-plain-'+ts+'.png';
+    a.href=cv.toDataURL('image/png');a.click();
+    t('📥 已下载带明文的名片');
 }
 async function copyEraLink(){
     const b64=document.getElementById('cipherOutput').value;
