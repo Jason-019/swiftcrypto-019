@@ -1733,7 +1733,7 @@ function decodeEraGrid(){
 window.addEventListener('beforeunload',function(){
     saveChat();
     saveDrafts();
-    if(isIncog()){localStorage.clear()}
+    if(isIncog()){localStorage.clear();localStorage.setItem('swiftcrypto_incog','1')}
 });
 
 // Auto-save drafts on input
