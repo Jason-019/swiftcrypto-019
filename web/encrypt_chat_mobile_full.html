@@ -295,7 +295,8 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     <div class="panel" id="panelChat">
         <div style="display:flex;align-items:center;gap:6px;padding:0 0 4px 0">
             <span style="font-size:0.65rem;color:var(--dim)">📱</span>
-            <code id="deviceIdLabel" title="点击编辑设备ID" style="font-size:0.6rem;color:var(--dim);background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;cursor:pointer" onclick="editDeviceId()"></code>
+            <code id="deviceIdLabel" title="点击编辑" style="font-size:0.6rem;color:var(--dim);background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;cursor:pointer" onclick="editDeviceId()"></code>
+            <button onclick="copyDeviceId()" title="复制设备ID" style="font-size:0.55rem;padding:1px 4px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);cursor:pointer;line-height:1">📋</button>
         </div>
         <div style="display:flex;gap:4px;align-items:center;padding:0 0 4px 0">
             <input id="chatSearch" placeholder="🔍 搜索消息…" oninput="renderChat()" style="flex:1;padding:3px 6px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.6rem;outline:none">
@@ -1219,12 +1220,20 @@ function getDeviceId(){
 }
 function editDeviceId(){
     const cur=getDeviceId();
-    const nid=prompt('编辑你的设备标识：',cur);
-    if(nid&&nid.trim()&&nid.trim().length>=6){
-        _deviceId=nid.trim();
-        localStorage.setItem('swiftcrypto_devid',_deviceId);
-        document.getElementById('deviceIdLabel').textContent=_deviceId;
-    }
+    const nid=prompt('编辑你的设备标识（至少6位字母或数字）：',cur);
+    if(nid===null)return;
+    const v=nid.trim();
+    if(!v){t('⚠ 设备标识不能为空');return}
+    if(v.length<6){t('⚠ 设备标识至少6位，当前仅'+v.length+'位');return}
+    if(!/^[A-Za-z0-9_-]+$/.test(v)){t('⚠ 设备标识只能包含字母、数字、下划线和连字符');return}
+    _deviceId=v;
+    localStorage.setItem('swiftcrypto_devid',_deviceId);
+    document.getElementById('deviceIdLabel').textContent=_deviceId;
+    t('✅ 设备标识已更新：'+_deviceId);
+}
+function copyDeviceId(){
+    const id=getDeviceId();
+    navigator.clipboard.writeText(id).then(()=>t('📋 已复制：'+id)).catch(()=>{prompt('手动复制：',id)});
 }
 // Device nickname management (like WeChat remarks)
 function getNicknames(){try{return JSON.parse(localStorage.getItem('swiftcrypto_nicks')||'{}')}catch{return{}}}
