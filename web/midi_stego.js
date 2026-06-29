@@ -426,7 +426,8 @@ function midiDecodeFromFile(){
             const senderName=m2?m2[1]:'';
             const senderId=m2?m2[2]:'未知';
             const displayText=m2?sd.message.slice(m2[0].length):sd.message;
-            document.getElementById('midiPlainOutput').value=displayText;
+            const showText=senderId!=='未知'?senderId+': '+displayText:displayText;
+            document.getElementById('midiPlainOutput').value=showText;
             // SD 倒计时
             if(sd.wasSD){
                 if(typeof _midiSDTimer!=='undefined'&&_midiSDTimer)clearInterval(_midiSDTimer);
@@ -434,7 +435,7 @@ function midiDecodeFromFile(){
                     const r=sd.expiry-Date.now();
                     const po=document.getElementById('midiPlainOutput');
                     if(r<=0){po.value='💨 此消息已过期焚毁';clearInterval(_midiSDTimer);_midiSDTimer=null;return}
-                    po.value=displayText+'\n\n⏳ 剩余 '+ (typeof fmtRemaining==='function'?fmtRemaining(r):Math.ceil(r/1000)+'秒') +' 后焚毁';
+                    po.value=showText+'\n\n⏳ 剩余 '+ (typeof fmtRemaining==='function'?fmtRemaining(r):Math.ceil(r/1000)+'秒') +' 后焚毁';
                 },500);
             }
             // 同步密聊
