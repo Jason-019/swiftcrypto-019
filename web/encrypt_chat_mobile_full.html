@@ -841,7 +841,7 @@ let _hsMode=false,_hsKeyPair=null,_hsPeerPubKey=null;
 async function toggleHS(){
     const cb=document.getElementById('hsMode'),panel=document.getElementById('hsPanel');
     if(cb.checked){
-        if(!confirm('🛡 开启高安全模式？\n\n开启后，你和对方各有一个"数字身份"。\n消息 = 你的密码 + 双方身份 → 双重加密。\n\n操作很简单：\n① 点 📋 复制你的身份码发给对方\n② 把对方的身份码粘贴进来导入\n③ 完成！之后的加密自动双重保护\n\n即使密码意外泄露，没有身份码也解不开。\n\n确定开启？')){
+        if(!confirm('🛡 开启高安全模式？\n\n开启后，你和对方各有一个"数字身份"。\n消息 = 你的密码 + 双方身份 → 双重加密。\n\n操作很简单：\n① 点 � 生成二维码，让对方扫码导入\n② 或点 📋 复制身份码发给对方\n③ 把对方的身份码粘贴（或 📷 扫码）导入\n④ 完成！之后的加密自动双重保护\n\n即使密码意外泄露，没有身份码也解不开。\n\n确定开启？')){
             cb.checked=false;return;
         }
         _hsMode=true;localStorage.setItem('swiftcrypto_hs','1');
