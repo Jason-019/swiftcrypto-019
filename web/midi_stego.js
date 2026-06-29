@@ -514,30 +514,49 @@ async function initMidiSynth(){
     if(typeof Tone==='undefined'){t('⚠️ Tone.js 未加载');return null}
     try{
         await Tone.start();
-        // 确保 AudioContext 已激活
         if(Tone.getContext().rawContext.state!=='running'){
             await Tone.getContext().rawContext.resume();
-            t('🔊 音频已激活');
         }
     }catch(e){t('⚠️ 音频初始化失败，请点击页面任意位置后重试');return null}
+    
+    const sampleNames=['A0','C1','D#1','F#1','A1','C2','D#2','F#2','A2','C3','D#3','F#3','A3','C4','D#4','F#4','A4','C5','D#5','F#5','A5','C6','D#6','F#6','A6','C7','D#7','F#7','A7','C8'];
+    const sampleFiles=['A0','C1','Ds1','Fs1','A1','C2','Ds2','Fs2','A2','C3','Ds3','Fs3','A3','C4','Ds4','Fs4','A4','C5','Ds5','Fs5','A5','C6','Ds6','Fs6','A6','C7','Ds7','Fs7','A7','C8'];
+    const total=sampleNames.length;
+    let loaded=0,errors=0;
+    const updateProgress=()=>{
+        const pct=Math.round((loaded+errors)/total*100);
+        t(`⏳ 钢琴音源 ${pct}% (${loaded}/${total})`);
+    };
+    
+    const buffers={};
+    await Promise.all(sampleNames.map(async (note,i)=>{
+        const file=sampleFiles[i];
+        try{
+            const r=await fetch(`./lib/salamander/${file}.mp3`);
+            if(!r.ok)throw new Error('HTTP '+r.status);
+            buffers[note]=await r.arrayBuffer();
+            loaded++;updateProgress();
+        }catch(e){
+            errors++;updateProgress();
+            console.warn('Sample load failed:',file,e);
+        }
+    }));
+    
+    if(loaded===0){t('⚠️ 所有音源加载失败');return null}
+    // 用 Blob URLs 创建 Sampler
+    const urlMap={};
+    for(const [name,buf] of Object.entries(buffers)){
+        urlMap[name]=URL.createObjectURL(new Blob([buf],{type:'audio/mpeg'}));
+    }
     _midiSynth=new Tone.Sampler({
-        urls:{
-            A0:'A0.mp3',C1:'C1.mp3','D#1':'Ds1.mp3','F#1':'Fs1.mp3',
-            A1:'A1.mp3',C2:'C2.mp3','D#2':'Ds2.mp3','F#2':'Fs2.mp3',
-            A2:'A2.mp3',C3:'C3.mp3','D#3':'Ds3.mp3','F#3':'Fs3.mp3',
-            A3:'A3.mp3',C4:'C4.mp3','D#4':'Ds4.mp3','F#4':'Fs4.mp3',
-            A4:'A4.mp3',C5:'C5.mp3','D#5':'Ds5.mp3','F#5':'Fs5.mp3',
-            A5:'A5.mp3',C6:'C6.mp3','D#6':'Ds6.mp3','F#6':'Fs6.mp3',
-            A6:'A6.mp3',C7:'C7.mp3','D#7':'Ds7.mp3','F#7':'Fs7.mp3',
-            A7:'A7.mp3',C8:'C8.mp3'
-        },
+        urls:urlMap,
         release:1,
-        baseUrl:'./lib/salamander/',
-        onload:()=>{t('🎹 钢琴音源就绪')},
-        onerror:()=>{t('⚠️ 音源加载失败，请检查网络')}
+        onload:()=>{t(`🎹 钢琴音源就绪 (${loaded}/${total})`)},
+        onerror:(e)=>{console.warn('Sampler error:',e)}
     }).toDestination();
-    // 等待采样器完全加载
     await Tone.loaded();
+    // 清理 Blob URLs
+    for(const url of Object.values(urlMap)){URL.revokeObjectURL(url)}
     return _midiSynth;
 }
 
