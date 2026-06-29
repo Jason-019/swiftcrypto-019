@@ -276,7 +276,7 @@ async function midiEncodeAndShare(){
         const k=await dk(pw);
         const n=crypto.getRandomValues(new Uint8Array(NS));
         // 附加设备标识 + 定时焚毁
-        const sdm=typeof getSDMeta==='function'?getSDMeta():'';
+        const sdm=typeof getMidiSDMeta==='function'?getMidiSDMeta():'';
         const payload=sdm+'['+getDeviceName()+'|'+getDeviceId()+']'+plain;
         const c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(payload));
         const m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);

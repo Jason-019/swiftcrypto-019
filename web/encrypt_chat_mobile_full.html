@@ -242,7 +242,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     <div class="tab active" onclick="switchTab('enc')">🔒 加密</div>
     <div class="tab" onclick="switchTab('dec')">🔓 解密</div>
     <div class="tab" onclick="switchTab('midi')">🎵 MIDI</div>
-    <div class="tab" onclick="switchTab('chat')">💬 密聊记录</div>
+    <div class="tab" onclick="switchTab('chat')">💬 记录</div>
 </div>
 
 <div class="content">
@@ -346,6 +346,19 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
             <div id="midiCapBar" style="height:100%;transition:width .3s,background .3s;width:0;background:var(--accent)"></div>
         </div>
         <div style="font-size:0.55rem;text-align:right;min-height:13px;color:var(--text)" id="midiCapLabel"></div>
+        <div class="sd-row">
+            <label class="sd-toggle" title="🔥 MIDI 定时焚毁">
+                <input type="checkbox" id="midiSdEnabled" onchange="toggleMidiSD()">
+                <span class="switch"></span> <span style="color:var(--dim);font-size:0.65rem">🔥 MIDI定时焚毁</span>
+            </label>
+            <span class="sd-opts" id="midiSdOpts">
+                <span class="sd-time">
+                    <input type="number" id="midiSdH" min="0" max="71" value="0"> <span style="font-size:0.6rem;color:var(--dim)">时</span>
+                    <input type="number" id="midiSdM" min="0" max="59" value="0"> <span style="font-size:0.6rem;color:var(--dim)">分</span>
+                    <input type="number" id="midiSdS" min="0" max="59" value="10"> <span style="font-size:0.6rem;color:var(--dim)">秒后销毁</span>
+                </span>
+            </span>
+        </div>
         <div class="btn-row">
             <button class="btn btn-primary" onclick="midiEncodeAndShare()">🔒 编码并分享 .mid</button>
             <button class="btn btn-outline" onclick="clearArea('midiPlainInput')">清空</button>
@@ -557,6 +570,21 @@ function getSDMeta(){
     const s=parseInt(document.getElementById('sdS').value);const S=isNaN(s)?0:s;
     const exp=Date.now()+(H*3600+M*60+S)*1000;
     return '🔥'+exp+'|';
+}
+// MIDI 独立定时焚毁
+function toggleMidiSD(){document.getElementById('midiSdOpts').classList.toggle('show',document.getElementById('midiSdEnabled').checked)}
+function clampMidiSD(){
+    let h=parseInt(document.getElementById('midiSdH').value)||0,m=parseInt(document.getElementById('midiSdM').value)||0,s=parseInt(document.getElementById('midiSdS').value)||0;
+    const total=h*3600+m*60+s;
+    if(total<10){h=0;m=0;s=10}
+    if(total>259199){h=71;m=59;s=59}
+    document.getElementById('midiSdH').value=h;document.getElementById('midiSdM').value=m;document.getElementById('midiSdS').value=s;
+}
+function getMidiSDMeta(){
+    if(!document.getElementById('midiSdEnabled').checked)return '';
+    clampMidiSD();
+    const h=parseInt(document.getElementById('midiSdH').value)||0,m=parseInt(document.getElementById('midiSdM').value)||0,s=parseInt(document.getElementById('midiSdS').value)||0;
+    return '🔥'+(Date.now()+(h*3600+m*60+s)*1000)+'|';
 }
 function fmtRemaining(ms){
     // Format remaining time nicely
