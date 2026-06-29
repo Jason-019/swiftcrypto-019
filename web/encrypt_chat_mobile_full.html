@@ -295,7 +295,6 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     <div class="panel" id="panelChat">
         <div style="display:flex;align-items:center;gap:6px;padding:0 0 4px 0">
             <span style="font-size:0.65rem;color:var(--dim)">📱</span>
-            <input id="deviceName" placeholder="设备名" onchange="saveDeviceName()" style="flex:1;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.7rem;outline:none;max-width:80px">
             <code id="deviceIdLabel" title="点击编辑设备ID" style="font-size:0.6rem;color:var(--dim);background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;cursor:pointer" onclick="editDeviceId()"></code>
         </div>
         <div style="display:flex;gap:4px;align-items:center;padding:0 0 4px 0">
@@ -477,7 +476,7 @@ async function doEncrypt(){
     let p=document.getElementById('plainInput').value;if(!p)return t('请输入明文');
     const sdm=getSDMeta();if(sdm)p=sdm+p;
     // 附加设备标识
-    const payload='['+getDeviceName()+'|'+getDeviceId()+']'+p;
+    const payload='['+getDeviceId()+']'+p;
     try{const k=await dk(gp()),n=crypto.getRandomValues(new Uint8Array(NS)),c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(payload)),m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);
         const b64=btoa(String.fromCharCode(...m));
         document.getElementById('cipherOutput').value=b64;uc();updateEmojiDisplay();autoSavePwd();
@@ -494,10 +493,9 @@ async function doDecrypt(){
     try{const k=await dk(gp()),r=Uint8Array.from(atob(b),c=>c.charCodeAt(0)),p=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));let pt=new TextDecoder().decode(p);
         const sd=checkSelfDestruct(pt);
         if(!sd.valid){document.getElementById('plainOutput').value=sd.message;uc();t('🔥 '+sd.message);return}
-        // 解析设备标识: [发送方|设备ID]消息
-        const m2=sd.message.match(/^\[(.+?)\|(.+?)\]/);
-        const senderName=m2?m2[1]:'';
-        const senderId=m2?m2[2]:'未知';
+        // 解析设备标识: [设备ID]消息
+        const m2=sd.message.match(/^\[(.+?)\]/);
+        const senderId=m2?m2[1]:'未知';
         const text=m2?sd.message.slice(m2[0].length):sd.message;
         const displayText=senderId!=='未知'?senderId+': '+text:text;
         typewriterOutput('plainOutput',displayText,()=>{
@@ -505,7 +503,7 @@ async function doDecrypt(){
         });
         uc();autoSavePwd();
         // 同步到密聊
-        chatMsgs.push({role:'them',text,cipher:b,time:Date.now(),device:senderId,senderName,sd:sd.wasSD,sdExpiry:sd.expiry});
+        chatMsgs.push({role:'them',text,cipher:b,time:Date.now(),device:senderId,sd:sd.wasSD,sdExpiry:sd.expiry});
         saveChat();if(document.getElementById('panelChat').classList.contains('active'))renderChat();
         if(sd.wasSD)startChatSDWatch();
         t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功')}catch(e){t(e.name==='OperationError'?'❌ 密码错误':'❌ '+e.message)}
@@ -1198,7 +1196,7 @@ function checkShareLink(){
 document.getElementById('shareModal').addEventListener('click',function(e){if(e.target===this)closeShareModal()});
 
 // ========== 💬 密语聊天模式 ==========
-let chatMsgs=[],_deviceName='',_deviceId='';
+let chatMsgs=[],_deviceId='';
 function getDeviceId(){
     if(!_deviceId){
         _deviceId=localStorage.getItem('swiftcrypto_devid');
@@ -1219,20 +1217,10 @@ function getDeviceId(){
     }
     return _deviceId;
 }
-function getDeviceName(){
-    if(!_deviceName){_deviceName=localStorage.getItem('swiftcrypto_devname')||('设备'+Math.floor(Math.random()*900+100));saveDeviceName()}
-    return _deviceName;
-}
-function saveDeviceName(){
-    _deviceName=document.getElementById('deviceName').value.trim()||('设备'+Math.floor(Math.random()*900+100));
-    localStorage.setItem('swiftcrypto_devname',_deviceName);
-    document.getElementById('deviceName').value=_deviceName;
-}
-function initDeviceName(){document.getElementById('deviceName').value=getDeviceName();document.getElementById('deviceIdLabel').textContent=getDeviceId();}
 function editDeviceId(){
     const cur=getDeviceId();
-    const nid=prompt('编辑设备 ID（复制到其他浏览器可统一标识）：',cur);
-    if(nid&&nid.trim()&&nid.trim().length>=8){
+    const nid=prompt('编辑你的设备标识：',cur);
+    if(nid&&nid.trim()&&nid.trim().length>=6){
         _deviceId=nid.trim();
         localStorage.setItem('swiftcrypto_devid',_deviceId);
         document.getElementById('deviceIdLabel').textContent=_deviceId;
@@ -1285,9 +1273,9 @@ function renderChat(){
         if(d!==lastDate){html+=`<div class="chat-date-sep"><span>${d}</span></div>`;lastDate=d;}
         const cls=m.role==='me'?'me':'them',label=m.role==='me'?'🧑 我':'👤 对方';
         const time=new Date(m.time).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
-        let devLabel;
+        let devLabel='';
         if(m.role==='me'){
-            devLabel=` · ${getDeviceName()}`;
+            devLabel=` · ${getDeviceId()}`;
         }else{
             const nick=getDeviceNickname(m.device);
             const displayName=nick?`${nick}`:(m.device||'???');
@@ -1319,7 +1307,7 @@ function updateChatScrollBtn(){
 // Export/Import
 async function exportChat(){
     if(!chatMsgs.length)return t('⚠️ 无聊天记录');
-    const data={version:2,exportedAt:Date.now(),deviceName:getDeviceName(),deviceId:getDeviceId(),messages:chatMsgs};
+    const data={version:2,exportedAt:Date.now(),deviceId:getDeviceId(),messages:chatMsgs};
     const json=JSON.stringify(data,null,2);
 
     // Ask for encryption
@@ -1399,7 +1387,7 @@ async function chatSend(){
     try{
         const k=await dk(pw),n=crypto.getRandomValues(new Uint8Array(NS));
         const sdm=getSDMeta();
-        const payload=sdm+`[${getDeviceName()}|${getDeviceId()}]${text}`;
+        const payload=sdm+'['+getDeviceId()+']'+text;
         const c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(payload));
         const m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);
         const b64=btoa(String.fromCharCode(...m));
@@ -1430,12 +1418,11 @@ async function chatReceive(){
             saveChat();renderChat();document.getElementById('chatRecvInput').value='';
             t('🔥 '+sd.message);return;
         }
-        // Parse: "[发送方名字|设备ID]消息内容"
-        const m2=sd.message.match(/^\[(.+?)\|(.+?)\]/);
-        const senderName=m2?m2[1]:'';
-        const senderId=m2?m2[2]:'未知';
+        // Parse: "[设备ID]消息内容"
+        const m2=sd.message.match(/^\[(.+?)\]/);
+        const senderId=m2?m2[1]:'未知';
         const text=m2?sd.message.slice(m2[0].length):sd.message;
-        chatMsgs.push({role:'them',text,cipher:b64,time:Date.now(),device:senderId,senderName,sd:sd.wasSD,sdExpiry:sd.expiry});
+        chatMsgs.push({role:'them',text,cipher:b64,time:Date.now(),device:senderId,sd:sd.wasSD,sdExpiry:sd.expiry});
         saveChat();renderChat();document.getElementById('chatRecvInput').value='';
         if(sd.wasSD)startChatSDWatch();
         autoSavePwd();t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功！');
@@ -1755,7 +1742,7 @@ function decodeEraGrid(){
 window.addEventListener('beforeunload',function(){
     saveChat();
     saveDrafts();
-    if(isIncog()){localStorage.clear();localStorage.setItem('swiftcrypto_incog','1')}
+    if(isIncog()){const devid=getDeviceId();localStorage.clear();localStorage.setItem('swiftcrypto_incog','1');localStorage.setItem('swiftcrypto_devid',devid)}
 });
 
 // Auto-save drafts on input
@@ -1775,7 +1762,7 @@ document.getElementById('password').addEventListener('input',saveDrafts);
         document.getElementById('draftMode').checked=true;
     }
     loadDrafts();
-    loadChat();checkShareLink();initDeviceName();setTheme();updateBgOpacity(75);uc();renderPwdHistory();
+    loadChat();checkShareLink();document.getElementById('deviceIdLabel').textContent=getDeviceId();setTheme();updateBgOpacity(75);uc();renderPwdHistory();
     setTimeout(()=>handleIncomingShare(),0);
 })();
 // PWA service worker
