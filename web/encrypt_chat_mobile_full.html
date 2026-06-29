@@ -407,7 +407,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
                 <input type="file" id="midiFileInput" accept=".mid,.midi" onchange="midiDecodeFromFile()" style="flex:1;padding:8px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.75rem;outline:none;color-scheme:dark">
                 <button class="icon-btn" onclick="clearFileInput('midiFileInput')" title="清除文件" style="font-size:0.6rem;flex-shrink:0">✕</button>
             </div>
-            <button class="btn btn-outline" onclick="handlePastedMidi()" style="width:100%;font-size:0.75rem;margin-top:4px">📋 粘贴收到的 .mid 文件</button>
+            <button class="btn btn-outline" id="midiRecvPlayBtn" onclick="toggleRecvPlay()" disabled style="width:100%;font-size:0.75rem;margin-top:4px">▶ 试听收到的文件</button>
             <textarea id="midiPlainOutput" placeholder="解码后的明文…" readonly style="margin-top:6px;width:100%;box-sizing:border-box"></textarea>
             <div class="btn-row">
                 <button class="btn btn-copy" onclick="copyText('midiPlainOutput')">📋 复制明文</button>

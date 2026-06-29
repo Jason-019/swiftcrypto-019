@@ -3,7 +3,9 @@
 // 🎵 MIDI 隐写传输 (Velocity LSB 编码)
 // ═══════════════════════════════════════════════════════════════
 let _midiMeta=null;
-let _midiSDTimer=null; // MIDI decrypt countdown
+let _midiSDTimer=null;
+let _midiRecvBuf=null; // 接收到的MIDI文件buffer，用于试听
+let _midiRecvPlaying=false; // 接收文件独立播放状态
 const _midiMetaUrl='midi_meta.json?v=3';
 
 async function initMidiTab(){
@@ -126,9 +128,10 @@ function confirmMidiPick(){
         `📊 ${s.bits} bit | ≈${s.base64} B64字符 | ≈${Math.max(0,Math.floor((s.base64*3/4-28)/3))} 汉字 | ${s.name}`;
     closeMidiPicker();
     updateMidiCapacity();
-    // 启用播放按钮，清除缓存
-    document.getElementById('midiPlayBtn').disabled=false;
+    // 清除接收缓冲区，启用播放
+    _midiRecvBuf=null;
     _midiPlayBuf=null;
+    document.getElementById('midiPlayBtn').disabled=false;
     document.getElementById('midiSongSelect').dataset.playId='';
 }
 
@@ -400,7 +403,10 @@ function midiDecodeFromFile(){
     reader.onload=async function(){
         try{
             const buf=reader.result;
-            
+            // 保存buffer供试听播放
+            _midiRecvBuf=buf;
+            document.getElementById('midiRecvPlayBtn').disabled=false;
+
             // ── SHA-256 哈希校验：对比原始 MIDI，确认文件确实被修改过 ──
             status.textContent='🔍 正在校验文件完整性…';
             const origBuf=await loadMidiOriginal(songId);
@@ -539,14 +545,16 @@ function parseMidiTimedEvents(buf){
 async function toggleMidiPlay(){
     const btn=document.getElementById('midiPlayBtn');
     if(_midiPlaying){stopMidiPlay();return}
-    const songId=document.getElementById('midiSongSelect').value;
-    if(!songId){t('⚠️ 请先挑选歌曲');return}
     const synth=await initMidiSynth();
     if(!synth)return;
     try{
-        if(!_midiPlayBuf||document.getElementById('midiSongSelect').dataset.playId!==songId){
-            _midiPlayBuf=await loadMidiOriginal(songId);
-            document.getElementById('midiSongSelect').dataset.playId=songId;
+        let buf=_midiRecvBuf||_midiPlayBuf;
+        // If no buffer yet, try loading by song ID
+        if(!buf){
+            const songId=document.getElementById('midiSongSelect').value;
+            if(!songId){t('⚠️ 请先挑选歌曲或接收MIDI文件');return}
+            buf=await loadMidiOriginal(songId);
+            _midiPlayBuf=buf;
         }
         const {events,division}=parseMidiTimedEvents(_midiPlayBuf);
         if(!events.length){t('⚠️ 无音符事件');return}
@@ -594,5 +602,46 @@ function stopMidiPlay(){
     _midiPlaying=false;
     const btn=document.getElementById('midiPlayBtn');
     btn.textContent='▶ 试听';
+    btn.style.color='';
+}
+
+// ─── 📥 接收文件独立试听 ───
+async function toggleRecvPlay(){
+    const btn=document.getElementById('midiRecvPlayBtn');
+    if(_midiRecvPlaying){stopRecvPlay();return}
+    if(!_midiRecvBuf){t('⚠️ 请先接收MIDI文件');return}
+    const synth=await initMidiSynth();
+    if(!synth)return;
+    try{
+        const {events,division}=parseMidiTimedEvents(_midiRecvBuf);
+        if(!events.length){t('⚠️ 无音符事件');return}
+        let tempo=500000;
+        for(const e of events){if(e.type==='tempo'){tempo=e.tempo;break}}
+        const secPerTick=tempo/1000000/division;
+        Tone.Transport.stop();Tone.Transport.cancel();Tone.Transport.position=0;
+        const partEvents=[];
+        for(const e of events){
+            if(e.type==='on') partEvents.push({time:e.tick*secPerTick,note:Tone.Frequency(e.pitch,'midi').toNote(),velocity:e.velocity/127,duration:0});
+        }
+        const totalSec=events[events.length-1].tick*secPerTick;
+        const part=new Tone.Part((time,evt)=>{
+            synth.triggerAttackRelease(evt.note,'8n',time,evt.velocity);
+        },partEvents).start(0);
+        Tone.Transport.schedule(()=>{
+            Tone.Transport.stop();Tone.Transport.cancel();part.dispose();
+            _midiRecvPlaying=false;btn.textContent='▶ 试听收到的文件';btn.style.color='';
+        },totalSec+0.5);
+        Tone.Transport.start();
+        _midiRecvPlaying=true;
+        btn.textContent='⏹ 停止';
+        btn.style.color='#ef4444';
+    }catch(e){t('❌ 播放失败: '+e.message)}
+}
+function stopRecvPlay(){
+    Tone.Transport.stop();Tone.Transport.cancel();
+    if(_midiSynth){_midiSynth.releaseAll()}
+    _midiRecvPlaying=false;
+    const btn=document.getElementById('midiRecvPlayBtn');
+    btn.textContent='▶ 试听收到的文件';
     btn.style.color='';
 }
