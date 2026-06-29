@@ -226,7 +226,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <span style="flex-shrink:0;font-size:0.6rem;white-space:nowrap">📢 我的</span>
         <code id="hsMyPubKey" style="flex:1;min-width:0;background:rgba(0,0,0,0.2);padding:4px 6px;border-radius:4px;font-size:0.55rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</code>
         <button onclick="copyHSPubKey()" title="复制身份码" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);cursor:pointer;flex-shrink:0;line-height:1">📋</button>
-        <button onclick="showQRModal()" title="身份码二维码" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);cursor:pointer;flex-shrink:0;line-height:1">📱</button>
+        <button onclick="showQRModal()" title="身份码二维码" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);cursor:pointer;flex-shrink:0;line-height:1">�</button>
         <button onclick="resetHSKeys()" title="重新生成" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);color:#f87171;cursor:pointer;flex-shrink:0;line-height:1">🔄</button>
     </div>
     <!-- 对方身份码行 -->
@@ -845,7 +845,7 @@ let _hsMode=false,_hsKeyPair=null,_hsPeerPubKey=null;
 async function toggleHS(){
     const cb=document.getElementById('hsMode'),panel=document.getElementById('hsPanel');
     if(cb.checked){
-        if(!confirm('🛡 开启高安全模式？\n\n开启后，你和对方各有一个"数字身份"。\n消息 = 你的密码 + 双方身份 → 双重加密。\n\n操作很简单：\n① 点 � 生成二维码，让对方扫码导入\n② 或点 📋 复制身份码发给对方\n③ 把对方的身份码粘贴（或 📷 扫码）导入\n④ 完成！之后的加密自动双重保护\n\n即使密码意外泄露，没有身份码也解不开。\n\n确定开启？')){
+        if(!confirm('🛡 开启高安全模式？\n\n开启后，你和对方各有一个"数字身份"。\n消息 = 你的密码 + 双方身份 → 双重加密。\n\n操作很简单：\n① 点 🐾 生成二维码，让对方扫码导入\n② 或点 📋 复制身份码发给对方\n③ 把对方的身份码粘贴（或 📷 扫码）导入\n④ 完成！之后的加密自动双重保护\n\n即使密码意外泄露，没有身份码也解不开。\n\n确定开启？')){
             cb.checked=false;return;
         }
         _hsMode=true;localStorage.setItem('swiftcrypto_hs','1');
