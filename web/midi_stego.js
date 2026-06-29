@@ -18,18 +18,36 @@ async function initMidiTab(){
 
 // ─── 🎹 MIDI 挑选 Modal ───
 let _midiPendingSong=null;  // {id, name, encodable, base64}
+let _midiLastAlbum='';       // 记住上次选的专辑
 
 function openMidiPicker(){
     if(!_midiMeta){t('⚠️ 歌曲列表加载中…');return}
     renderMidiAlbumList();
     // Reset
     _midiPendingSong=null;
-    document.getElementById('midiTrigSong').disabled=true;
-    document.getElementById('midiTrigSong').textContent='— 歌曲 —';
+    const trigSong=document.getElementById('midiTrigSong');
+    trigSong.disabled=true;
+    trigSong.textContent='— 歌曲 —';
     document.getElementById('midiOptsSong').innerHTML='';
     document.getElementById('midiPickerPreview').textContent='';
     document.getElementById('midiConfirmBtn').disabled=true;
     document.getElementById('midiPickerModal').style.display='flex';
+    // 恢复上次选择的专辑
+    if(_midiLastAlbum&&_midiMeta.songs){
+        const trigAlbum=document.getElementById('midiTrigAlbum');
+        trigAlbum.textContent=_midiLastAlbum;
+        populateMidiSongs(_midiLastAlbum);
+        // 恢复上次选的歌曲
+        const songId=document.getElementById('midiSongSelect').value;
+        if(songId&&_midiMeta.songs[songId]&&_midiMeta.songs[songId].album===_midiLastAlbum){
+            const s=_midiMeta.songs[songId];
+            _midiPendingSong={id:songId,name:s.name,bits:s.bits,base64:s.base64_chars};
+            trigSong.textContent=s.name;
+            document.getElementById('midiPickerPreview').textContent=
+                `📊 ${s.bits} bit | ≈${s.base64_chars} B64字符 | ≈${Math.max(0,Math.floor((s.base64_chars*3/4-28)/3))} 汉字`;
+            document.getElementById('midiConfirmBtn').disabled=false;
+        }
+    }
 }
 function closeMidiPicker(){
     document.getElementById('midiPickerModal').style.display='none';
@@ -65,26 +83,27 @@ function renderMidiAlbumList(){
 }
 function midiPickAlbum(el){
     const v=el.dataset.v;
+    _midiLastAlbum=v;
     document.getElementById('midiTrigAlbum').textContent=v;
     midiToggleCS('midiCsAlbum');
-    
+    populateMidiSongs(v);
+    _midiPendingSong=null;
+    document.getElementById('midiPickerPreview').textContent='';
+    document.getElementById('midiConfirmBtn').disabled=true;
+}
+function populateMidiSongs(album){
     const trig=document.getElementById('midiTrigSong');
     const o=document.getElementById('midiOptsSong');
     trig.disabled=false;trig.textContent='— 歌曲 —';
-    
     const songs=[];
     for(const [id,s] of Object.entries(_midiMeta.songs)){
-        if(s.album===v)songs.push({id,name:s.name,bits:s.bits,base64:s.base64_chars});
+        if(s.album===album)songs.push({id,name:s.name,bits:s.bits,base64:s.base64_chars});
     }
     songs.sort((a,b)=>a.name.localeCompare(b.name));
     o.innerHTML=songs.map(s=>{
         const cn=Math.max(0,Math.floor((s.base64*3/4-28)/3));
         return `<div class="lcs-opt" data-v="${eh(s.id)}" data-name="${eh(s.name)}" data-bits="${s.bits}" data-b64="${s.base64}" onclick="midiPickSong(this)">${eh(s.name)} (${s.bits}bit ≈${cn}汉字)</div>`;
     }).join('');
-    
-    _midiPendingSong=null;
-    document.getElementById('midiPickerPreview').textContent='';
-    document.getElementById('midiConfirmBtn').disabled=true;
 }
 function midiPickSong(el){
     _midiPendingSong={
