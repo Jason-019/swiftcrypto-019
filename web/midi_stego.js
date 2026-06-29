@@ -275,7 +275,10 @@ async function midiEncodeAndShare(){
     try{
         const k=await dk(pw);
         const n=crypto.getRandomValues(new Uint8Array(NS));
-        const c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(plain));
+        // 附加设备标识 + 定时焚毁
+        const sdm=typeof getSDMeta==='function'?getSDMeta():'';
+        const payload=sdm+'['+getDeviceName()+'|'+getDeviceId()+']'+plain;
+        const c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(payload));
         const m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);
         const b64=btoa(String.fromCharCode(...m));
         const bits=[];
@@ -338,7 +341,14 @@ async function midiEncodeAndShare(){
         }else{
             midiDownloadFallback(blob,fileName,status,encodedBits,song);
         }
-        status.textContent=`✅ 编码完成 — ${encodedBits} bits 已嵌入 "${song.name}"`;
+        status.textContent=`✅ 编码完成 — ${encodedBits} bits 已嵌入 "${song.name}"`+(sdm?' 🔥 定时焚毁已激活':'');
+        // 同步密聊
+        if(typeof chatMsgs!=='undefined'){
+            const sdExp=sdm?parseInt(sdm.match(/^🔥(\d+)\|/)?.[1]||'0'):0;
+            chatMsgs.push({role:'me',text:plain,cipher:b64,time:Date.now(),device:getDeviceId(),midi:true,songName:song.name,sd:!!sdm,sdExpiry:sdExp});
+            if(typeof saveChat==='function')saveChat();
+            if(document.getElementById('panelChat')&&document.getElementById('panelChat').classList.contains('active')&&typeof renderChat==='function')renderChat();
+        }
         autoSavePwd();
     }catch(e){
         status.textContent='❌ '+e.message;
@@ -409,7 +419,21 @@ function midiDecodeFromFile(){
             const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));
             let pt=new TextDecoder().decode(p);
             const sd=checkSelfDestruct(pt);
+            if(!sd.valid){document.getElementById('midiPlainOutput').value=sd.message;status.textContent='❌ 消息已过期';t(sd.message);return}
+            // 解析设备标识: [发送方|设备ID]消息
+            const m2=sd.message.match(/^\[(.+?)\|(.+?)\]/);
+            const senderName=m2?m2[1]:'';
+            const senderId=m2?m2[2]:'未知';
+            const displayText=m2?sd.message.slice(m2[0].length):sd.message;
             document.getElementById('midiPlainOutput').value=sd.message;
+            // 同步密聊
+            if(typeof chatMsgs!=='undefined'){
+                const songName=_midiMeta&&_midiMeta.songs[songId]?_midiMeta.songs[songId].name:songId;
+                chatMsgs.push({role:'them',text:displayText,cipher:b64,time:Date.now(),device:senderId,senderName,midi:true,songName,sd:sd.wasSD,sdExpiry:sd.expiry});
+                if(typeof saveChat==='function')saveChat();
+                if(document.getElementById('panelChat')&&document.getElementById('panelChat').classList.contains('active')&&typeof renderChat==='function')renderChat();
+                if(sd.wasSD&&typeof startChatSDWatch==='function')startChatSDWatch();
+            }
             status.textContent=sd.wasSD?`✅ 解码成功！(🔥 剩余 ${fmtRemaining(sd.remaining)} 后焚毁)`:'✅ 解码成功！';
             t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功');
             autoSavePwd();
