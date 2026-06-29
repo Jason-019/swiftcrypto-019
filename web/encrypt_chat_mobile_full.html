@@ -891,7 +891,13 @@ function getMyPubKeyB64(){
 function displayMyPubKey(){
     const pk=getMyPubKeyB64();
     const el=document.getElementById('hsMyPubKey');
-    if(pk){el.textContent=pk.slice(0,16)+'…';el.title='点击复制完整公钥'}
+    if(pk){
+        // 显示密钥指纹（前8位hash），而非JWK头
+        let h=0;for(let i=0;i<pk.length;i++){h=((h<<5)-h)+pk.charCodeAt(i);h|=0}
+        const fp=Math.abs(h).toString(16).toUpperCase().slice(0,8);
+        el.textContent='🔑 '+fp;
+        el.title=pk.slice(0,40)+'…';
+    }
 }
 
 async function resetHSKeys(){
@@ -909,13 +915,14 @@ async function resetHSKeys(){
 // ─── 📱 QR 码 & 📷 扫码 ───
 function showQRModal(){
     const pk=getMyPubKeyB64();
-    if(!pk)return t('⚠️ 密钥尚未生成');
+    if(!pk)return t('⚠️ 身份码尚未生成');
     document.getElementById('qrPubKeyPreview').textContent=pk.slice(0,40)+'…';
     const container=document.getElementById('qrContainer');
-    container.innerHTML=''; // 清除旧QR码
-    // qrcodejs库渲染到div
+    container.innerHTML='';
+    // 带时间戳的载荷
+    const payload=JSON.stringify({k:pk,t:Date.now()});
     if(typeof QRCode!=='undefined'){
-        new QRCode(container,{text:pk,width:240,height:240,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+        new QRCode(container,{text:payload,width:240,height:240,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
     }else{
         container.textContent='QR库未加载，请用📋复制';
     }
@@ -953,9 +960,16 @@ async function startScan(){
             if(typeof jsQR!=='undefined'){
                 const code=jsQR(imgData.data,cv.width,cv.height);
                 if(code&&code.data){
-                    // Got a QR code!
-                    document.getElementById('hsPeerPubKey').value=code.data;
-                    document.getElementById('scanStatus').textContent='✅ 识别成功！';
+                    // 兼容新旧格式：新版{"k":"...","t":123}，旧版纯base64
+                    let keyData=code.data,ts=null;
+                    try{const p=JSON.parse(code.data);if(p.k){keyData=p.k;ts=p.t}}catch(e){}
+                    document.getElementById('hsPeerPubKey').value=keyData;
+                    if(ts){
+                        const t=new Date(ts);
+                        document.getElementById('scanStatus').textContent='✅ 识别成功！生成于 '+t.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+                    }else{
+                        document.getElementById('scanStatus').textContent='✅ 识别成功！';
+                    }
                     importHSPeerKey();
                     setTimeout(stopScan,500);
                 }
@@ -980,15 +994,19 @@ function copyHSPubKey(){
 }
 
 async function importHSPeerKey(){
-    const raw=document.getElementById('hsPeerPubKey').value.trim();
-    if(!raw)return t('⚠️ 请粘贴对方公钥');
+    let raw=document.getElementById('hsPeerPubKey').value.trim();
+    if(!raw)return t('⚠️ 请粘贴对方身份码');
+    // 兼容新版JSON格式 {"k":"...","t":123}
+    let ts=null;
+    try{if(raw.startsWith('{')){const p=JSON.parse(raw);if(p.k){raw=p.k;ts=p.t}}}catch(e){}
     try{
         const jwk=JSON.parse(atob(raw));
         if(!jwk.kty||!jwk.crv||!jwk.x||!jwk.y)throw new Error('格式无效');
         _hsPeerPubKey=await crypto.subtle.importKey('jwk',jwk,{name:'ECDH',namedCurve:'P-256'},true,[]);
         localStorage.setItem('swiftcrypto_hs_peer',raw);
         updateHSPeerStatus();
-        t('✅ 对方身份码已导入');
+        const tsStr=ts?' (生成于 '+new Date(ts).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})+')':'';
+        t('✅ 对方身份码已导入'+tsStr);
     }catch(e){t('❌ 身份码格式无效: '+e.message)}
 }
 
