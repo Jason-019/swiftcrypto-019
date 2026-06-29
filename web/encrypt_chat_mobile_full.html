@@ -1525,9 +1525,10 @@ function downloadEraWithPlain(){
     if(!plain)return t('⚠️ 请先解密得到明文');
     const text=plain.length>200?plain.slice(0,200)+'…':plain;
     const cardW=srcCv.width,cardH=srcCv.height;
-    // 计算文字区域高度
+
+    // 计算文字行数
     const tc=document.createElement('canvas');const tctx=tc.getContext('2d');
-    tctx.font='14px -apple-system,sans-serif';
+    tctx.font='13px -apple-system,sans-serif';
     const maxW=cardW-40;
     const lines=[];let cur='';
     for(const ch of text){
@@ -1536,19 +1537,33 @@ function downloadEraWithPlain(){
         else cur=test;
     }
     if(cur)lines.push(cur);
-    const textH=lines.length*22+40;
+    const textH=lines.length*20+36;
     const totalH=cardH+textH;
-    // 绘制
+
+    // 重绘整张卡片
     const cv=document.createElement('canvas');cv.width=cardW;cv.height=totalH;
     const ctx=cv.getContext('2d');
+    // 背景渐变 — 覆盖整个新高度
+    const grad=ctx.createLinearGradient(0,0,cardW,totalH);
+    grad.addColorStop(0,'#1a1a2e');grad.addColorStop(0.5,'#16213e');grad.addColorStop(1,'#0f0f1a');
+    ctx.fillStyle=grad;roundRect(ctx,0,0,cardW,totalH,16);ctx.fill();
+    ctx.strokeStyle='rgba(167,139,250,0.4)';ctx.lineWidth=2;
+    roundRect(ctx,1,1,cardW-2,totalH-2,16);ctx.stroke();
+    // 复制原有的 Eras 码
     ctx.drawImage(srcCv,0,0);
-    ctx.fillStyle='#1a1a2e';ctx.fillRect(0,cardH,cardW,textH);
-    ctx.strokeStyle='rgba(167,139,250,0.3)';ctx.lineWidth=1;
-    ctx.strokeRect(2,cardH+2,cardW-4,textH-4);
+    // 分割线
+    ctx.strokeStyle='rgba(167,139,250,0.25)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(24,cardH+2);ctx.lineTo(cardW-24,cardH+2);ctx.stroke();
+    // 明文标题
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='11px monospace';ctx.textAlign='left';
+    ctx.fillText('🔓 解密明文',20,cardH+20);
+    // 明文内容
     ctx.fillStyle='#e0e0e0';ctx.font='13px -apple-system,sans-serif';ctx.textAlign='left';
-    for(let i=0;i<lines.length;i++)ctx.fillText(lines[i],20,cardH+28+i*22);
-    ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='10px monospace';ctx.textAlign='right';
-    ctx.fillText('— SwiftCrypto 解密 —',cardW-16,cardH+textH-10);
+    for(let i=0;i<lines.length;i++)ctx.fillText(lines[i],20,cardH+42+i*20);
+    // 脚注
+    ctx.fillStyle='rgba(255,255,255,0.25)';ctx.font='10px monospace';ctx.textAlign='right';
+    ctx.fillText('SwiftCrypto',cardW-16,totalH-10);
+
     const ts=new Date().toISOString().replace(/[-:]/g,'').slice(0,15);
     const a=document.createElement('a');a.download='swiftcrypto-plain-'+ts+'.png';
     a.href=cv.toDataURL('image/png');a.click();
