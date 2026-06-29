@@ -475,6 +475,7 @@ const NS=12,KS=256,IT=600000,ST=new TextEncoder().encode('SCMobile_v1');
 async function dk(p){const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:ST,iterations:IT,hash:'SHA-256'},m,{name:'AES-GCM',length:KS},false,['encrypt','decrypt'])}
 async function doEncrypt(){
     let p=document.getElementById('plainInput').value;if(!p)return t('请输入明文');
+    if(!gp())return t('请先输入共享密码');
     const sdm=getSDMeta();if(sdm)p=sdm+p;
     // 附加设备标识
     const payload='['+getDeviceId()+']'+p;
