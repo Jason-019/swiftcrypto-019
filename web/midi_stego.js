@@ -3,6 +3,7 @@
 // 🎵 MIDI 隐写传输 (Velocity LSB 编码)
 // ═══════════════════════════════════════════════════════════════
 let _midiMeta=null;
+let _midiLoading=null; // 防止并发加载
 let _midiSDTimer=null;
 let _midiRecvBuf=null; // 接收到的MIDI文件buffer，用于试听
 let _midiRecvPlaying=false; // 接收文件独立播放状态
@@ -10,20 +11,29 @@ const _midiMetaUrl='midi_meta.json?v=3';
 
 async function initMidiTab(){
     if(_midiMeta){return} // Already loaded
-    try{
-        const r=await fetch(_midiMetaUrl);
-        if(!r.ok)throw new Error('HTTP '+r.status);
-        _midiMeta=await r.json();
-        if(typeof showMidiCacheStatus==='function') showMidiCacheStatus();
-    }catch(e){console.warn('initMidiTab:',e)}
+    if(_midiLoading){return _midiLoading} // Loading in progress
+    _midiLoading=(async()=>{
+        try{
+            const r=await fetch(_midiMetaUrl);
+            if(!r.ok)throw new Error('HTTP '+r.status);
+            _midiMeta=await r.json();
+            if(typeof showMidiCacheStatus==='function') showMidiCacheStatus();
+        }catch(e){console.warn('initMidiTab:',e)}
+        _midiLoading=null;
+    })();
+    return _midiLoading;
 }
 
 // ─── 🎹 MIDI 挑选 Modal ───
 let _midiPendingSong=null;  // {id, name, encodable, base64}
 let _midiLastAlbum='';       // 记住上次选的专辑
 
-function openMidiPicker(){
-    if(!_midiMeta){t('⚠️ 歌曲列表加载中…');return}
+async function openMidiPicker(){
+    if(!_midiMeta){
+        t('⏳ 歌曲列表加载中…');
+        await initMidiTab();
+        if(!_midiMeta){t('⚠️ 歌曲列表加载失败，请刷新重试');return}
+    }
     renderMidiAlbumList();
     // Reset
     _midiPendingSong=null;
