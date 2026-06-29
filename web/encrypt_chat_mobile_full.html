@@ -296,7 +296,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <div style="display:flex;align-items:center;gap:6px;padding:0 0 4px 0">
             <span style="font-size:0.65rem;color:var(--dim)">📱</span>
             <input id="deviceName" placeholder="设备名" onchange="saveDeviceName()" style="flex:1;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.7rem;outline:none;max-width:80px">
-            <code id="deviceIdLabel" style="font-size:0.6rem;color:var(--dim);background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px"></code>
+            <code id="deviceIdLabel" title="点击编辑设备ID" style="font-size:0.6rem;color:var(--dim);background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;cursor:pointer" onclick="editDeviceId()"></code>
         </div>
         <div style="display:flex;gap:4px;align-items:center;padding:0 0 4px 0">
             <input id="chatSearch" placeholder="🔍 搜索消息…" oninput="renderChat()" style="flex:1;padding:3px 6px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.6rem;outline:none">
@@ -1212,9 +1212,7 @@ function getDeviceId(){
             fp+=navigator.platform+screen.width+'x'+screen.height+navigator.hardwareConcurrency;
             let h=0;for(let i=0;i<fp.length;i++){h=((h<<5)-h)+fp.charCodeAt(i);h|=0}
             const hwHex=Math.abs(h).toString(16).toUpperCase().slice(0,6);
-            // 后缀也用哈希(反向遍历),确保跨浏览器一致
-            let h2=0;for(let i=fp.length-1;i>=0;i--){h2=((h2<<5)-h2)+fp.charCodeAt(i);h2|=0}
-            const sf=Math.abs(h2).toString(16).toUpperCase().slice(0,6);
+            const sf=Math.random().toString(16).slice(2,8).toUpperCase();
             _deviceId=hwHex+'-'+sf;
             localStorage.setItem('swiftcrypto_devid',_deviceId);
         }
@@ -1231,6 +1229,15 @@ function saveDeviceName(){
     document.getElementById('deviceName').value=_deviceName;
 }
 function initDeviceName(){document.getElementById('deviceName').value=getDeviceName();document.getElementById('deviceIdLabel').textContent=getDeviceId();}
+function editDeviceId(){
+    const cur=getDeviceId();
+    const nid=prompt('编辑设备 ID（复制到其他浏览器可统一标识）：',cur);
+    if(nid&&nid.trim()&&nid.trim().length>=8){
+        _deviceId=nid.trim();
+        localStorage.setItem('swiftcrypto_devid',_deviceId);
+        document.getElementById('deviceIdLabel').textContent=_deviceId;
+    }
+}
 // Device nickname management (like WeChat remarks)
 function getNicknames(){try{return JSON.parse(localStorage.getItem('swiftcrypto_nicks')||'{}')}catch{return{}}}
 function getDeviceNickname(devId){const nicks=getNicknames();return nicks[devId]||'';}
