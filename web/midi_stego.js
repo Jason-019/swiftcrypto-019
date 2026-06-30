@@ -632,7 +632,7 @@ function scheduleMidiPlayback(synth,events,division,tempo){
             const durTicks=Math.max(e.tick-on.tick,1);
             const secPerTick=tempo/1000000/division;
             const dur=durTicks*secPerTick;
-            if(dur<0.05)continue; // 过滤<50ms
+            if(dur<0.03)continue; // 过滤<30ms
             partEvts.push({
                 time:on.tick*secPerTick,
                 note:Tone.Frequency(on.pitch,'midi').toNote(),
@@ -733,7 +733,7 @@ function prepWaterfall(buf){
         _wfNotes=[];_wfMinPitch=127;_wfMaxPitch=0;
         for(const trk of midi.tracks){
             for(const n of trk.notes){
-                if(n.duration<0.05)continue; // 跳过短于50ms的音符
+                if(n.duration<0.03)continue; // 跳过短于30ms的音符
                 _wfNotes.push({time:n.time,pitch:n.midi,dur:n.duration,vel:n.velocity});
                 if(n.midi<_wfMinPitch)_wfMinPitch=n.midi;
                 if(n.midi>_wfMaxPitch)_wfMaxPitch=n.midi;
