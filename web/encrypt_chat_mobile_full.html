@@ -1377,7 +1377,7 @@ function genPwd(){
 const THEMES=[
     {name:'纯黑',grad:''},
     {name:'Debut',grad:'linear-gradient(135deg,#0a4a3a,#1a6b5a,#0d5c8a)'},
-    {name:'Fearless',grad:'linear-gradient(135deg,#3d2b0a,#6b4c1a,#c4942a)'},
+    {name:'Fearless',grad:'linear-gradient(135deg,#4a3500,#8b6d00,#e6c200)'},
     {name:'Speak Now',grad:'linear-gradient(135deg,#2a0a3d,#5c1a6b,#c94aa4)'},
     {name:'Red',grad:'linear-gradient(135deg,#3d0a0a,#8b1a1a,#d44a2a)'},
     {name:'1989',grad:'linear-gradient(135deg,#1a3a5c,#4a8ab5,#c4ddf0)'},
@@ -1387,7 +1387,7 @@ const THEMES=[
     {name:'Evermore',grad:'linear-gradient(135deg,#3d2a1a,#6b4a2a,#c48a4a)'},
     {name:'Midnights',grad:'linear-gradient(135deg,#0a0a2a,#1a1a5c,#4a3a8b)'},
     {name:'TTPD',grad:'linear-gradient(135deg,#3d3a2a,#8b8a6a,#d4c4a0)'},
-    {name:'Showgirl',grad:'linear-gradient(135deg,#2a0a1a,#8b1a4a,#d4a43a)'},
+    {name:'Showgirl',grad:'linear-gradient(135deg,#3d1a00,#c46400,#5a8a2a)'},
 ];
 let themeIdx=4;
 function setTheme(){
@@ -1918,14 +1918,17 @@ function renderEraCard(){
     const themeColors=(t.grad&&t.grad.match(/#[0-9a-fA-F]{6}/g))||['#1a1a2e','#16213e','#0f0f1a'];
     const accent=themeColors[1]||ERA_COLORS[4];
     const grad=ctx.createLinearGradient(0,0,cardW,cardH);
-    grad.addColorStop(0,darkenHex(themeColors[0]||'#1a1a2e',0.55));
-    grad.addColorStop(0.5,darkenHex(themeColors[1]||'#16213e',0.60));
-    grad.addColorStop(1,darkenHex((themeColors[2]||themeColors[0]||'#0f0f1a'),0.70));
+    grad.addColorStop(0,darkenHex(themeColors[0]||'#1a1a2e',0.45));
+    grad.addColorStop(0.5,darkenHex(themeColors[1]||'#16213e',0.40));
+    grad.addColorStop(1,darkenHex((themeColors[2]||themeColors[0]||'#0f0f1a'),0.35));
     ctx.fillStyle=grad;roundRect(ctx,0,0,cardW,cardH,16);ctx.fill();
     ctx.strokeStyle=hexToRgba(accent,0.4);ctx.lineWidth=2;
     roundRect(ctx,1,1,cardW-2,cardH-2,16);ctx.stroke();
-    ctx.fillStyle=darkenHex(accent,0.7);ctx.font='bold 16px -apple-system,sans-serif';ctx.textAlign='center';
+    // 标题使用主题强调色的高亮版，与深色背景形成对比，不影响网格解码
+    ctx.fillStyle=accent;ctx.font='bold 16px -apple-system,sans-serif';ctx.textAlign='center';
+    ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=4;
     ctx.fillText('🔐 SwiftCrypto',cardW/2,26);
+    ctx.shadowColor='transparent';ctx.shadowBlur=0;
     // 网格纯黑底色，隔离卡片渐变
     const ox=Math.floor((cardW-gridW)/2),oy=36;
     ctx.fillStyle='#000';ctx.fillRect(ox,oy,gridW,gridH);
