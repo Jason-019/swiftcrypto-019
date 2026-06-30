@@ -1313,58 +1313,56 @@ function renderQRCode(){
     const hint=document.getElementById('qrShareHint').value.trim();
     const hintB64=hint?btoa(unescape(encodeURIComponent(hint))):'';
     const payload=JSON.stringify({v:1,c:b64,h:hintB64,t:Date.now()});
+    const rawDiv=document.getElementById('qrShareRaw');
     const canvas=document.getElementById('qrShareCanvas');
     const ctx=canvas.getContext('2d');
     canvas.width=canvas.height=280;
-    ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
-    ctx.fillStyle='#999';ctx.font='13px -apple-system,sans-serif';ctx.textAlign='center';
-    ctx.fillText('生成中…',140,140);
+    // 显示可见容器、隐藏canvas
+    rawDiv.style.display='block';rawDiv.innerHTML='';
+    canvas.style.display='none';
     // 清除上一次
     if(_qrRenderTimer){clearTimeout(_qrRenderTimer);_qrRenderTimer=null}
-    const oldTmp=document.getElementById('_qrTmp');
-    if(oldTmp)oldTmp.remove();
-    const tmp=document.createElement('div');
-    tmp.id='_qrTmp';tmp.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden';
-    document.body.appendChild(tmp);
     if(typeof QRCode!=='undefined'){
         let hintDropped=false;
         try{
-            new QRCode(tmp,{text:payload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+            new QRCode(rawDiv,{text:payload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
         }catch(e){
             console.warn('QR M-level overflow, trying L:',e);
             try{
-                new QRCode(tmp,{text:payload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});
+                new QRCode(rawDiv,{text:payload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});
             }catch(e2){
                 console.warn('QR L-level overflow, removing hint');
                 hintDropped=true;
                 const minPayload=JSON.stringify({v:1,c:b64,h:'',t:Date.now()});
-                new QRCode(tmp,{text:minPayload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+                rawDiv.innerHTML='';
+                new QRCode(rawDiv,{text:minPayload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
             }
         }
-        // qrcodejs 生成 dataURL 是同步的，img 立即可用
-        const img=tmp.querySelector('img');
-        const done=()=>{
-            const warnEl=document.getElementById('qrHintWarning');
-            if(warnEl)warnEl.style.display=hintDropped&&hint?'block':'none';
-            tmp.remove();
-        };
-        if(img){
-            if(img.complete&&img.naturalWidth>0){
+        // 等img加载后截取到canvas（visible容器确保移动端正常加载）
+        const captureToCanvas=()=>{
+            const img=rawDiv.querySelector('img');
+            if(img&&img.complete&&img.naturalWidth>0){
                 drawQRToCanvas(ctx,img);
-                done();
+                rawDiv.style.display='none';
+                canvas.style.display='block';
+                const warnEl=document.getElementById('qrHintWarning');
+                if(warnEl)warnEl.style.display=hintDropped&&hint?'block':'none';
+            }else if(img&&!img.complete){
+                img.onload=()=>{
+                    drawQRToCanvas(ctx,img);
+                    rawDiv.style.display='none';
+                    canvas.style.display='block';
+                    const warnEl=document.getElementById('qrHintWarning');
+                    if(warnEl)warnEl.style.display=hintDropped&&hint?'block':'none';
+                };
+                img.onerror=()=>{rawDiv.innerHTML='<span style="color:#e53e3e;font-size:12px">QR失败</span>'};
             }else{
-                img.onload=()=>{drawQRToCanvas(ctx,img);done();};
-                img.onerror=()=>{ctx.fillText('QR失败',140,160);done();};
-                return; // 等回调，不执行后面的done()
+                _qrRenderTimer=setTimeout(captureToCanvas,100);
             }
-        }else{
-            tmp.remove();
-        }
+        };
+        captureToCanvas();
     }else{
-        ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
-        ctx.fillStyle='#e53e3e';ctx.font='12px -apple-system,sans-serif';
-        ctx.fillText('QR库未加载',140,140);
-        tmp.remove();
+        rawDiv.innerHTML='<span style="color:#e53e3e;font-size:12px;line-height:280px">QR库未加载</span>';
     }
 }
 function drawQRToCanvas(ctx,img){
@@ -2620,7 +2618,10 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
         <label style="font-size:0.7rem;color:var(--dim);width:100%;text-align:left">💡 密码提示（可选，不要直接填密码！）</label>
         <input type="text" id="qrShareHint" placeholder="例如：我们常用的那个密码…" oninput="renderQRCode()">
         <div id="qrHintWarning" style="display:none;font-size:0.6rem;color:#f97316;text-align:left;margin-top:-8px">⚠️ 提示过长，已从二维码中省略（PDF 中仍保留）</div>
-        <div class="qr-preview"><canvas id="qrShareCanvas" width="280" height="280"></canvas></div>
+        <div class="qr-preview" style="position:relative;min-height:280px">
+            <div id="qrShareRaw" style="width:280px;height:280px;background:#fff;border-radius:4px;overflow:hidden"></div>
+            <canvas id="qrShareCanvas" width="280" height="280" style="display:none;position:absolute;top:0;left:0;border-radius:4px"></canvas>
+        </div>
         <p style="font-size:0.65rem;color:var(--dim);margin:0">让对方用 SwiftCrypto 扫码或导入此 PDF</p>
         <div class="btn-row">
             <button class="btn btn-outline" onclick="closeQRShareModal()">关闭</button>
