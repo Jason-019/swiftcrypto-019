@@ -1296,9 +1296,12 @@ function updateHintCount(){
 }
 
 function drawAppIcon(ctx,cx,cy,size){
-    // 紫色渐变圆角矩形
+    // 跟随主题色的渐变圆角矩形
+    const style=getComputedStyle(document.documentElement);
+    const c1=style.getPropertyValue('--accent2').trim()||'#7c3aed';
+    const c2=style.getPropertyValue('--accent').trim()||'#a78bfa';
     const grad=ctx.createLinearGradient(cx-size/2,cy-size/2,cx+size/2,cy+size/2);
-    grad.addColorStop(0,'#7c3aed');grad.addColorStop(1,'#a78bfa');
+    grad.addColorStop(0,c1);grad.addColorStop(1,c2);
     const r=size*0.2;
     ctx.beginPath();ctx.moveTo(cx-size/2+r,cy-size/2);
     ctx.lineTo(cx+size/2-r,cy-size/2);ctx.arcTo(cx+size/2,cy-size/2,cx+size/2,cy-size/2+r,r);
@@ -1328,25 +1331,27 @@ function renderQRCode(){
     // 清除上一次
     if(_qrRenderTimer){clearTimeout(_qrRenderTimer);_qrRenderTimer=null}
     if(typeof QRCode!=='undefined'){
+        // 获取主题色作为QR码颜色
+        const style=getComputedStyle(document.documentElement);
+        const qrColor=style.getPropertyValue('--accent2').trim()||'#7c3aed';
         let hintDropped=false;
+        const genQR=(pl)=>{rawDiv.innerHTML='';new QRCode(rawDiv,{text:pl,width:280,height:280,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M})};
         try{
-            new QRCode(rawDiv,{text:payload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+            genQR(payload);
         }catch(e){
             console.warn('QR M-level overflow, trying L:',e);
             try{
-                new QRCode(rawDiv,{text:payload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});
+                rawDiv.innerHTML='';new QRCode(rawDiv,{text:payload,width:280,height:280,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});
             }catch(e2){
                 console.warn('QR L-level overflow, removing hint');
                 hintDropped=true;
-                const minPayload=JSON.stringify({v:1,c:b64,h:'',t:Date.now()});
-                rawDiv.innerHTML='';
-                new QRCode(rawDiv,{text:minPayload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+                genQR(JSON.stringify({v:1,c:b64,h:'',t:Date.now()}));
             }
         }
         // 等img加载后截取到canvas（visible容器确保移动端正常加载）
         const captureToCanvas=()=>{
             const img=rawDiv.querySelector('img');
-            if(img&&img.complete&&img.naturalWidth>0){
+            if(img&&img.complete){
                 drawQRToCanvas(ctx,img);
                 rawDiv.style.display='none';
                 canvas.style.display='block';
