@@ -605,6 +605,7 @@ async function toggleMidiPlay(){
         const totalSec=scheduleMidiPlayback(synth,events,division,tempo);
         if(!totalSec){t('⚠️ 无可播放音符');return}
         prepWaterfall(buf);
+        _midiPlaying=true;
         if(document.getElementById('midiWaterfallToggle').checked)renderWaterfall();
         // 自动停止
         if(_midiAutoStop)clearTimeout(_midiAutoStop);
@@ -614,7 +615,6 @@ async function toggleMidiPlay(){
             btn.style.color='';
             _midiAutoStop=null;
         },totalSec*1000+500);
-        _midiPlaying=true;
         btn.textContent='⏹ 停止';
         btn.style.color='#ef4444';
     }catch(e){t('❌ 播放失败: '+e.message)}
@@ -683,6 +683,7 @@ async function toggleRecvPlay(){
         const totalSec=scheduleMidiPlayback(synth,events,division,tempo);
         if(!totalSec){t('⚠️ 无可播放音符');return}
         prepWaterfall(_midiRecvBuf);
+        _midiRecvPlaying=true;
         if(document.getElementById('midiWaterfallToggle').checked)renderWaterfall();
         if(_midiAutoStop)clearTimeout(_midiAutoStop);
         _midiAutoStop=setTimeout(()=>{
@@ -690,12 +691,13 @@ async function toggleRecvPlay(){
             btn.textContent='▶ 试听收到的文件';btn.style.color='';
             _midiAutoStop=null;
         },totalSec*1000+500);
-        _midiRecvPlaying=true;
         btn.textContent='⏹ 停止';btn.style.color='#ef4444';
     }catch(e){t('❌ 播放失败: '+e.message)}
 }
 function stopRecvPlay(){
-    if(_midiAutoStop){clearTimeout(_midiAutoStop);_midiAutoStop=null}    if(_wfAnimId){cancelAnimationFrame(_wfAnimId);_wfAnimId=null}    Tone.Transport.stop();
+    if(_midiAutoStop){clearTimeout(_midiAutoStop);_midiAutoStop=null}
+    if(_wfAnimId){cancelAnimationFrame(_wfAnimId);_wfAnimId=null}
+    Tone.Transport.stop();
     Tone.Transport.cancel();
     if(_midiPart){_midiPart.dispose();_midiPart=null}
     if(_midiSynth){_midiSynth.releaseAll()}
