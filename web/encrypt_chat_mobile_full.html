@@ -1373,10 +1373,10 @@ function drawQRToCanvas(ctx,img){
     drawAppIcon(ctx,cx,cy,iconSize);
 }
 
-function exportQRPDF(){
+function exportQRImage(){
     const canvas=document.getElementById('qrShareCanvas');
     if(!canvas)return t('⚠️ 请先生成二维码');
-    // 确保canvas有内容：如果hidden则从visible rawDiv补画
+    // 确保canvas有内容
     if(canvas.style.display==='none'){
         const rawDiv=document.getElementById('qrShareRaw');
         const rawImg=rawDiv.querySelector('img');
@@ -1387,64 +1387,12 @@ function exportQRPDF(){
         }
     }
     if(!canvas.width||!canvas.toDataURL)return t('⚠️ 请先生成二维码');
-    const hint=document.getElementById('qrShareHint').value.trim();
-    try{
-        const {jsPDF}=window.jspdf;
-        const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-        const pageW=pdf.internal.pageSize.getWidth();
-        const margin=15; // 左右边距
-        const qrSize=70; // mm
-        const qrX=(pageW-qrSize)/2;
-        let y=18; // 起始Y
-        
-        // 标题
-        const title=textToPngDataUrl('SwiftCrypto 加密消息',16,'#1e1e32',pageW-margin*2);
-        pdf.addImage(title.dataUrl,'PNG',margin,y,title.wMm,title.hMm);
-        y+=title.hMm+6;
-        
-        // 二维码
-        const imgData=canvas.toDataURL('image/png');
-        pdf.addImage(imgData,'PNG',qrX,y,qrSize,qrSize);
-        y+=qrSize+8;
-        
-        // 密码提示
-        if(hint){
-            const hintImg=textToPngDataUrl('💡 密码提示：'+hint,9,'#646478',pageW-margin*2);
-            pdf.addImage(hintImg.dataUrl,'PNG',margin,y,hintImg.wMm,hintImg.hMm);
-            y+=hintImg.hMm+6;
-        }
-        
-        // Footer
-        const ft=textToPngDataUrl('扫码或导入此PDF解密 | swiftcrypto',7,'#9696a0',pageW-margin*2);
-        pdf.addImage(ft.dataUrl,'PNG',margin,280,ft.wMm,ft.hMm);
-        
-        // 文件名带时间戳
-        const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
-        pdf.save('swiftcrypto_qr_'+ts+'.pdf');
-        t('📥 PDF 已导出');
-    }catch(e){
-        console.error('PDF export failed:',e);
-        t('⚠️ PDF导出失败，请重试');
-    }
-}
-
-// Canvas 渲染文字→PNG DataURL（返回 {dataUrl, wMm, hMm} 保证比例正确）
-function textToPngDataUrl(text,fontSizePt,cssColor,widthMm){
-    const scale=4; // 高清渲染
-    const pxPerMm=96/25.4*scale;
-    const fontPx=fontSizePt*96/72; // pt→px
-    const lineH=fontPx*1.6; // 行高（含上下留白）
-    const w=Math.round(widthMm*pxPerMm);
-    const h=Math.round(lineH*scale);
-    const cv=document.createElement('canvas');
-    cv.width=w;cv.height=h;
-    const ctx=cv.getContext('2d');
-    ctx.scale(scale,scale);
-    ctx.font=`bold ${fontPx}px -apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif`;
-    ctx.fillStyle=cssColor;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(text,(w/scale)/2,(h/scale)/2);
-    return {dataUrl:cv.toDataURL('image/png'), wMm:widthMm, hMm:Math.round(h/pxPerMm*10)/10};
+    const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
+    const a=document.createElement('a');
+    a.download='swiftcrypto_qr_'+ts+'.png';
+    a.href=canvas.toDataURL('image/png');
+    a.click();
+    t('📥 二维码图片已保存');
 }
 
 // ─── 📷 扫码/导入密文二维码 ───
@@ -2578,7 +2526,6 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
 <script src="lib/midi.bundle.js"></script>
 <script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="lib/jspdf.umd.min.js"></script>
 </script><script src="midi_stego.js?v=70"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
@@ -2633,10 +2580,10 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
             <div id="qrShareRaw" style="width:280px;height:280px;background:#fff;border-radius:4px;overflow:hidden"></div>
             <canvas id="qrShareCanvas" width="280" height="280" style="display:none;position:absolute;top:0;left:0;border-radius:4px"></canvas>
         </div>
-        <p style="font-size:0.65rem;color:var(--dim);margin:0">让对方用 SwiftCrypto 扫码或导入此 PDF</p>
+        <p style="font-size:0.65rem;color:var(--dim);margin:0">让对方用 SwiftCrypto 扫码或导入此图片</p>
         <div class="btn-row">
             <button class="btn btn-outline" onclick="closeQRShareModal()">关闭</button>
-            <button class="btn btn-primary" onclick="exportQRPDF()">📥 导出二维码为PDF</button>
+            <button class="btn btn-primary" onclick="exportQRImage()">📥 保存二维码图片</button>
         </div>
     </div>
 </div>
