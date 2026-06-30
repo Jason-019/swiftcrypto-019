@@ -2127,10 +2127,12 @@ function decodeEraGrid(){
             return maxV>total*confThresh?winner:-1;
         };
         // ── 逐行解码 ──
+        // 渲染公式: cardH = gridH+90 = (rows*cellSp+46)+90 = rows*23+136
+        const maxDataRows=Math.max(1,Math.floor((H-136)/cellSp));
         let b64='',emptyRows=0,row=0;
-        for(;;row++){
+        for(;row<maxDataRows;row++){
             let mc=0;for(let col=0;col<EC_COLS;col++)if(readCell(col,row)>=0)mc++;
-            if(mc===0){emptyRows++;if(emptyRows>=2||b64.length>0)break}
+            if(mc===0){emptyRows++;if(emptyRows>=2)break}
             else emptyRows=0;
             if(mc<3&&b64.length===0)break; // 起始无数据行
             for(let col=0;col+1<EC_COLS;col+=2){
@@ -2139,13 +2141,17 @@ function decodeEraGrid(){
             }
         }
         if(!b64){t('⚠️ 未识别到数据');document.getElementById('eraFileInput').value='';return}
-        // 编码: clean_b64 + checksum_char。验证校验和，剥离后补回==
-        if(b64.length>1){
-            const csChar=b64.slice(-1),data=b64.slice(0,-1);
+        // 编码: clean_b64 + checksum_char。末尾可能多读了空cell，逐字符裁剪重试
+        let validB64=null;
+        for(let trim=0;trim<=3&&trim<b64.length;trim++){
+            const trial=trim===0?b64:b64.slice(0,-trim);
+            if(trial.length<2)break;
+            const csChar=trial.slice(-1),data=trial.slice(0,-1);
             let cs=0;for(const c of data){const i=B64.indexOf(c);if(i>=0)cs^=i;}
-            if((cs&63)!==B64.indexOf(csChar)){t('⚠️ 校验和不匹配');document.getElementById('eraFileInput').value='';return}
-            b64=data;
+            if((cs&63)===B64.indexOf(csChar)){validB64=data;break}
         }
+        if(!validB64){t('⚠️ 校验和不匹配');document.getElementById('eraFileInput').value='';return}
+        b64=validB64;
         while(b64.length%4)b64+='=';
         while(b64.length%4)b64+='=';
         document.getElementById('cipherInput').value=b64;uc();
