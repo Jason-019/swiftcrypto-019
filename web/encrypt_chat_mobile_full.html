@@ -311,7 +311,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
                 <div class="share-menu">
                     <button onclick="shareAsEras()">🎨 Eras码</button>
                     <button onclick="shareAsText()">📝 纯文字</button>
-                    <button onclick="shareAsQRPDF()" id="btnQRPDF">📱 二维码PDF</button>
+                    <button onclick="shareAsQRPDF()" id="btnQRPDF">📱 二维码图片</button>
                 </div>
             </div>
             <button class="btn btn-outline" onclick="openShareModal()">🔗 链接</button>
@@ -1232,13 +1232,13 @@ function toggleShareMenu(){
     const btn=document.getElementById('btnQRPDF');
     const maxQR=1160, used=b64.length; // 1400-240(60汉字提示)
     if(used<=maxQR*0.7){
-        btn.innerHTML='📱 二维码PDF <small style="opacity:0.5">'+used+'/'+maxQR+'字</small>';
+        btn.innerHTML='📱 二维码图片 <small style="opacity:0.5">'+used+'/'+maxQR+'字</small>';
         btn.style.color='';
     }else if(used<=maxQR){
-        btn.innerHTML='📱 二维码PDF <small style="color:#fbbf24">'+used+'/'+maxQR+'字</small>';
+        btn.innerHTML='📱 二维码图片 <small style="color:#fbbf24">'+used+'/'+maxQR+'字</small>';
         btn.style.color='';
     }else{
-        btn.innerHTML='📱 二维码PDF <small style="color:#f97316">超长'+used+'/'+maxQR+'⚠️</small>';
+        btn.innerHTML='📱 二维码图片 <small style="color:#f97316">超长'+used+'/'+maxQR+'⚠️</small>';
         btn.style.color='#f97316';
     }
     dd.classList.toggle('open');
@@ -1278,7 +1278,7 @@ document.addEventListener('click',function(e){
     if(dd&&!dd.contains(e.target))dd.classList.remove('open');
 });
 
-// ─── 📱 二维码PDF分享 ───
+// ─── 📱 二维码图片分享 ───
 function shareAsQRPDF(){
     document.getElementById('shareDropdown').classList.remove('open');
     const b64=document.getElementById('cipherOutput').value;
@@ -2574,7 +2574,7 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
     <button class="btn btn-outline" onclick="stopScan()" style="color:#fff;border-color:rgba(255,255,255,0.3)">关闭</button>
 </div>
 
-<!-- 📱 二维码PDF分享弹窗 -->
+<!-- 📱 二维码图片分享弹窗 -->
 <div id="qrShareModal" style="display:none;position:fixed;inset:0;z-index:110;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);justify-content:center;align-items:center">
     <div class="sheet" style="text-align:center;max-width:380px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:14px">
         <h3 style="margin:0;font-size:1rem">📱 二维码分享</h3>
