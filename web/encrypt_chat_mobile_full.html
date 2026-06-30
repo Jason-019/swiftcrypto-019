@@ -2094,7 +2094,7 @@ function decodeEraGrid(){
         };
         // 转换参考色到 Lab
         const TARGET_LAB=TARGET_RGB.map(c=>rgb2lab(c[0],c[1],c[2]));
-        // ── 验证参考色分散度：两色太近说明参考行检测错了 ──
+        // ── a*b* 欧氏匹配 + 余弦可分性 ──
         let minD2=Infinity,maxD2=0;
         for(let i=0;i<8;i++)for(let j=i+1;j<8;j++){
             const da=TARGET_LAB[i][1]-TARGET_LAB[j][1],db=TARGET_LAB[i][2]-TARGET_LAB[j][2];
