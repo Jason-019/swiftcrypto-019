@@ -1335,26 +1335,45 @@ function exportQRPDF(){
         const qrSize=70; // mm
         const qrX=(pageW-qrSize)/2;
         const qrY=30;
-        // 标题
-        pdf.setFontSize(16);pdf.setTextColor(30,30,50);
-        pdf.text('SwiftCrypto 加密消息',pageW/2,qrY-8,{align:'center'});
+        // 标题（Canvas渲染中文→图片，避免PDF内置字体乱码）
+        const titleImg=textToPngDataUrl('SwiftCrypto 加密消息',16,'#1e1e32',pageW);
+        pdf.addImage(titleImg,'PNG',0,qrY-12,pageW,10);
         // 二维码
         const imgData=canvas.toDataURL('image/png');
         pdf.addImage(imgData,'PNG',qrX,qrY,qrSize,qrSize);
         // 密码提示
         if(hint){
-            pdf.setFontSize(10);pdf.setTextColor(100,100,120);
-            pdf.text('密码提示：'+hint,pageW/2,qrY+qrSize+10,{align:'center'});
+            const hintImg=textToPngDataUrl('💡 密码提示：'+hint,10,'#646478',pageW-20);
+            pdf.addImage(hintImg,'PNG',10,qrY+qrSize+8,pageW-20,7);
         }
         // Footer
-        pdf.setFontSize(8);pdf.setTextColor(150,150,160);
-        pdf.text('扫码或导入此PDF解密 | swiftcrypto',pageW/2,280,{align:'center'});
-        pdf.save('swiftcrypto_qr.pdf');
+        const ftImg=textToPngDataUrl('扫码或导入此PDF解密 | swiftcrypto',8,'#9696a0',pageW);
+        pdf.addImage(ftImg,'PNG',0,280,pageW,5);
+        // 文件名带时间戳
+        const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
+        pdf.save('swiftcrypto_qr_'+ts+'.pdf');
         t('📥 PDF 已导出');
     }catch(e){
         console.error('PDF export failed:',e);
         t('⚠️ PDF导出失败，请重试');
     }
+}
+
+// Canvas 渲染文字→PNG DataURL（解决PDF内置字体不支持中文的问题）
+function textToPngDataUrl(text,fontSize,cssColor,widthMm){
+    const scale=4; // 高清渲染
+    const pxPerMm=96/25.4*scale;
+    const w=Math.round(widthMm*pxPerMm);
+    const h=Math.round(fontSize*1.6/25.4*96*scale);
+    const cv=document.createElement('canvas');
+    cv.width=w;cv.height=h;
+    const ctx=cv.getContext('2d');
+    ctx.scale(scale,scale);
+    ctx.font=`bold ${fontSize*96/72}px -apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif`;
+    ctx.fillStyle=cssColor;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(text,(w/scale)/2,(h/scale)/2);
+    return cv.toDataURL('image/png');
 }
 
 // ─── 📷 扫码/导入密文二维码 ───
