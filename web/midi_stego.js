@@ -816,13 +816,17 @@ function renderWaterfall(){
         ctx.stroke();
     }
     
-    // C标记 + 白键底线
-    ctx.fillStyle='rgba(0,0,0,0.25)';ctx.font=`${Math.max(7,Math.round(keyW*0.6))}px monospace`;ctx.textAlign='center';
+    // 白键音名标注
+    const noteNames=['C','','D','','E','F','','G','','A','','B'];
+    ctx.fillStyle='rgba(0,0,0,0.3)';
+    ctx.font=`${Math.max(6,Math.round(keyW*0.55))}px monospace`;
+    ctx.textAlign='center';
     for(let pitch=_wfMinPitch;pitch<=_wfMaxPitch;pitch++){
-        if(pitch%12===0){
-            const oct=Math.floor(pitch/12)-1;
-            ctx.fillText('C'+oct,(pitch-_wfMinPitch+0.5)*keyW,noteArea+keyH-3);
-        }
+        const nn=noteNames[pitch%12];
+        if(!nn)continue;
+        const oct=Math.floor(pitch/12)-1;
+        const label=nn+oct;
+        ctx.fillText(label,(pitch-_wfMinPitch+0.5)*keyW,noteArea+keyH-3);
     }
     
     _wfAnimId=requestAnimationFrame(renderWaterfall);
