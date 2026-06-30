@@ -827,9 +827,11 @@ function renderWaterfall(){
         const hue=Math.round(240-(n.vel||0.5)*200);
         ctx.fillStyle=`hsla(${hue},80%,55%,0.85)`;
         ctx.fillRect(x,ry,w-1,rh);
-        ctx.strokeStyle=`hsla(${hue},80%,85%,0.65)`;
-        ctx.lineWidth=0.8;
-        ctx.strokeRect(x+0.4,ry+0.4,w-1.8,rh-0.8);
+        // 上下边缘加粗白线，纵向（时间方向）分隔清晰
+        ctx.strokeStyle='rgba(255,255,255,1)';
+        ctx.lineWidth=3;
+        ctx.beginPath();ctx.moveTo(x,ry);ctx.lineTo(x+w-1,ry);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(x,ry+rh);ctx.lineTo(x+w-1,ry+rh);ctx.stroke();
     }
 
     // ── 4. 当前时间线（音符区与琴键分界线）──
