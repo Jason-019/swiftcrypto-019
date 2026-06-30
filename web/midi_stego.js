@@ -707,7 +707,7 @@ function stopRecvPlay(){
 }
 
 // ══════ 瀑布图钢琴卷帘 ══════
-let _wfNotes=[],_wfAnimId=null,_wfMinPitch=60,_wfMaxPitch=84,_wfLastTime=null,_wfAccum=0,_wfOffCv=null;
+let _wfNotes=[],_wfAnimId=null,_wfMinPitch=60,_wfMaxPitch=84,_wfLastTime=null,_wfAccum=0,_wfOffCv=null,_wfLatency=0.06; // 视觉延迟补偿(秒)，抵消音频输出延迟
 const WF_LOOKAHEAD=3; // 超前显示秒数
 
 function toggleWaterfall(){
@@ -756,7 +756,7 @@ function renderWaterfall(){
     const W=cv.clientWidth,H=cv.clientHeight;
     if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;_wfLastTime=null}
 
-    const now=Tone.Transport.seconds;
+    const now=Tone.Transport.seconds-_wfLatency; // 延迟补偿，使视觉与听觉同步
     const keyH=Math.max(22,Math.round(H*0.18));
     const noteArea=H-keyH;
     const nPitches=_wfMaxPitch-_wfMinPitch+1;
