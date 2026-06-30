@@ -311,7 +311,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
                 <div class="share-menu">
                     <button onclick="shareAsEras()">🎨 Eras码</button>
                     <button onclick="shareAsText()">📝 纯文字</button>
-                    <button onclick="shareAsQRPDF()">📱 二维码PDF <small style="opacity:0.5">≈300字内</small></button>
+                    <button onclick="shareAsQRPDF()" id="btnQRPDF">📱 二维码PDF</button>
                 </div>
             </div>
             <button class="btn btn-outline" onclick="openShareModal()">🔗 链接</button>
@@ -1228,6 +1228,19 @@ function toggleShareMenu(){
     const dd=document.getElementById('shareDropdown');
     const b64=document.getElementById('cipherOutput').value;
     if(!b64)return t('⚠️ 请先生成密文');
+    // 根据密文长度更新二维码PDF按钮提示（QR M级≈1400字符，JSON开销≈45）
+    const btn=document.getElementById('btnQRPDF');
+    const maxQR=1400, used=b64.length;
+    if(used<=maxQR*0.7){
+        btn.innerHTML='📱 二维码PDF <small style="opacity:0.5">'+used+'/'+maxQR+'字</small>';
+        btn.style.color='';
+    }else if(used<=maxQR){
+        btn.innerHTML='📱 二维码PDF <small style="color:#fbbf24">'+used+'/'+maxQR+'字</small>';
+        btn.style.color='';
+    }else{
+        btn.innerHTML='📱 二维码PDF <small style="color:#f97316">超长'+used+'/'+maxQR+'⚠️</small>';
+        btn.style.color='#f97316';
+    }
     dd.classList.toggle('open');
 }
 async function shareAsText(){
