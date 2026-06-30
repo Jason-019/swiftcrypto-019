@@ -2087,37 +2087,17 @@ function decodeEraGrid(){
         // 转换参考色到 Lab
         const TARGET_LAB=TARGET_RGB.map(c=>rgb2lab(c[0],c[1],c[2]));
         // ── 仿人眼：基于 a*b* 欧氏距离 + 余弦可分性 ──
-        const abDist2=(a,b)=>{const da=a[1]-b[1],db=a[2]-b[2];return da*da+db*db};
-        const abCos=(a,b)=>{
-            const dot=a[1]*b[1]+a[2]*b[2];
-            const ma=Math.sqrt(a[1]*a[1]+a[2]*a[2]),mb=Math.sqrt(b[1]*b[1]+b[2]*b[2]);
-            return ma>0.1&&mb>0.1?dot/(ma*mb):0;
-        };
-        let minCos=1,maxCos=0,minD2=Infinity,maxD2=0;
+        // ── 简化阈值：稳定优先 ──
+        let minD2=Infinity,maxD2=0;
         for(let i=0;i<8;i++)for(let j=i+1;j<8;j++){
-            const cs=abCos(TARGET_LAB[i],TARGET_LAB[j]);
-            const d2=abDist2(TARGET_LAB[i],TARGET_LAB[j]);
-            if(cs<minCos)minCos=cs;if(cs>maxCos)maxCos=cs;
+            const da=TARGET_LAB[i][1]-TARGET_LAB[j][1],db=TARGET_LAB[i][2]-TARGET_LAB[j][2];
+            const d2=da*da+db*db;
             if(d2<minD2)minD2=d2;if(d2>maxD2)maxD2=d2;
         }
-        const spreadRatio=1-minCos; // 0=两色同向, 1=非常分散
-        const confThresh=0.08+spreadRatio*0.27; // 范围 0.08~0.35
-        const maxD2Vote=maxD2*0.8; // 投票门槛：a*b*距离不超过最远色对的80%
+        const confThresh=0.15; // 固定置信度，可靠
+        const maxD2Vote=maxD2*1.5; // 宽松投票门槛
         const dataY0=refBot+1+EC_GAP;
         const cellW=refW,cellSp=EC_CELL+EC_GAP;
-        // ── 自适应暗像素阈值：数据区边缘黑底采样 ──
-        let bgBright=0,bgN=0;
-        const dBgY=dataY0+Math.round(cellW/2); // 首行格子中心高度
-        for(let dy=-2;dy<=2;dy+=4){ // 上下各2个点
-            for(let dx=1;dx<=EC_GAP;dx++){ // 格子间隙中采样
-                const sx=Math.round(refX0+dx);
-                if(sx>1&&sx+1<W&&dBgY+dy>1&&dBgY+dy+1<H){
-                    const d=ctx.getImageData(sx,dBgY+dy,1,1).data;
-                    bgBright+=d[0]+d[1]+d[2];bgN++;
-                }
-            }
-        }
-        const darkThresh=bgN>2?Math.max(25,Math.round(bgBright/bgN)+20):25;
         t('📐 已定位，解码中…');
         // ── 逐格采样（中心加权） ──
         const readCell=(col,row)=>{
@@ -2127,7 +2107,7 @@ function decodeEraGrid(){
             const r=Math.max(3,Math.round(cellW*0.25)); // 采样半径(25%)
             for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
                 const d=ctx.getImageData(cx+dx,cy+dy,1,1).data;
-                if(d[0]+d[1]+d[2]<darkThresh)continue;
+                if(d[0]+d[1]+d[2]<25)continue;
                 // 中心加权：距离越近权重越高
                 const dist2=dx*dx+dy*dy;
                 const w=Math.max(1,r*r-dist2);
