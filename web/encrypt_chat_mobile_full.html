@@ -1297,9 +1297,9 @@ function updateHintCount(){
 
 function drawAppIcon(ctx,cx,cy,size){
     // 跟随主题色的渐变圆角矩形
-    const style=getComputedStyle(document.documentElement);
-    const c1=style.getPropertyValue('--accent2').trim()||'#7c3aed';
-    const c2=style.getPropertyValue('--accent').trim()||'#a78bfa';
+    const tc=THEMES[themeIdx];
+    const c1=tc.qr||'#7c3aed';
+    const c2=tc.qr?c1:'#a78bfa'; // 纯黑主题用双色渐变
     const grad=ctx.createLinearGradient(cx-size/2,cy-size/2,cx+size/2,cy+size/2);
     grad.addColorStop(0,c1);grad.addColorStop(1,c2);
     const r=size*0.2;
@@ -1332,8 +1332,7 @@ function renderQRCode(){
     if(_qrRenderTimer){clearTimeout(_qrRenderTimer);_qrRenderTimer=null}
     if(typeof QRCode!=='undefined'){
         // 获取主题色作为QR码颜色
-        const style=getComputedStyle(document.documentElement);
-        const qrColor=style.getPropertyValue('--accent2').trim()||'#7c3aed';
+        const qrColor=THEMES[themeIdx].qr||'#7c3aed';
         let hintDropped=false;
         const genQR=(pl)=>{rawDiv.innerHTML='';new QRCode(rawDiv,{text:pl,width:280,height:280,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M})};
         try{
@@ -1644,18 +1643,18 @@ function genPwd(){
 }
 // Theme gradients (inspired by album color palettes)
 const THEMES=[
-    {name:'纯黑',grad:''},
-    {name:'Debut',grad:'linear-gradient(135deg,#0a4a3a,#1a6b5a,#0d5c8a)'},
-    {name:'Fearless',grad:'linear-gradient(135deg,#4a3500,#8b6d00,#e6c200)'},
-    {name:'Speak Now',grad:'linear-gradient(135deg,#4a0a2a,#c44a7a,#7a3ac4)'},
-    {name:'Red',grad:'linear-gradient(135deg,#3d0a0a,#8b1a1a,#d44a2a)'},
-    {name:'1989',grad:'linear-gradient(135deg,#1a3a5c,#4a8ab5,#c4ddf0)'},
-    {name:'Reputation',grad:'linear-gradient(135deg,#0a0a0a,#2a2a2a,#5a5a5a)'},
-    {name:'Lover',grad:'linear-gradient(135deg,#d47090,#a070b8,#5098c8)'},
-    {name:'Folklore',grad:'linear-gradient(135deg,#1a2a1a,#3a5a3a,#8a9a7a)'},
-    {name:'Evermore',grad:'linear-gradient(135deg,#3d2a1a,#6b4a2a,#c48a4a)'},
-    {name:'Midnights',grad:'linear-gradient(135deg,#0a0a2a,#1a1a5c,#4a3a8b)'},
-    {name:'TTPD',grad:'linear-gradient(135deg,#3d3a2a,#8b8a6a,#d4c4a0)'},
+    {name:'纯黑',grad:'',qr:'#7c3aed'},
+    {name:'Debut',grad:'linear-gradient(135deg,#0a4a3a,#1a6b5a,#0d5c8a)',qr:'#1a6b5a'},
+    {name:'Fearless',grad:'linear-gradient(135deg,#4a3500,#8b6d00,#e6c200)',qr:'#b88600'},
+    {name:'Speak Now',grad:'linear-gradient(135deg,#4a0a2a,#c44a7a,#7a3ac4)',qr:'#c44a7a'},
+    {name:'Red',grad:'linear-gradient(135deg,#3d0a0a,#8b1a1a,#d44a2a)',qr:'#c0392b'},
+    {name:'1989',grad:'linear-gradient(135deg,#1a3a5c,#4a8ab5,#c4ddf0)',qr:'#3a7ab5'},
+    {name:'Reputation',grad:'linear-gradient(135deg,#0a0a0a,#2a2a2a,#5a5a5a)',qr:'#555'},
+    {name:'Lover',grad:'linear-gradient(135deg,#d47090,#a070b8,#5098c8)',qr:'#a070b8'},
+    {name:'Folklore',grad:'linear-gradient(135deg,#1a2a1a,#3a5a3a,#8a9a7a)',qr:'#6b8b6b'},
+    {name:'Evermore',grad:'linear-gradient(135deg,#3d2a1a,#6b4a2a,#c48a4a)',qr:'#b87333'},
+    {name:'Midnights',grad:'linear-gradient(135deg,#0a0a2a,#1a1a5c,#4a3a8b)',qr:'#4a3a8b'},
+    {name:'TTPD',grad:'linear-gradient(135deg,#3d3a2a,#8b8a6a,#d4c4a0)',qr:'#8b8a6a'},
     {name:'Showgirl',grad:'linear-gradient(135deg,#3d1a00,#c46400,#5a8a2a)'},
 ];
 let themeIdx=4;
