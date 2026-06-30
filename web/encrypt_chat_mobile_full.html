@@ -1882,7 +1882,7 @@ function decodeParity(b64){
 // ---- 🎨 Era Color Grid share ----
 const ERA_COLORS=['#FFD60A','#FF9500','#34C759','#007AFF','#AF52DE','#5AC8FA','#FF2D55','#8E8E93'];
 const ERA_NAMES=['Gold','Fearless','Debut','1989','Speak Now','Evermore','Lover','Midnights'];
-const EC_COLS=12,EC_CELL=26,EC_GAP=6,EC_REF_W=26,EC_REF_H=22;
+const EC_COLS=12,EC_CELL=20,EC_GAP=3,EC_REF_W=20,EC_REF_H=18;
 function renderEraCard(){
     let b64=document.getElementById('cipherOutput').value;
     const cv=document.getElementById('eraCardCanvas');if(!cv||!b64)return;
@@ -2054,33 +2054,38 @@ function decodeEraGrid(){
         while(refTop>0&&ctx.getImageData(refCx,refTop-1,1,1).data[0]+ctx.getImageData(refCx,refTop-1,1,1).data[1]+ctx.getImageData(refCx,refTop-1,1,1).data[2]>120)refTop--;
         while(refBot<H&&ctx.getImageData(refCx,refBot+1,1,1).data[0]+ctx.getImageData(refCx,refBot+1,1,1).data[1]+ctx.getImageData(refCx,refBot+1,1,1).data[2]>120)refBot++;
         const refH=refBot-refTop+1;
-        // 8参考块=12数据格铺满同宽: cellSp从refSp推算
-        const GAP_act=(7*refSp-11*refW)/11;
-        const cellSp=refW+GAP_act,cellW=refW;
-        const dataY0=refTop+refH+GAP_act;
+        // 用refBot定位数据起点: 渲染侧 dataY0 = refY+refH+GAP = refBot+1+GAP
+        const dataY0=refBot+1+EC_GAP;
+        const cellW=refW,cellSp=EC_CELL+EC_GAP;
         t('📐 已定位，解码中…');
-        // ── 逐格采样 ──
+        // ── 逐格采样（中心加权） ──
         const readCell=(col,row)=>{
-            const cx=refX0+col*cellSp,cy=dataY0+row*cellSp;
-            if(cx<3||cy<3||cx+cellW>=W||cy+cellW>=H)return -1;
+            const cx=Math.round(refX0+col*cellSp+cellW/2),cy=Math.round(dataY0+row*cellSp+cellW/2);
+            if(cx<2||cy<2||cx+2>=W||cy+2>=H)return -1;
             const votes=[0,0,0,0,0,0,0,0];let total=0;
-            const m=Math.max(2,Math.round(cellW*0.08));
-            for(let dy=m;dy<cellW-m;dy++)for(let dx=m;dx<cellW-m;dx++){
+            const r=Math.max(3,Math.round(cellW*0.25)); // 采样半径(25%)
+            for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
                 const d=ctx.getImageData(cx+dx,cy+dy,1,1).data;
-                if(d[0]+d[1]+d[2]<25)continue;total++;
+                if(d[0]+d[1]+d[2]<25)continue;
+                // 中心加权：距离越近权重越高
+                const dist2=dx*dx+dy*dy;
+                const w=Math.max(1,r*r-dist2);
+                total+=w;
                 let best=0,bestD=1e9;
                 for(let k=0;k<8;k++){const dist=(d[0]-TARGET_RGB[k][0])**2+(d[1]-TARGET_RGB[k][1])**2+(d[2]-TARGET_RGB[k][2])**2;if(dist<bestD){bestD=dist;best=k}}
-                if(bestD<maxDist)votes[best]++;
+                if(bestD<maxDist)votes[best]+=w;
             }
             if(total===0)return -1;
             let winner=0,maxV=0;for(let k=0;k<8;k++){if(votes[k]>maxV){maxV=votes[k];winner=k}}
-            return maxV>total*0.40?winner:-1;
+            return maxV>total*0.35?winner:-1;
         };
         // ── 逐行解码 ──
-        let b64='',emptyRows=0;
-        for(let row=0;;row++){
+        let b64='',emptyRows=0,row=0;
+        for(;;row++){
             let mc=0;for(let col=0;col<EC_COLS;col++)if(readCell(col,row)>=0)mc++;
-            if(mc<3){emptyRows++;if(emptyRows>=2)break;continue}else emptyRows=0;
+            if(mc===0){emptyRows++;if(emptyRows>=2||b64.length>0)break}
+            else emptyRows=0;
+            if(mc<3&&b64.length===0)break; // 起始无数据行
             for(let col=0;col+1<EC_COLS;col+=2){
                 const hi=readCell(col,row),lo=readCell(col+1,row);
                 if(hi>=0&&lo>=0)b64+=B64[(hi<<3)|lo];
