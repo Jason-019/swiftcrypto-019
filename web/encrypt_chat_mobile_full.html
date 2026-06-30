@@ -1228,9 +1228,9 @@ function toggleShareMenu(){
     const dd=document.getElementById('shareDropdown');
     const b64=document.getElementById('cipherOutput').value;
     if(!b64)return t('⚠️ 请先生成密文');
-    // 根据密文长度更新二维码PDF按钮提示（QR M级≈1400字符，JSON开销≈45）
+    // QR M级≈1400字符，预留60中文字(≈247字符)给密码提示
     const btn=document.getElementById('btnQRPDF');
-    const maxQR=1400, used=b64.length;
+    const maxQR=1150, used=b64.length;
     if(used<=maxQR*0.7){
         btn.innerHTML='📱 二维码PDF <small style="opacity:0.5">'+used+'/'+maxQR+'字</small>';
         btn.style.color='';
