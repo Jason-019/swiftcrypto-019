@@ -1918,9 +1918,9 @@ function renderEraCard(){
     const themeColors=(t.grad&&t.grad.match(/#[0-9a-fA-F]{6}/g))||['#1a1a2e','#16213e','#0f0f1a'];
     const accent=themeColors[1]||ERA_COLORS[4];
     const grad=ctx.createLinearGradient(0,0,cardW,cardH);
-    grad.addColorStop(0,darkenHex(themeColors[0]||'#1a1a2e',0.45));
-    grad.addColorStop(0.5,darkenHex(themeColors[1]||'#16213e',0.40));
-    grad.addColorStop(1,darkenHex((themeColors[2]||themeColors[0]||'#0f0f1a'),0.35));
+    grad.addColorStop(0,darkenHex(themeColors[0]||'#1a1a2e',0.55));
+    grad.addColorStop(0.5,darkenHex(themeColors[1]||'#16213e',0.60));
+    grad.addColorStop(1,darkenHex((themeColors[2]||themeColors[0]||'#0f0f1a'),0.70));
     ctx.fillStyle=grad;roundRect(ctx,0,0,cardW,cardH,16);ctx.fill();
     ctx.strokeStyle=hexToRgba(accent,0.4);ctx.lineWidth=2;
     roundRect(ctx,1,1,cardW-2,cardH-2,16);ctx.stroke();
