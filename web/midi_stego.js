@@ -761,71 +761,36 @@ function renderWaterfall(){
     const noteArea=H-keyH;
     const nPitches=_wfMaxPitch-_wfMinPitch+1;
     const pixPerSec=noteArea/WF_LOOKAHEAD;
+    const keyOverlap=Math.round(keyH*0.45); // 音符伸入琴键区像素，视觉上触碰琴键顶部即触发
+    const noteBottom=noteArea+keyOverlap; // 音符可延伸到的最大y
+    const visualNow=now+keyOverlap/pixPerSec; // 视觉时间提前，让音符下移伸入琴键
 
-    // ── 自移位瀑布：把已有内容往上推，只在底部画新进入的音符 ──
+    // ── 1. 移位或清除音符区（仅处理 0~noteArea）──
     const needsFullRedraw=_wfLastTime===null||now<_wfLastTime;
     if(!needsFullRedraw){
-        const dt=Math.min(now-_wfLastTime,0.1); // 防止跳帧拉太长
+        const dt=Math.min(now-_wfLastTime,0.1);
         const rawShift=dt*pixPerSec+_wfAccum;
         const shiftPx=Math.floor(rawShift);
         _wfAccum=rawShift-shiftPx;
         if(shiftPx>0&&shiftPx<noteArea){
-            // 离屏 canvas 中转，避免自绘制兼容性问题
             if(!_wfOffCv||_wfOffCv.width!==W||_wfOffCv.height!==noteArea){
                 _wfOffCv=document.createElement('canvas');
                 _wfOffCv.width=W;_wfOffCv.height=noteArea;
             }
             const offCtx=_wfOffCv.getContext('2d');
             offCtx.drawImage(cv,0,0,W,noteArea, 0,0,W,noteArea);
-            ctx.fillStyle='#0a0a14';
-            ctx.fillRect(0,0,W,noteArea);
-            // 像素向下移位：未来音符从顶部进入，向底部时间线滚动
+            ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,noteArea);
             ctx.drawImage(_wfOffCv,0,0,W,noteArea-shiftPx, 0,shiftPx,W,noteArea-shiftPx);
-            // 顶部新露出的条带画最新进入的未来音符
-            const topBottom=shiftPx;
-            for(const n of _wfNotes){
-                if(n.time+n.dur<now-0.3)continue;
-                if(n.time>now+WF_LOOKAHEAD)continue;
-                const yEnd=noteArea-(n.time+n.dur-now)*pixPerSec;
-                const yStart=noteArea-(n.time-now)*pixPerSec;
-                if(yEnd>topBottom||yStart<0)continue; // 不在顶部新条带
-                const x=(n.pitch-_wfMinPitch)/nPitches*W;
-                const w=W/nPitches;
-                const ry=Math.max(0,yEnd);
-                const rh=Math.max(2,Math.min(topBottom,yStart)-ry);
-                const hue=Math.round(240-(n.vel||0.5)*200);
-                ctx.fillStyle=`hsla(${hue},80%,55%,0.85)`;
-                ctx.fillRect(x,ry,w-1,rh);
-            }
         }
     } else {
-        // 首帧或时间跳回：全量重绘音符区
         ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,noteArea);
-        for(const n of _wfNotes){
-            if(n.time+n.dur<now-0.3)continue;
-            if(n.time>now+WF_LOOKAHEAD)continue;
-            const yEnd=noteArea-(n.time+n.dur-now)*pixPerSec;
-            const yStart=noteArea-(n.time-now)*pixPerSec;
-            if(yEnd<0||yStart>noteArea)continue;
-            const x=(n.pitch-_wfMinPitch)/nPitches*W;
-            const w=W/nPitches;
-            const ry=Math.max(0,yEnd),rh=Math.max(2,Math.min(noteArea,yStart)-ry);
-            const hue=Math.round(240-(n.vel||0.5)*200);
-            ctx.fillStyle=`hsla(${hue},80%,55%,0.85)`;
-            ctx.fillRect(x,ry,w-1,rh);
-        }
         _wfAccum=0;
     }
     _wfLastTime=now;
 
-    // ── 当前时间线 ──
-    ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(0,noteArea);ctx.lineTo(W,noteArea);ctx.stroke();
-
-    // ── 迷你钢琴键盘（始终重绘，保持清晰）──
+    // ── 2. 绘制钢琴键盘（先画，音符叠在上面可伸入琴键区）──
     const keyW=W/nPitches;
     const blackPattern=[0,1,0,1,0,0,1,0,1,0,1,0];
-    // 白键底色
     ctx.fillStyle='#e8e8e8';ctx.fillRect(0,noteArea,W,keyH);
     for(let pitch=_wfMinPitch;pitch<=_wfMaxPitch;pitch++){
         if(blackPattern[pitch%12])continue;
@@ -837,31 +802,43 @@ function renderWaterfall(){
         ctx.strokeStyle='#aaa';ctx.lineWidth=0.5;
         ctx.strokeRect(x+0.5,noteArea,keyW-1,keyH);
     }
-    // 黑键
     for(let pitch=_wfMinPitch;pitch<=_wfMaxPitch;pitch++){
         if(!blackPattern[pitch%12])continue;
         const x=(pitch-_wfMinPitch)*keyW;
-        const bw=keyW*0.6;
-        const bx=x+(keyW-bw)/2;
-        const bh=keyH*0.62;
+        const bw=keyW*0.6,bx=x+(keyW-bw)/2,bh=keyH*0.62;
         const grad=ctx.createLinearGradient(bx,noteArea,bx,noteArea+bh);
         grad.addColorStop(0,'#444');grad.addColorStop(0.3,'#1a1a1a');grad.addColorStop(1,'#000');
         ctx.fillStyle=grad;
-        ctx.beginPath();
-        ctx.roundRect(bx,noteArea,bw,bh,2);
-        ctx.fill();
+        ctx.beginPath();ctx.roundRect(bx,noteArea,bw,bh,2);ctx.fill();
         ctx.strokeStyle='#555';ctx.lineWidth=0.8;
-        ctx.beginPath();
-        ctx.roundRect(bx,noteArea,bw,bh,2);
-        ctx.stroke();
+        ctx.beginPath();ctx.roundRect(bx,noteArea,bw,bh,2);ctx.stroke();
     }
 
+    // ── 3. 绘制音符（叠在键盘上方，可延伸到 noteBottom）──
+    for(const n of _wfNotes){
+        if(n.time+n.dur<now-0.3)continue;
+        if(n.time>now+WF_LOOKAHEAD)continue;
+        const yEnd=noteArea-(n.time+n.dur-visualNow)*pixPerSec;
+        const yStart=noteArea-(n.time-visualNow)*pixPerSec;
+        if(yEnd>noteBottom||yStart<0)continue;
+        const x=(n.pitch-_wfMinPitch)/nPitches*W;
+        const w=W/nPitches;
+        const ry=Math.max(0,yEnd),rh=Math.max(2,Math.min(noteBottom,yStart)-ry);
+        const hue=Math.round(240-(n.vel||0.5)*200);
+        ctx.fillStyle=`hsla(${hue},80%,55%,0.85)`;
+        ctx.fillRect(x,ry,w-1,rh);
+    }
+
+    // ── 4. 当前时间线（音符区与琴键分界线）──
+    ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,noteArea);ctx.lineTo(W,noteArea);ctx.stroke();
+
+    // ── 5. 音名标注 ──
     const noteNames=['C','','D','','E','F','','G','','A','','B'];
     const fontSize=Math.max(7,Math.round(keyW*0.75));
     ctx.fillStyle='rgba(0,0,0,0.55)';
     ctx.font=`bold ${fontSize}px -apple-system,sans-serif`;
-    ctx.textAlign='center';
-    ctx.textBaseline='bottom';
+    ctx.textAlign='center';ctx.textBaseline='bottom';
     for(let pitch=_wfMinPitch;pitch<=_wfMaxPitch;pitch++){
         const nn=noteNames[pitch%12];
         if(!nn)continue;
