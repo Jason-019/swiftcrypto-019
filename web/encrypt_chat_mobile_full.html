@@ -1324,7 +1324,7 @@ function renderQRCode(){
     const oldTmp=document.getElementById('_qrTmp');
     if(oldTmp)oldTmp.remove();
     const tmp=document.createElement('div');
-    tmp.id='_qrTmp';tmp.style.position='absolute';tmp.style.left='-9999px';
+    tmp.id='_qrTmp';tmp.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden';
     document.body.appendChild(tmp);
     if(typeof QRCode!=='undefined'){
         let hintDropped=false;
