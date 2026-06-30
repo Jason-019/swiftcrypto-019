@@ -1330,10 +1330,10 @@ function renderQRCode(){
     if(typeof QRCode!=='undefined'){
         const qrColor=THEMES[themeIdx].qr||'#7c3aed';
         let hintDropped=false;
-        const genQR=(pl)=>{rawDiv.innerHTML='';new QRCode(rawDiv,{text:pl,width:350,height:350,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M})};
+        const genQR=(pl)=>{rawDiv.innerHTML='';new QRCode(rawDiv,{text:pl,width:280,height:280,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M})};
         try{genQR(payload)}catch(e){
             console.warn('QR M-level overflow, trying L:',e);
-            try{rawDiv.innerHTML='';new QRCode(rawDiv,{text:payload,width:350,height:350,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L})}catch(e2){
+            try{rawDiv.innerHTML='';new QRCode(rawDiv,{text:payload,width:280,height:280,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L})}catch(e2){
                 console.warn('QR L-level overflow, removing hint');hintDropped=true;
                 genQR(JSON.stringify({v:1,c:b64,h:'',t:Date.now()}));
             }
@@ -1358,33 +1358,24 @@ function renderQRCode(){
 }
 
 function exportQRImage(){
-    const rawDiv=document.getElementById('qrShareRaw');
-    const srcImg=rawDiv.querySelector('img');
-    if(!srcImg||!srcImg.src)return t('⚠️ 请先生成二维码');
-    // 用临时canvas合成：白边margin + QR + 图标
-    const margin=24, qrSize=350, total=qrSize+margin*2;
+    const srcImg=document.querySelector('#qrShareRaw img');
+    if(!srcImg||!srcImg.complete||!srcImg.naturalWidth)return t('⚠️ 请先生成二维码');
+    const margin=24, qrSize=280, total=qrSize+margin*2;
     const cv=document.createElement('canvas');
     cv.width=cv.height=total;
-    const ctx=cv.getContext('2d',{willReadFrequently:true});
-    // 白底
+    const ctx=cv.getContext('2d');
     ctx.fillStyle='#fff';ctx.fillRect(0,0,total,total);
-    // 等QR图加载后绘制
-    const qi=new Image();
-    qi.onload=()=>{
-        ctx.drawImage(qi,margin,margin,qrSize,qrSize);
-        const cx=total/2,cy=total/2,iconSize=52,coverSize=44;
-        ctx.fillStyle='#fff';ctx.fillRect(cx-coverSize/2,cy-coverSize/2,coverSize,coverSize);
-        drawAppIcon(ctx,cx,cy,iconSize);
-        const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
-        const a=document.createElement('a');
-        a.download='swiftcrypto_qr_'+ts+'.png';
-        a.href=cv.toDataURL('image/png');
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        t('📥 二维码图片已保存');
-    };
-    qi.src=srcImg.src;
+    // 直接绘制已加载的img（不用new Image，移动端onload可能不触发）
+    ctx.drawImage(srcImg,margin,margin,qrSize,qrSize);
+    const cx=total/2,cy=total/2,iconSize=48,coverSize=40;
+    ctx.fillStyle='#fff';ctx.fillRect(cx-coverSize/2,cy-coverSize/2,coverSize,coverSize);
+    drawAppIcon(ctx,cx,cy,iconSize);
+    const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
+    const a=document.createElement('a');
+    a.download='swiftcrypto_qr_'+ts+'.png';
+    a.href=cv.toDataURL('image/png');
+    a.click();
+    t('📥 二维码图片已保存');
 }
 
 // ─── 📷 扫码/导入密文二维码 ───
@@ -2578,8 +2569,8 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
         </div>
         <div id="qrHintWarning" style="display:none;font-size:0.6rem;color:#f97316;text-align:left;margin-top:-8px">⚠️ 提示过长，已从二维码中省略（图片中仍保留）</div>
         <div class="qr-preview" style="position:relative;display:inline-block">
-            <div id="qrShareRaw" style="width:350px;height:350px;background:#fff;border-radius:4px;overflow:hidden"></div>
-            <div id="qrIconOverlay" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:10px;pointer-events:none;text-align:center;line-height:52px;font-size:26px;color:#fff;z-index:3">🔐</div>
+            <div id="qrShareRaw" style="width:280px;height:280px;background:#fff;border-radius:4px;overflow:hidden"></div>
+            <div id="qrIconOverlay" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:9px;pointer-events:none;text-align:center;line-height:40px;font-size:20px;color:#fff;z-index:3">🔐</div>
         </div>
         <p style="font-size:0.65rem;color:var(--dim);margin:0">让对方用 SwiftCrypto 扫码或导入此图片</p>
         <div class="btn-row">
