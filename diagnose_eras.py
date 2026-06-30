@@ -11,7 +11,7 @@ ERA_COLORS_RGB = [(int(c[1:3],16), int(c[3:5],16), int(c[5:7],16)) for c in ERA_
 BASE = r'd:\anaconda_projects\SwiftCrypto\pic_comparison'
 B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 
-EC_COLS, EC_CELL, EC_GAP = 12, 20, 3
+EC_COLS, EC_CELL, EC_GAP = 16, 20, 3
 CELL_SP = EC_CELL + EC_GAP
 
 def rgb2lab(r, g, b):

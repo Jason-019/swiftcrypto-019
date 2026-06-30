@@ -1886,7 +1886,7 @@ function decodeParity(b64){
 // ---- 🎨 Era Color Grid share ----
 const ERA_COLORS=['#FFD60A','#FF9500','#34C759','#007AFF','#AF52DE','#5AC8FA','#FF2D55','#8E8E93'];
 const ERA_NAMES=['Gold','Fearless','Debut','1989','Speak Now','Evermore','Lover','Midnights'];
-const EC_COLS=12,EC_CELL=20,EC_GAP=3,EC_REF_W=20,EC_REF_H=18;
+const EC_COLS=16,EC_CELL=20,EC_GAP=3,EC_REF_W=20,EC_REF_H=18;
 function renderEraCard(){
     let b64=document.getElementById('cipherOutput').value;
     const cv=document.getElementById('eraCardCanvas');if(!cv||!b64)return;
