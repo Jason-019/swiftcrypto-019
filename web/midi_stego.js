@@ -769,34 +769,29 @@ function renderWaterfall(){
         const shiftPx=Math.floor(rawShift);
         _wfAccum=rawShift-shiftPx;
         if(shiftPx>0&&shiftPx<noteArea){
-            // 使用离屏 canvas 中转，避免 drawImage(cv,cv) 自绘制的兼容性问题
+            // 离屏 canvas 中转，避免自绘制兼容性问题
             if(!_wfOffCv||_wfOffCv.width!==W||_wfOffCv.height!==noteArea){
                 _wfOffCv=document.createElement('canvas');
                 _wfOffCv.width=W;_wfOffCv.height=noteArea;
             }
             const offCtx=_wfOffCv.getContext('2d');
-            // 复制当前音符区到离屏
             offCtx.drawImage(cv,0,0,W,noteArea, 0,0,W,noteArea);
-            // 清除主画布音符区
             ctx.fillStyle='#0a0a14';
             ctx.fillRect(0,0,W,noteArea);
-            // 从离屏上移后画回
-            ctx.drawImage(_wfOffCv,0,shiftPx,W,noteArea-shiftPx, 0,0,W,noteArea-shiftPx);
-            // 清除底部新露出的条带
-            ctx.fillStyle='#0a0a14';
-            ctx.fillRect(0,noteArea-shiftPx,W,shiftPx);
-            // 只画落入底部条带 + 当前可见的音符
-            const bottomTop=noteArea-shiftPx;
+            // 像素向下移位：未来音符从顶部进入，向底部时间线滚动
+            ctx.drawImage(_wfOffCv,0,0,W,noteArea-shiftPx, 0,shiftPx,W,noteArea-shiftPx);
+            // 顶部新露出的条带画最新进入的未来音符
+            const topBottom=shiftPx;
             for(const n of _wfNotes){
                 if(n.time+n.dur<now-0.3)continue;
                 if(n.time>now+WF_LOOKAHEAD)continue;
                 const yEnd=noteArea-(n.time+n.dur-now)*pixPerSec;
                 const yStart=noteArea-(n.time-now)*pixPerSec;
-                if(yEnd>noteArea||yStart<bottomTop)continue; // 不在底部新条带内
+                if(yEnd>topBottom||yStart<0)continue; // 不在顶部新条带
                 const x=(n.pitch-_wfMinPitch)/nPitches*W;
                 const w=W/nPitches;
-                const ry=Math.max(bottomTop,Math.max(0,yEnd));
-                const rh=Math.max(2,Math.min(noteArea,yStart)-ry);
+                const ry=Math.max(0,yEnd);
+                const rh=Math.max(2,Math.min(topBottom,yStart)-ry);
                 const hue=Math.round(240-(n.vel||0.5)*200);
                 ctx.fillStyle=`hsla(${hue},80%,55%,0.85)`;
                 ctx.fillRect(x,ry,w-1,rh);
