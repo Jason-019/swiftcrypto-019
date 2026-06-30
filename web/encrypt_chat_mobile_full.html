@@ -1228,9 +1228,9 @@ function toggleShareMenu(){
     const dd=document.getElementById('shareDropdown');
     const b64=document.getElementById('cipherOutput').value;
     if(!b64)return t('⚠️ 请先生成密文');
-    // QR M级≈1400字符，预留60中文字(≈247字符)给密码提示
+    // 根据密文长度更新提示（QR M级≈1400字符，预留240给60字密码提示，JSON开销≈45）
     const btn=document.getElementById('btnQRPDF');
-    const maxQR=1150, used=b64.length;
+    const maxQR=1160, used=b64.length; // 1400-240(60汉字提示)
     if(used<=maxQR*0.7){
         btn.innerHTML='📱 二维码PDF <small style="opacity:0.5">'+used+'/'+maxQR+'字</small>';
         btn.style.color='';
@@ -1289,6 +1289,11 @@ function shareAsQRPDF(){
     document.getElementById('qrShareModal').style.display='flex';
 }
 function closeQRShareModal(){document.getElementById('qrShareModal').style.display='none'}
+function updateHintCount(){
+    const el=document.getElementById('qrHintCount');
+    const len=document.getElementById('qrShareHint').value.length;
+    if(el)el.textContent=len+'/60';
+}
 
 function drawAppIcon(ctx,cx,cy,size){
     // 紫色渐变圆角矩形
@@ -2574,8 +2579,11 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
     <div class="sheet" style="text-align:center;max-width:380px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:14px">
         <h3 style="margin:0;font-size:1rem">📱 二维码分享</h3>
         <label style="font-size:0.7rem;color:var(--dim);width:100%;text-align:left">💡 密码提示（可选，不要直接填密码！）</label>
-        <input type="text" id="qrShareHint" placeholder="例如：我们常用的那个密码…" oninput="renderQRCode()">
-        <div id="qrHintWarning" style="display:none;font-size:0.6rem;color:#f97316;text-align:left;margin-top:-8px">⚠️ 提示过长，已从二维码中省略（PDF 中仍保留）</div>
+        <div style="width:100%;position:relative">
+            <input type="text" id="qrShareHint" placeholder="例如：我们常用的那个密码…" maxlength="60" oninput="renderQRCode();updateHintCount()" style="padding-right:44px">
+            <span id="qrHintCount" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:0.6rem;color:var(--dim);pointer-events:none">0/60</span>
+        </div>
+        <div id="qrHintWarning" style="display:none;font-size:0.6rem;color:#f97316;text-align:left;margin-top:-8px">⚠️ 提示过长，已从二维码中省略（图片中仍保留）</div>
         <div class="qr-preview" style="position:relative;min-height:280px">
             <div id="qrShareRaw" style="width:280px;height:280px;background:#fff;border-radius:4px;overflow:hidden"></div>
             <canvas id="qrShareCanvas" width="280" height="280" style="display:none;position:absolute;top:0;left:0;border-radius:4px"></canvas>
