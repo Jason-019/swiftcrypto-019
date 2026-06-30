@@ -1359,13 +1359,12 @@ function renderQRCode(){
 
 function exportQRImage(){
     const srcImg=document.querySelector('#qrShareRaw img');
-    if(!srcImg||!srcImg.complete||!srcImg.naturalWidth)return t('⚠️ 请先生成二维码');
+    if(!srcImg)return t('⚠️ 请先生成二维码');
     const margin=24, qrSize=280, total=qrSize+margin*2;
     const cv=document.createElement('canvas');
     cv.width=cv.height=total;
     const ctx=cv.getContext('2d');
     ctx.fillStyle='#fff';ctx.fillRect(0,0,total,total);
-    // 直接绘制已加载的img（不用new Image，移动端onload可能不触发）
     ctx.drawImage(srcImg,margin,margin,qrSize,qrSize);
     const cx=total/2,cy=total/2,iconSize=48,coverSize=40;
     ctx.fillStyle='#fff';ctx.fillRect(cx-coverSize/2,cy-coverSize/2,coverSize,coverSize);
