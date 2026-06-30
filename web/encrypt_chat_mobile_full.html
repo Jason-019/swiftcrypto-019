@@ -189,6 +189,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 .share-dropdown.open .share-menu{display:block}
 .share-dropdown .share-menu button{display:block;width:100%;padding:8px 12px;border:none;background:transparent;color:var(--text);font-size:0.75rem;cursor:pointer;text-align:left;white-space:nowrap}
 .share-dropdown .share-menu button:hover{background:rgba(167,139,250,0.15)}
+.share-dropdown .share-menu button small{font-weight:400}
 .sd-countdown{font-size:0.55rem;color:#f97316;margin-left:4px}
 /* Auto-paste toggle (standalone, not inside sd-row) */
 .chat-auto-toggle{display:flex;align-items:center;cursor:pointer}
@@ -310,7 +311,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
                 <div class="share-menu">
                     <button onclick="shareAsEras()">🎨 Eras码</button>
                     <button onclick="shareAsText()">📝 纯文字</button>
-                    <button onclick="shareAsQRPDF()">📱 二维码PDF</button>
+                    <button onclick="shareAsQRPDF()">📱 二维码PDF <small style="opacity:0.5">≈500字内</small></button>
                 </div>
             </div>
             <button class="btn btn-outline" onclick="openShareModal()">🔗 链接</button>
@@ -1269,6 +1270,8 @@ function shareAsQRPDF(){
     document.getElementById('shareDropdown').classList.remove('open');
     const b64=document.getElementById('cipherOutput').value;
     if(!b64)return t('⚠️ 请先生成密文');
+    document.getElementById('qrShareHint').value='';
+    document.getElementById('qrHintWarning').style.display='none';
     renderQRCode();
     document.getElementById('qrShareModal').style.display='flex';
 }
@@ -1291,20 +1294,46 @@ function drawAppIcon(ctx,cx,cy,size){
     ctx.fillText('🔐',cx,cy+size*0.02);
 }
 
+let _qrRenderTimer=null; // 防抖定时器
 function renderQRCode(){
     const b64=document.getElementById('cipherOutput').value;
     const hint=document.getElementById('qrShareHint').value.trim();
-    const payload=JSON.stringify({v:1,c:b64,h:hint,t:Date.now()});
+    // 提示用Base64编码存入QR（避免中文导致qrcodejs溢出）
+    const hintB64=hint?btoa(unescape(encodeURIComponent(hint))):'';
+    const payload=JSON.stringify({v:1,c:b64,h:hintB64,t:Date.now()});
     const canvas=document.getElementById('qrShareCanvas');
     const ctx=canvas.getContext('2d');
     canvas.width=canvas.height=280;
+    // 清除上一次的定时器
+    if(_qrRenderTimer){clearTimeout(_qrRenderTimer);_qrRenderTimer=null}
+    // 移除旧的临时div
+    const oldTmp=document.getElementById('_qrTmp');
+    if(oldTmp)oldTmp.remove();
     // 生成QR码到临时div
     const tmp=document.createElement('div');
-    tmp.style.position='absolute';tmp.style.left='-9999px';
+    tmp.id='_qrTmp';tmp.style.position='absolute';tmp.style.left='-9999px';
     document.body.appendChild(tmp);
     if(typeof QRCode!=='undefined'){
-        new QRCode(tmp,{text:payload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H});
-        setTimeout(()=>{
+        let hintDropped=false;
+        try{
+            // M级纠错（15%），图标覆盖~6%，足够容错
+            new QRCode(tmp,{text:payload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+        }catch(e){
+            // M级也溢出，尝试L级并加大覆盖区
+            console.warn('QR M-level overflow, trying L:',e);
+            try{
+                new QRCode(tmp,{text:payload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});
+            }catch(e2){
+                // 仍溢出：去掉提示仅含密文
+                console.warn('QR L-level overflow, removing hint');
+                hintDropped=true;
+                const minPayload=JSON.stringify({v:1,c:b64,h:'',t:Date.now()});
+                new QRCode(tmp,{text:minPayload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+            }
+        }
+        const _hintDropped=hintDropped;
+        _qrRenderTimer=setTimeout(()=>{
+            _qrRenderTimer=null;
             const img=tmp.querySelector('img');
             if(img){
                 ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
@@ -1314,6 +1343,9 @@ function renderQRCode(){
                 ctx.fillStyle='#fff';ctx.fillRect(cx-coverSize/2,cy-coverSize/2,coverSize,coverSize);
                 drawAppIcon(ctx,cx,cy,iconSize);
             }
+            // 更新容量警告
+            const warnEl=document.getElementById('qrHintWarning');
+            if(warnEl)warnEl.style.display=_hintDropped&&hint?'block':'none';
             tmp.remove();
         },300);
     }else{
@@ -1332,23 +1364,32 @@ function exportQRPDF(){
         const {jsPDF}=window.jspdf;
         const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
         const pageW=pdf.internal.pageSize.getWidth();
+        const margin=15; // 左右边距
         const qrSize=70; // mm
         const qrX=(pageW-qrSize)/2;
-        const qrY=30;
-        // 标题（Canvas渲染中文→图片，避免PDF内置字体乱码）
-        const titleImg=textToPngDataUrl('SwiftCrypto 加密消息',16,'#1e1e32',pageW);
-        pdf.addImage(titleImg,'PNG',0,qrY-12,pageW,10);
+        let y=18; // 起始Y
+        
+        // 标题
+        const title=textToPngDataUrl('SwiftCrypto 加密消息',16,'#1e1e32',pageW-margin*2);
+        pdf.addImage(title.dataUrl,'PNG',margin,y,title.wMm,title.hMm);
+        y+=title.hMm+6;
+        
         // 二维码
         const imgData=canvas.toDataURL('image/png');
-        pdf.addImage(imgData,'PNG',qrX,qrY,qrSize,qrSize);
+        pdf.addImage(imgData,'PNG',qrX,y,qrSize,qrSize);
+        y+=qrSize+8;
+        
         // 密码提示
         if(hint){
-            const hintImg=textToPngDataUrl('💡 密码提示：'+hint,10,'#646478',pageW-20);
-            pdf.addImage(hintImg,'PNG',10,qrY+qrSize+8,pageW-20,7);
+            const hintImg=textToPngDataUrl('💡 密码提示：'+hint,9,'#646478',pageW-margin*2);
+            pdf.addImage(hintImg.dataUrl,'PNG',margin,y,hintImg.wMm,hintImg.hMm);
+            y+=hintImg.hMm+6;
         }
+        
         // Footer
-        const ftImg=textToPngDataUrl('扫码或导入此PDF解密 | swiftcrypto',8,'#9696a0',pageW);
-        pdf.addImage(ftImg,'PNG',0,280,pageW,5);
+        const ft=textToPngDataUrl('扫码或导入此PDF解密 | swiftcrypto',7,'#9696a0',pageW-margin*2);
+        pdf.addImage(ft.dataUrl,'PNG',margin,280,ft.wMm,ft.hMm);
+        
         // 文件名带时间戳
         const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
         pdf.save('swiftcrypto_qr_'+ts+'.pdf');
@@ -1359,21 +1400,23 @@ function exportQRPDF(){
     }
 }
 
-// Canvas 渲染文字→PNG DataURL（解决PDF内置字体不支持中文的问题）
-function textToPngDataUrl(text,fontSize,cssColor,widthMm){
+// Canvas 渲染文字→PNG DataURL（返回 {dataUrl, wMm, hMm} 保证比例正确）
+function textToPngDataUrl(text,fontSizePt,cssColor,widthMm){
     const scale=4; // 高清渲染
     const pxPerMm=96/25.4*scale;
+    const fontPx=fontSizePt*96/72; // pt→px
+    const lineH=fontPx*1.6; // 行高（含上下留白）
     const w=Math.round(widthMm*pxPerMm);
-    const h=Math.round(fontSize*1.6/25.4*96*scale);
+    const h=Math.round(lineH*scale);
     const cv=document.createElement('canvas');
     cv.width=w;cv.height=h;
     const ctx=cv.getContext('2d');
     ctx.scale(scale,scale);
-    ctx.font=`bold ${fontSize*96/72}px -apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif`;
+    ctx.font=`bold ${fontPx}px -apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif`;
     ctx.fillStyle=cssColor;
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(text,(w/scale)/2,(h/scale)/2);
-    return cv.toDataURL('image/png');
+    return {dataUrl:cv.toDataURL('image/png'), wMm:widthMm, hMm:Math.round(h/pxPerMm*10)/10};
 }
 
 // ─── 📷 扫码/导入密文二维码 ───
@@ -1383,6 +1426,11 @@ function parseQRPayload(data){
         if(p.v===1&&p.c){
             document.getElementById('cipherInput').value=p.c;
             if(p.h){
+                // 提示可能是Base64编码（避免中文QR溢出）或明文
+                let hintText=p.h;
+                if(!/[\u4e00-\u9fff]/.test(p.h)&&!/[^\x00-\x7F]/.test(p.h)){
+                    try{hintText=decodeURIComponent(escape(atob(p.h)))}catch(e){}
+                }
                 // 显示密码提示
                 let hintEl=document.getElementById('qrHintDisplay');
                 if(!hintEl){
@@ -1392,7 +1440,7 @@ function parseQRPayload(data){
                     const cipherInput=document.getElementById('cipherInput');
                     cipherInput.parentNode.insertBefore(hintEl,cipherInput.nextSibling);
                 }
-                hintEl.textContent='💡 密码提示：'+p.h;
+                hintEl.textContent='💡 密码提示：'+hintText;
                 hintEl.style.display='block';
             }
             if(p.t){
@@ -2551,7 +2599,8 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
     <div class="sheet" style="text-align:center;max-width:380px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:14px">
         <h3 style="margin:0;font-size:1rem">📱 二维码分享</h3>
         <label style="font-size:0.7rem;color:var(--dim);width:100%;text-align:left">💡 密码提示（可选，不要直接填密码！）</label>
-        <input type="text" id="qrShareHint" placeholder="例如：我们常用的那个密码…">
+        <input type="text" id="qrShareHint" placeholder="例如：我们常用的那个密码…" oninput="renderQRCode()">
+        <div id="qrHintWarning" style="display:none;font-size:0.6rem;color:#f97316;text-align:left;margin-top:-8px">⚠️ 提示过长，已从二维码中省略（PDF 中仍保留）</div>
         <div class="qr-preview"><canvas id="qrShareCanvas" width="280" height="280"></canvas></div>
         <p style="font-size:0.65rem;color:var(--dim);margin:0">让对方用 SwiftCrypto 扫码或导入此 PDF</p>
         <div class="btn-row">
