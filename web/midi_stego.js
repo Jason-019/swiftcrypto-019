@@ -827,6 +827,9 @@ function renderWaterfall(){
         const hue=Math.round(240-(n.vel||0.5)*200);
         ctx.fillStyle=`hsla(${hue},80%,55%,0.85)`;
         ctx.fillRect(x,ry,w-1,rh);
+        // 边框勾勒每个音符事件
+        ctx.strokeStyle=`hsla(${hue},80%,75%,0.6)`;
+        ctx.lineWidth=0.8;ctx.strokeRect(x,ry,w-1,rh);
     }
 
     // ── 4. 当前时间线（音符区与琴键分界线）──
