@@ -826,9 +826,7 @@ function renderWaterfall(){
     for(let pitch=_wfMinPitch;pitch<=_wfMaxPitch;pitch++){
         const nn=noteNames[pitch%12];
         if(!nn)continue;
-        const oct=Math.floor(pitch/12)-1;
-        const label=nn+oct;
-        ctx.fillText(label,(pitch-_wfMinPitch+0.5)*keyW,noteArea+keyH-3);
+        ctx.fillText(nn,(pitch-_wfMinPitch+0.5)*keyW,noteArea+keyH-3);
     }
     
     _wfAnimId=requestAnimationFrame(renderWaterfall);
