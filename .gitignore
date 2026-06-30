@@ -8,6 +8,10 @@ __pycache__/
 *.pyc
 *.pyo
 .venv/
+
+# Test images
+pic_comparison/
+web/*.jpg
 *.egg-info/
 
 # 桌面应用源码（只发布 web 版）
