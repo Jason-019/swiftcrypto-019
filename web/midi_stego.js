@@ -604,6 +604,8 @@ async function toggleMidiPlay(){
         synth.volume.value=0;
         const totalSec=scheduleMidiPlayback(synth,events,division,tempo);
         if(!totalSec){t('⚠️ 无可播放音符');return}
+        prepWaterfall(buf);
+        if(document.getElementById('midiWaterfallToggle').checked)renderWaterfall();
         // 自动停止
         if(_midiAutoStop)clearTimeout(_midiAutoStop);
         _midiAutoStop=setTimeout(()=>{
@@ -655,6 +657,7 @@ function scheduleMidiPlayback(synth,events,division,tempo){
 
 function stopMidiPlay(){
     if(_midiAutoStop){clearTimeout(_midiAutoStop);_midiAutoStop=null}
+    if(_wfAnimId){cancelAnimationFrame(_wfAnimId);_wfAnimId=null}
     Tone.Transport.stop();
     Tone.Transport.cancel();
     if(_midiPart){_midiPart.dispose();_midiPart=null}
@@ -679,6 +682,8 @@ async function toggleRecvPlay(){
         synth.volume.value=0;
         const totalSec=scheduleMidiPlayback(synth,events,division,tempo);
         if(!totalSec){t('⚠️ 无可播放音符');return}
+        prepWaterfall(_midiRecvBuf);
+        if(document.getElementById('midiWaterfallToggle').checked)renderWaterfall();
         if(_midiAutoStop)clearTimeout(_midiAutoStop);
         _midiAutoStop=setTimeout(()=>{
             _midiRecvPlaying=false;
@@ -690,8 +695,7 @@ async function toggleRecvPlay(){
     }catch(e){t('❌ 播放失败: '+e.message)}
 }
 function stopRecvPlay(){
-    if(_midiAutoStop){clearTimeout(_midiAutoStop);_midiAutoStop=null}
-    Tone.Transport.stop();
+    if(_midiAutoStop){clearTimeout(_midiAutoStop);_midiAutoStop=null}    if(_wfAnimId){cancelAnimationFrame(_wfAnimId);_wfAnimId=null}    Tone.Transport.stop();
     Tone.Transport.cancel();
     if(_midiPart){_midiPart.dispose();_midiPart=null}
     if(_midiSynth){_midiSynth.releaseAll()}
@@ -699,3 +703,109 @@ function stopRecvPlay(){
     document.getElementById('midiRecvPlayBtn').textContent='▶ 试听收到的文件';
     document.getElementById('midiRecvPlayBtn').style.color='';
 }
+
+// ══════ 瀑布图钢琴卷帘 ══════
+let _wfNotes=[],_wfAnimId=null,_wfMinPitch=60,_wfMaxPitch=84;
+const WF_LOOKAHEAD=3; // 超前显示秒数
+
+function toggleWaterfall(){
+    const cv=document.getElementById('midiWaterfall');
+    const on=document.getElementById('midiWaterfallToggle').checked;
+    cv.style.display=on?'block':'none';
+    if(!on){
+        if(_wfAnimId)cancelAnimationFrame(_wfAnimId);
+        _wfAnimId=null;
+        return;
+    }
+    if(_midiPlaying||_midiRecvPlaying){
+        const buf=_midiRecvBuf||_midiPlayBuf;
+        if(buf)prepWaterfall(buf);
+        renderWaterfall();
+    }
+}
+
+function prepWaterfall(buf){
+    try{
+        const midi=new ToneMidi.Midi(buf);
+        _wfNotes=[];_wfMinPitch=127;_wfMaxPitch=0;
+        for(const trk of midi.tracks){
+            for(const n of trk.notes){
+                _wfNotes.push({time:n.time,pitch:n.midi,dur:n.duration,vel:n.velocity});
+                if(n.midi<_wfMinPitch)_wfMinPitch=n.midi;
+                if(n.midi>_wfMaxPitch)_wfMaxPitch=n.midi;
+            }
+        }
+        if(_wfMinPitch>127){_wfMinPitch=60;_wfMaxPitch=84}
+        // 扩展范围确保至少1个八度
+        const span=_wfMaxPitch-_wfMinPitch;
+        if(span<12){const mid=Math.round((_wfMinPitch+_wfMaxPitch)/2);_wfMinPitch=mid-6;_wfMaxPitch=mid+6}
+        // 加一点边距
+        _wfMinPitch=Math.max(21,Math.floor(_wfMinPitch-1));
+        _wfMaxPitch=Math.min(108,Math.ceil(_wfMaxPitch+1));
+    }catch(e){console.warn('Waterfall prep failed:',e)}
+}
+
+function renderWaterfall(){
+    if(!document.getElementById('midiWaterfallToggle').checked){_wfAnimId=null;return}
+    if(!_midiPlaying&&!_midiRecvPlaying){_wfAnimId=null;return}
+    const cv=document.getElementById('midiWaterfall');
+    const ctx=cv.getContext('2d');
+    const W=cv.clientWidth,H=cv.clientHeight;
+    if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
+    ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,H);
+    const now=Tone.Transport.seconds;
+    const keyH=14; // 琴键区高度
+    const noteArea=H-keyH; // 音符滚动区高度
+    const nPitches=_wfMaxPitch-_wfMinPitch+1;
+    const pitchH=noteArea/nPitches;
+    
+    // 绘制音符
+    for(const n of _wfNotes){
+        const yStart=noteArea-(n.time-now)/WF_LOOKAHEAD*noteArea;
+        const yEnd=noteArea-(n.time+n.dur-now)/WF_LOOKAHEAD*noteArea;
+        if(yEnd<0||yStart>noteArea)continue; // 不可见
+        const x=(n.pitch-_wfMinPitch)/nPitches*W;
+        const w=W/nPitches;
+        const ry=Math.max(0,yEnd),rh=Math.max(2,yStart-ry);
+        // 颜色：力度映射到HSL色相(蓝色→青色→绿色→黄色→红色)
+        const hue=Math.round(240-(n.vel||0.5)*200);
+        ctx.fillStyle=`hsla(${hue},80%,55%,0.85)`;
+        ctx.fillRect(x,ry,w-1,rh);
+        // 描边
+        ctx.strokeStyle=`hsla(${hue},80%,70%,0.5)`;
+        ctx.lineWidth=0.5;ctx.strokeRect(x,ry,w-1,rh);
+    }
+    
+    // 当前时间线
+    const nowY=noteArea;
+    ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,nowY);ctx.lineTo(W,nowY);ctx.stroke();
+    
+    // 绘制迷你钢琴键盘
+    const keyW=W/nPitches;
+    for(let pitch=_wfMinPitch;pitch<=_wfMaxPitch;pitch++){
+        const x=(pitch-_wfMinPitch)*keyW;
+        const isBlack=[1,0,1,0,1,1,0,1,0,1,0,1][pitch%12]; // 黑键=1
+        const kY=noteArea,kh=keyH;
+        if(isBlack){
+            ctx.fillStyle='#222';ctx.fillRect(x,kY,keyW,kh);
+            ctx.fillStyle='#1a1a1a';ctx.fillRect(x+1,kY,keyW-2,kh*0.6);
+            ctx.strokeStyle='#444';ctx.lineWidth=0.5;ctx.strokeRect(x,kY,keyW,kh*0.65);
+        }else{
+            ctx.fillStyle='#ddd';ctx.fillRect(x,kY,keyW-0.5,kh);
+            ctx.strokeStyle='#999';ctx.lineWidth=0.3;ctx.strokeRect(x,kY,keyW-0.5,kh);
+        }
+    }
+    
+    // C标记
+    ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='8px monospace';ctx.textAlign='center';
+    for(let pitch=_wfMinPitch;pitch<=_wfMaxPitch;pitch++){
+        if(pitch%12===0){ // C
+            const oct=Math.floor(pitch/12)-1;
+            ctx.fillText('C'+oct,(pitch-_wfMinPitch+0.5)*keyW,noteArea+keyH-2);
+        }
+    }
+    
+    _wfAnimId=requestAnimationFrame(renderWaterfall);
+}
+
