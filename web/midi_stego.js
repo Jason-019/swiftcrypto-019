@@ -733,6 +733,7 @@ function prepWaterfall(buf){
         _wfNotes=[];_wfMinPitch=127;_wfMaxPitch=0;
         for(const trk of midi.tracks){
             for(const n of trk.notes){
+                if(n.duration<0.05)continue; // 跳过短于50ms的音符
                 _wfNotes.push({time:n.time,pitch:n.midi,dur:n.duration,vel:n.velocity});
                 if(n.midi<_wfMinPitch)_wfMinPitch=n.midi;
                 if(n.midi>_wfMaxPitch)_wfMaxPitch=n.midi;
