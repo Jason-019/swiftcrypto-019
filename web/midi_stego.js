@@ -761,14 +761,17 @@ function renderWaterfall(){
     const nPitches=_wfMaxPitch-_wfMinPitch+1;
     const pitchH=noteArea/nPitches;
     
-    // 绘制音符
+    // 绘制音符——已过的跳过，未来的从上方滑入
+    const pixPerSec=noteArea/WF_LOOKAHEAD;
     for(const n of _wfNotes){
-        const yStart=noteArea-(n.time-now)/WF_LOOKAHEAD*noteArea;
-        const yEnd=noteArea-(n.time+n.dur-now)/WF_LOOKAHEAD*noteArea;
-        if(yEnd<0||yStart>noteArea)continue; // 不可见
+        if(n.time+n.dur<now-0.3)continue; // 已过去，跳过
+        if(n.time>now+WF_LOOKAHEAD)continue; // 太远，跳过
+        const yEnd=noteArea-(n.time+n.dur-now)*pixPerSec;
+        const yStart=noteArea-(n.time-now)*pixPerSec;
+        if(yEnd<0||yStart>noteArea)continue;
         const x=(n.pitch-_wfMinPitch)/nPitches*W;
         const w=W/nPitches;
-        const ry=Math.max(0,yEnd),rh=Math.max(2,yStart-ry);
+        const ry=Math.max(0,yEnd),rh=Math.max(2,Math.min(noteArea,yStart)-ry);
         // 颜色：力度映射到HSL色相(蓝色→青色→绿色→黄色→红色)
         const hue=Math.round(240-(n.vel||0.5)*200);
         ctx.fillStyle=`hsla(${hue},80%,55%,0.85)`;
