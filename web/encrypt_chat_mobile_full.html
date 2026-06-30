@@ -1913,16 +1913,18 @@ function renderEraCard(){
     const cardW=gridW+40,cardH=gridH+90;
     cv.width=cardW;cv.height=cardH;
     const ctx=cv.getContext('2d');
-    // 背景：从当前主题色派生暗色渐变
-    const accent=ERA_COLORS[4]; // 紫色调，用于标题和边框
+    // 背景：解析当前主题渐变色，暗化后用于卡片
+    const t=THEMES[themeIdx];
+    const themeColors=(t.grad&&t.grad.match(/#[0-9a-fA-F]{6}/g))||['#1a1a2e','#16213e','#0f0f1a'];
+    const accent=themeColors[1]||ERA_COLORS[4];
     const grad=ctx.createLinearGradient(0,0,cardW,cardH);
-    grad.addColorStop(0,darkenHex(ERA_COLORS[5],0.12));
-    grad.addColorStop(0.5,darkenHex(ERA_COLORS[4],0.15));
-    grad.addColorStop(1,darkenHex(ERA_COLORS[0],0.08));
+    grad.addColorStop(0,darkenHex(themeColors[0]||'#1a1a2e',0.45));
+    grad.addColorStop(0.5,darkenHex(themeColors[1]||'#16213e',0.40));
+    grad.addColorStop(1,darkenHex((themeColors[2]||themeColors[0]||'#0f0f1a'),0.35));
     ctx.fillStyle=grad;roundRect(ctx,0,0,cardW,cardH,16);ctx.fill();
     ctx.strokeStyle=hexToRgba(accent,0.4);ctx.lineWidth=2;
     roundRect(ctx,1,1,cardW-2,cardH-2,16);ctx.stroke();
-    ctx.fillStyle=accent;ctx.font='bold 16px -apple-system,sans-serif';ctx.textAlign='center';
+    ctx.fillStyle=darkenHex(accent,0.7);ctx.font='bold 16px -apple-system,sans-serif';ctx.textAlign='center';
     ctx.fillText('🔐 SwiftCrypto',cardW/2,26);
     // 网格纯黑底色，隔离卡片渐变
     const ox=Math.floor((cardW-gridW)/2),oy=36;
