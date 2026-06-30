@@ -2022,41 +2022,102 @@ function decodeEraGrid(){
         const cv=document.createElement('canvas');cv.width=img.width;cv.height=img.height;
         const ctx=cv.getContext('2d');ctx.drawImage(img,0,0);
         const W=img.width,H=img.height;
-        const TARGET_RGB=ERA_COLORS.map(c=>[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)]);
-        let minPair=Infinity;
-        for(let i=0;i<8;i++)for(let j=i+1;j<8;j++){
-            const d=(TARGET_RGB[i][0]-TARGET_RGB[j][0])**2+(TARGET_RGB[i][1]-TARGET_RGB[j][1])**2+(TARGET_RGB[i][2]-TARGET_RGB[j][2])**2;
-            if(d<minPair)minPair=d;
-        }
-        const maxDist=10000;
-        // ── 找参考行：8个等间距亮色块 ──
-        let refY=-1,refX0=0,refW=0,refSp=0;
-        for(let y=4;y<H*0.4&&refY<0;y++){
-            const runs=[];let inB=false,rs=0;
-            for(let x=0;x<W;x++){
-                const px=ctx.getImageData(x,y,1,1).data;
-                const b=px[0]+px[1]+px[2]>120;
-                if(b&&!inB){inB=true;rs=x}
-                if(!b&&inB){inB=false;if(x-rs>=8)runs.push({s:rs,e:x})}
-            }
-            if(runs.length>=8){
-                const sp=[];for(let i=1;i<runs.length;i++)sp.push(runs[i].s-runs[i-1].s);
-                const avg=sp.reduce((a,b)=>a+b,0)/sp.length;
-                if(sp.every(s=>Math.abs(s-avg)<avg*0.3)){
-                    refY=y;refX0=runs[0].s;refW=runs[0].e-runs[0].s;refSp=avg;
+        let TARGET_RGB=ERA_COLORS.map(c=>[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)]); // 硬编码兜底
+        // ── 找参考行：8个等间距亮色块（自适应阈值，多趟扫描）──
+        let refY=-1,refX0=0,refW=0,refSp=0,refRuns=null;
+        for(const brightThresh of [120,180,240]){
+            if(refY>=0)break;
+            for(let y=4;y<H*0.4&&refY<0;y++){
+                const runs=[];let inB=false,rs=0;
+                for(let x=0;x<W;x++){
+                    const px=ctx.getImageData(x,y,1,1).data;
+                    const b=px[0]+px[1]+px[2]>brightThresh;
+                    if(b&&!inB){inB=true;rs=x}
+                    if(!b&&inB){inB=false;if(x-rs>=8)runs.push({s:rs,e:x})}
+                }
+                if(runs.length>=8){
+                    const sp=[];for(let i=1;i<runs.length;i++)sp.push(runs[i].s-runs[i-1].s);
+                    const avg=sp.reduce((a,b)=>a+b,0)/sp.length;
+                    if(sp.every(s=>Math.abs(s-avg)<avg*0.3)){
+                        refY=y;refX0=runs[0].s;refW=runs[0].e-runs[0].s;refSp=avg;refRuns=runs;
+                    }
                 }
             }
         }
         if(refY<0){t('⚠️ 未找到参考色块');document.getElementById('eraFileInput').value='';return}
-        // 垂直扫描测参考块高度
+        // 垂直扫描测参考块高度（固定阈值，参考块始终远亮于背景）
         const refCx=refX0+Math.round(refW/2);
+        const refBright=ctx.getImageData(refCx,refY,1,1).data[0]+ctx.getImageData(refCx,refY,1,1).data[1]+ctx.getImageData(refCx,refY,1,1).data[2];
         let refTop=refY,refBot=refY;
         while(refTop>0&&ctx.getImageData(refCx,refTop-1,1,1).data[0]+ctx.getImageData(refCx,refTop-1,1,1).data[1]+ctx.getImageData(refCx,refTop-1,1,1).data[2]>120)refTop--;
         while(refBot<H&&ctx.getImageData(refCx,refBot+1,1,1).data[0]+ctx.getImageData(refCx,refBot+1,1,1).data[1]+ctx.getImageData(refCx,refBot+1,1,1).data[2]>120)refBot++;
         const refH=refBot-refTop+1;
-        // 用refBot定位数据起点: 渲染侧 dataY0 = refY+refH+GAP = refBot+1+GAP
+        // ── 从参考色块实际采样RGB（抗调色）──
+        if(refRuns&&refH>=6){
+            const refCy=refTop+Math.round(refH/2),sr=Math.max(2,Math.round(refW*0.3));
+            const sampled=[];
+            for(let i=0;i<8&&i<refRuns.length;i++){
+                const cx=Math.round((refRuns[i].s+refRuns[i].e)/2);
+                let rSum=0,gSum=0,bSum=0,count=0;
+                for(let dy=-sr;dy<=sr;dy++){
+                    for(let dx=-sr;dx<=sr;dx++){
+                        const d=ctx.getImageData(cx+dx,refCy+dy,1,1).data;
+                        if(d[0]+d[1]+d[2]>120){rSum+=d[0];gSum+=d[1];bSum+=d[2];count++}
+                    }
+                }
+                if(count>=sr)sampled.push([Math.round(rSum/count),Math.round(gSum/count),Math.round(bSum/count)]);
+                else break;
+            }
+            if(sampled.length===8)TARGET_RGB=sampled;
+        }
+        // ── CIE Lab 颜色空间：感知均匀，L*与a*b*分离（抗亮度变化）──
+        const rgb2lab=(r,g,b)=>{
+            // sRGB → linear
+            const lin=v=>{v/=255;return v>0.04045?((v+0.055)/1.055)**2.4:v/12.92};
+            const rl=lin(r),gl=lin(g),bl=lin(b);
+            // linear RGB → XYZ (D65)
+            const x=0.4124564*rl+0.3575761*gl+0.1804375*bl;
+            const y=0.2126729*rl+0.7151522*gl+0.0721750*bl;
+            const z=0.0193339*rl+0.1191920*gl+0.9503041*bl;
+            // XYZ → Lab
+            const f=v=>v>0.008856?Math.cbrt(v):7.787*v+16/116;
+            const fx=f(x/0.95047),fy=f(y/1.0),fz=f(z/1.08883);
+            return[116*fy-16,500*(fx-fy),200*(fy-fz)];
+        };
+        // 转换参考色到 Lab
+        const TARGET_LAB=TARGET_RGB.map(c=>rgb2lab(c[0],c[1],c[2]));
+        // ── 仿人眼：基于 a*b* 欧氏距离 + 余弦可分性 ──
+        const abDist2=(a,b)=>{const da=a[1]-b[1],db=a[2]-b[2];return da*da+db*db};
+        const abCos=(a,b)=>{
+            const dot=a[1]*b[1]+a[2]*b[2];
+            const ma=Math.sqrt(a[1]*a[1]+a[2]*a[2]),mb=Math.sqrt(b[1]*b[1]+b[2]*b[2]);
+            return ma>0.1&&mb>0.1?dot/(ma*mb):0;
+        };
+        let minCos=1,maxCos=0,minD2=Infinity,maxD2=0;
+        for(let i=0;i<8;i++)for(let j=i+1;j<8;j++){
+            const cs=abCos(TARGET_LAB[i],TARGET_LAB[j]);
+            const d2=abDist2(TARGET_LAB[i],TARGET_LAB[j]);
+            if(cs<minCos)minCos=cs;if(cs>maxCos)maxCos=cs;
+            if(d2<minD2)minD2=d2;if(d2>maxD2)maxD2=d2;
+        }
+        const spreadRatio=1-minCos; // 0=两色同向, 1=非常分散
+        const confThresh=0.08+spreadRatio*0.27; // 范围 0.08~0.35
+        const maxD2Vote=maxD2*0.8; // 投票门槛：a*b*距离不超过最远色对的80%
         const dataY0=refBot+1+EC_GAP;
         const cellW=refW,cellSp=EC_CELL+EC_GAP;
+        // ── 自适应暗像素阈值：数据区边缘黑底采样 ──
+        let bgBright=0,bgN=0;
+        const dBgY=dataY0+Math.round(cellW/2); // 首行格子中心高度
+        for(let dy=-2;dy<=2;dy+=4){ // 上下各2个点
+            for(let dx=1;dx<=EC_GAP;dx++){ // 格子间隙中采样
+                const sx=Math.round(refX0+dx);
+                if(sx>1&&sx+1<W&&dBgY+dy>1&&dBgY+dy+1<H){
+                    const d=ctx.getImageData(sx,dBgY+dy,1,1).data;
+                    bgBright+=d[0]+d[1]+d[2];bgN++;
+                }
+            }
+        }
+        const darkThresh=bgN>2?Math.max(25,Math.round(bgBright/bgN)+20):25;
         t('📐 已定位，解码中…');
         // ── 逐格采样（中心加权） ──
         const readCell=(col,row)=>{
@@ -2066,18 +2127,24 @@ function decodeEraGrid(){
             const r=Math.max(3,Math.round(cellW*0.25)); // 采样半径(25%)
             for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
                 const d=ctx.getImageData(cx+dx,cy+dy,1,1).data;
-                if(d[0]+d[1]+d[2]<25)continue;
+                if(d[0]+d[1]+d[2]<darkThresh)continue;
                 // 中心加权：距离越近权重越高
                 const dist2=dx*dx+dy*dy;
                 const w=Math.max(1,r*r-dist2);
                 total+=w;
-                let best=0,bestD=1e9;
-                for(let k=0;k<8;k++){const dist=(d[0]-TARGET_RGB[k][0])**2+(d[1]-TARGET_RGB[k][1])**2+(d[2]-TARGET_RGB[k][2])**2;if(dist<bestD){bestD=dist;best=k}}
-                if(bestD<maxDist)votes[best]+=w;
+                // a*b* 欧氏距离匹配：忽略L*，抗亮度变化
+                const lab=rgb2lab(d[0],d[1],d[2]);
+                let best=0,bestD2=1e9;
+                for(let k=0;k<8;k++){
+                    const da=lab[1]-TARGET_LAB[k][1],db=lab[2]-TARGET_LAB[k][2];
+                    const d2=da*da+db*db;
+                    if(d2<bestD2){bestD2=d2;best=k}
+                }
+                if(bestD2<maxD2Vote)votes[best]+=w;
             }
             if(total===0)return -1;
             let winner=0,maxV=0;for(let k=0;k<8;k++){if(votes[k]>maxV){maxV=votes[k];winner=k}}
-            return maxV>total*0.35?winner:-1;
+            return maxV>total*confThresh?winner:-1;
         };
         // ── 逐行解码 ──
         let b64='',emptyRows=0,row=0;
