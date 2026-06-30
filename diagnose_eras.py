@@ -166,10 +166,13 @@ def decode_grid(img_arr, ref, sampled_rgb, W, H):
     maxD2Vote = maxD2 * 1.5
     confThresh = 0.15
     
+    # Max rows from card formula: cardH = rows*23 + 136
+    maxDataRows = max(1, (H - 136) // CELL_SP)
+    
     # Decode rows
     b64 = ''
     row_details = []
-    for row in range(200):  # safety limit
+    for row in range(maxDataRows):
         mc = 0
         cell_results = []
         for col in range(EC_COLS):
