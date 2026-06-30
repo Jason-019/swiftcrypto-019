@@ -756,7 +756,7 @@ function renderWaterfall(){
     if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
     ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,H);
     const now=Tone.Transport.seconds;
-    const keyH=14; // 琴键区高度
+    const keyH=Math.max(18,Math.round(H*0.15)); // 琴键区高度
     const noteArea=H-keyH; // 音符滚动区高度
     const nPitches=_wfMaxPitch-_wfMinPitch+1;
     const pitchH=noteArea/nPitches;
@@ -785,26 +785,43 @@ function renderWaterfall(){
     
     // 绘制迷你钢琴键盘
     const keyW=W/nPitches;
+    const blackPattern=[0,1,0,1,0,0,1,0,1,0,1,0];
     for(let pitch=_wfMinPitch;pitch<=_wfMaxPitch;pitch++){
+        if(blackPattern[pitch%12])continue;
         const x=(pitch-_wfMinPitch)*keyW;
-        const isBlack=[1,0,1,0,1,1,0,1,0,1,0,1][pitch%12]; // 黑键=1
-        const kY=noteArea,kh=keyH;
-        if(isBlack){
-            ctx.fillStyle='#222';ctx.fillRect(x,kY,keyW,kh);
-            ctx.fillStyle='#1a1a1a';ctx.fillRect(x+1,kY,keyW-2,kh*0.6);
-            ctx.strokeStyle='#444';ctx.lineWidth=0.5;ctx.strokeRect(x,kY,keyW,kh*0.65);
-        }else{
-            ctx.fillStyle='#ddd';ctx.fillRect(x,kY,keyW-0.5,kh);
-            ctx.strokeStyle='#999';ctx.lineWidth=0.3;ctx.strokeRect(x,kY,keyW-0.5,kh);
-        }
+        // 白键主体
+        const grad=ctx.createLinearGradient(x,noteArea,x,noteArea+keyH);
+        grad.addColorStop(0,'#f8f8f8');grad.addColorStop(0.85,'#e8e8e8');grad.addColorStop(1,'#ccc');
+        ctx.fillStyle=grad;
+        ctx.fillRect(x+0.5,noteArea,keyW-1,keyH);
+        ctx.strokeStyle='#aaa';ctx.lineWidth=0.5;
+        ctx.strokeRect(x+0.5,noteArea,keyW-1,keyH);
+    }
+    // 再画黑键（叠在白键上方）
+    for(let pitch=_wfMinPitch;pitch<=_wfMaxPitch;pitch++){
+        if(!blackPattern[pitch%12])continue;
+        const x=(pitch-_wfMinPitch)*keyW;
+        const bw=keyW*0.6; // 黑键宽度60%
+        const bx=x+(keyW-bw)/2; // 居中
+        const bh=keyH*0.62; // 黑键高度62%
+        const grad=ctx.createLinearGradient(bx,noteArea,bx,noteArea+bh);
+        grad.addColorStop(0,'#444');grad.addColorStop(0.3,'#1a1a1a');grad.addColorStop(1,'#000');
+        ctx.fillStyle=grad;
+        ctx.beginPath();
+        ctx.roundRect(bx,noteArea,bw,bh,2);
+        ctx.fill();
+        ctx.strokeStyle='#555';ctx.lineWidth=0.8;
+        ctx.beginPath();
+        ctx.roundRect(bx,noteArea,bw,bh,2);
+        ctx.stroke();
     }
     
-    // C标记
-    ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='8px monospace';ctx.textAlign='center';
+    // C标记 + 白键底线
+    ctx.fillStyle='rgba(0,0,0,0.25)';ctx.font=`${Math.max(7,Math.round(keyW*0.6))}px monospace`;ctx.textAlign='center';
     for(let pitch=_wfMinPitch;pitch<=_wfMaxPitch;pitch++){
-        if(pitch%12===0){ // C
+        if(pitch%12===0){
             const oct=Math.floor(pitch/12)-1;
-            ctx.fillText('C'+oct,(pitch-_wfMinPitch+0.5)*keyW,noteArea+keyH-2);
+            ctx.fillText('C'+oct,(pitch-_wfMinPitch+0.5)*keyW,noteArea+keyH-3);
         }
     }
     
