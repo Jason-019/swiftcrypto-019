@@ -1375,7 +1375,18 @@ function drawQRToCanvas(ctx,img){
 
 function exportQRPDF(){
     const canvas=document.getElementById('qrShareCanvas');
-    if(!canvas||!canvas.width)return t('⚠️ 请先生成二维码');
+    if(!canvas)return t('⚠️ 请先生成二维码');
+    // 确保canvas有内容：如果hidden则从visible rawDiv补画
+    if(canvas.style.display==='none'){
+        const rawDiv=document.getElementById('qrShareRaw');
+        const rawImg=rawDiv.querySelector('img');
+        if(rawImg&&rawImg.complete&&rawImg.naturalWidth>0){
+            const ctx=canvas.getContext('2d');
+            canvas.width=canvas.height=280;
+            drawQRToCanvas(ctx,rawImg);
+        }
+    }
+    if(!canvas.width||!canvas.toDataURL)return t('⚠️ 请先生成二维码');
     const hint=document.getElementById('qrShareHint').value.trim();
     try{
         const {jsPDF}=window.jspdf;
