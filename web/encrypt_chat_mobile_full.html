@@ -1311,33 +1311,31 @@ let _qrRenderTimer=null; // 防抖定时器
 function renderQRCode(){
     const b64=document.getElementById('cipherOutput').value;
     const hint=document.getElementById('qrShareHint').value.trim();
-    // 提示用Base64编码存入QR（避免中文导致qrcodejs溢出）
     const hintB64=hint?btoa(unescape(encodeURIComponent(hint))):'';
     const payload=JSON.stringify({v:1,c:b64,h:hintB64,t:Date.now()});
     const canvas=document.getElementById('qrShareCanvas');
     const ctx=canvas.getContext('2d');
     canvas.width=canvas.height=280;
-    // 清除上一次的定时器
+    // 显示"生成中"
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
+    ctx.fillStyle='#999';ctx.font='13px -apple-system,sans-serif';ctx.textAlign='center';
+    ctx.fillText('生成中…',140,140);
+    // 清除上一次
     if(_qrRenderTimer){clearTimeout(_qrRenderTimer);_qrRenderTimer=null}
-    // 移除旧的临时div
     const oldTmp=document.getElementById('_qrTmp');
     if(oldTmp)oldTmp.remove();
-    // 生成QR码到临时div
     const tmp=document.createElement('div');
     tmp.id='_qrTmp';tmp.style.position='absolute';tmp.style.left='-9999px';
     document.body.appendChild(tmp);
     if(typeof QRCode!=='undefined'){
         let hintDropped=false;
         try{
-            // M级纠错（15%），图标覆盖~6%，足够容错
             new QRCode(tmp,{text:payload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
         }catch(e){
-            // M级也溢出，尝试L级并加大覆盖区
             console.warn('QR M-level overflow, trying L:',e);
             try{
                 new QRCode(tmp,{text:payload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});
             }catch(e2){
-                // 仍溢出：去掉提示仅含密文
                 console.warn('QR L-level overflow, removing hint');
                 hintDropped=true;
                 const minPayload=JSON.stringify({v:1,c:b64,h:'',t:Date.now()});
@@ -1345,28 +1343,48 @@ function renderQRCode(){
             }
         }
         const _hintDropped=hintDropped;
-        _qrRenderTimer=setTimeout(()=>{
-            _qrRenderTimer=null;
+        // 用 onload 等待图片加载完成（移动端可能较慢）
+        const waitForImg=()=>{
             const img=tmp.querySelector('img');
             if(img){
-                ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
-                ctx.drawImage(img,0,0,280,280);
-                // 中心白色覆盖 + 图标
-                const cx=140,cy=140,iconSize=52,coverSize=44;
-                ctx.fillStyle='#fff';ctx.fillRect(cx-coverSize/2,cy-coverSize/2,coverSize,coverSize);
-                drawAppIcon(ctx,cx,cy,iconSize);
+                if(img.complete&&img.naturalWidth>0){
+                    drawQRToCanvas(ctx,img);
+                    const warnEl=document.getElementById('qrHintWarning');
+                    if(warnEl)warnEl.style.display=_hintDropped&&hint?'block':'none';
+                    tmp.remove();
+                }else{
+                    img.onload=()=>{
+                        drawQRToCanvas(ctx,img);
+                        const warnEl=document.getElementById('qrHintWarning');
+                        if(warnEl)warnEl.style.display=_hintDropped&&hint?'block':'none';
+                        tmp.remove();
+                    };
+                    img.onerror=()=>{
+                        ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
+                        ctx.fillStyle='#e53e3e';ctx.font='12px -apple-system,sans-serif';
+                        ctx.fillText('QR生成失败',140,140);
+                        tmp.remove();
+                    };
+                }
+            }else{
+                // 还没生成img，轮询等待
+                _qrRenderTimer=setTimeout(waitForImg,100);
             }
-            // 更新容量警告
-            const warnEl=document.getElementById('qrHintWarning');
-            if(warnEl)warnEl.style.display=_hintDropped&&hint?'block':'none';
-            tmp.remove();
-        },300);
+        };
+        _qrRenderTimer=setTimeout(waitForImg,50);
     }else{
         ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
-        ctx.fillStyle='#333';ctx.font='14px sans-serif';ctx.textAlign='center';
+        ctx.fillStyle='#e53e3e';ctx.font='12px -apple-system,sans-serif';
         ctx.fillText('QR库未加载',140,140);
         tmp.remove();
     }
+}
+function drawQRToCanvas(ctx,img){
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
+    ctx.drawImage(img,0,0,280,280);
+    const cx=140,cy=140,iconSize=52,coverSize=44;
+    ctx.fillStyle='#fff';ctx.fillRect(cx-coverSize/2,cy-coverSize/2,coverSize,coverSize);
+    drawAppIcon(ctx,cx,cy,iconSize);
 }
 
 function exportQRPDF(){
