@@ -1343,17 +1343,23 @@ function renderQRCode(){
         }
         // qrcodejs 生成 dataURL 是同步的，img 立即可用
         const img=tmp.querySelector('img');
+        const done=()=>{
+            const warnEl=document.getElementById('qrHintWarning');
+            if(warnEl)warnEl.style.display=hintDropped&&hint?'block':'none';
+            tmp.remove();
+        };
         if(img){
-            if(img.complete){
+            if(img.complete&&img.naturalWidth>0){
                 drawQRToCanvas(ctx,img);
+                done();
             }else{
-                img.onload=()=>drawQRToCanvas(ctx,img);
-                img.onerror=()=>{ctx.fillText('QR失败',140,140)};
+                img.onload=()=>{drawQRToCanvas(ctx,img);done();};
+                img.onerror=()=>{ctx.fillText('QR失败',140,160);done();};
+                return; // 等回调，不执行后面的done()
             }
+        }else{
+            tmp.remove();
         }
-        const warnEl=document.getElementById('qrHintWarning');
-        if(warnEl)warnEl.style.display=hintDropped&&hint?'block':'none';
-        tmp.remove();
     }else{
         ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
         ctx.fillStyle='#e53e3e';ctx.font='12px -apple-system,sans-serif';
