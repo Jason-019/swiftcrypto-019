@@ -657,7 +657,7 @@ function scheduleMidiPlayback(synth,events,division,tempo){
 
 function stopMidiPlay(){
     if(_midiAutoStop){clearTimeout(_midiAutoStop);_midiAutoStop=null}
-    if(_wfAnimId){cancelAnimationFrame(_wfAnimId);_wfAnimId=null}
+    if(_wfAnimId){cancelAnimationFrame(_wfAnimId);_wfAnimId=null;_wfLastTime=null}
     Tone.Transport.stop();
     Tone.Transport.cancel();
     if(_midiPart){_midiPart.dispose();_midiPart=null}
@@ -696,7 +696,7 @@ async function toggleRecvPlay(){
 }
 function stopRecvPlay(){
     if(_midiAutoStop){clearTimeout(_midiAutoStop);_midiAutoStop=null}
-    if(_wfAnimId){cancelAnimationFrame(_wfAnimId);_wfAnimId=null}
+    if(_wfAnimId){cancelAnimationFrame(_wfAnimId);_wfAnimId=null;_wfLastTime=null}
     Tone.Transport.stop();
     Tone.Transport.cancel();
     if(_midiPart){_midiPart.dispose();_midiPart=null}
@@ -707,7 +707,7 @@ function stopRecvPlay(){
 }
 
 // ══════ 瀑布图钢琴卷帘 ══════
-let _wfNotes=[],_wfAnimId=null,_wfMinPitch=60,_wfMaxPitch=84;
+let _wfNotes=[],_wfAnimId=null,_wfMinPitch=60,_wfMaxPitch=84,_wfLastTime=null,_wfAccum=0;
 const WF_LOOKAHEAD=3; // 超前显示秒数
 
 function toggleWaterfall(){
@@ -716,12 +716,13 @@ function toggleWaterfall(){
     cv.style.display=on?'block':'none';
     if(!on){
         if(_wfAnimId)cancelAnimationFrame(_wfAnimId);
-        _wfAnimId=null;
+        _wfAnimId=null;_wfLastTime=null;
         return;
     }
     if(_midiPlaying||_midiRecvPlaying){
         const buf=_midiRecvBuf||_midiPlayBuf;
         if(buf)prepWaterfall(buf);
+        _wfLastTime=null; // 强制首帧全量重绘
         renderWaterfall();
     }
 }
@@ -738,61 +739,90 @@ function prepWaterfall(buf){
             }
         }
         if(_wfMinPitch>127){_wfMinPitch=60;_wfMaxPitch=84}
-        // 扩展范围确保至少1个八度
         const span=_wfMaxPitch-_wfMinPitch;
         if(span<12){const mid=Math.round((_wfMinPitch+_wfMaxPitch)/2);_wfMinPitch=mid-6;_wfMaxPitch=mid+6}
-        // 加一点边距
         _wfMinPitch=Math.max(21,Math.floor(_wfMinPitch-1));
         _wfMaxPitch=Math.min(108,Math.ceil(_wfMaxPitch+1));
+        _wfLastTime=null; // 强制首帧全量重绘
     }catch(e){console.warn('Waterfall prep failed:',e)}
 }
 
 function renderWaterfall(){
-    if(!document.getElementById('midiWaterfallToggle').checked){_wfAnimId=null;return}
-    if(!_midiPlaying&&!_midiRecvPlaying){_wfAnimId=null;return}
+    if(!document.getElementById('midiWaterfallToggle').checked){_wfAnimId=null;_wfLastTime=null;return}
+    if(!_midiPlaying&&!_midiRecvPlaying){_wfAnimId=null;_wfLastTime=null;return}
     const cv=document.getElementById('midiWaterfall');
     const ctx=cv.getContext('2d');
     const W=cv.clientWidth,H=cv.clientHeight;
-    if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
-    ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,H);
+    if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;_wfLastTime=null}
+
     const now=Tone.Transport.seconds;
-    const keyH=Math.max(22,Math.round(H*0.18)); // 琴键区高度
-    const noteArea=H-keyH; // 音符滚动区高度
+    const keyH=Math.max(22,Math.round(H*0.18));
+    const noteArea=H-keyH;
     const nPitches=_wfMaxPitch-_wfMinPitch+1;
-    const pitchH=noteArea/nPitches;
-    
-    // 绘制音符——已过的跳过，未来的从上方滑入
     const pixPerSec=noteArea/WF_LOOKAHEAD;
-    for(const n of _wfNotes){
-        if(n.time+n.dur<now-0.3)continue; // 已过去，跳过
-        if(n.time>now+WF_LOOKAHEAD)continue; // 太远，跳过
-        const yEnd=noteArea-(n.time+n.dur-now)*pixPerSec;
-        const yStart=noteArea-(n.time-now)*pixPerSec;
-        if(yEnd<0||yStart>noteArea)continue;
-        const x=(n.pitch-_wfMinPitch)/nPitches*W;
-        const w=W/nPitches;
-        const ry=Math.max(0,yEnd),rh=Math.max(2,Math.min(noteArea,yStart)-ry);
-        // 颜色：力度映射到HSL色相(蓝色→青色→绿色→黄色→红色)
-        const hue=Math.round(240-(n.vel||0.5)*200);
-        ctx.fillStyle=`hsla(${hue},80%,55%,0.85)`;
-        ctx.fillRect(x,ry,w-1,rh);
-        // 描边
-        ctx.strokeStyle=`hsla(${hue},80%,70%,0.5)`;
-        ctx.lineWidth=0.5;ctx.strokeRect(x,ry,w-1,rh);
+
+    // ── 自移位瀑布：把已有内容往上推，只在底部画新进入的音符 ──
+    const needsFullRedraw=_wfLastTime===null||now<_wfLastTime;
+    if(!needsFullRedraw){
+        const dt=Math.min(now-_wfLastTime,0.1); // 防止跳帧拉太长
+        const rawShift=dt*pixPerSec+_wfAccum;
+        const shiftPx=Math.floor(rawShift);
+        _wfAccum=rawShift-shiftPx;
+        if(shiftPx>0&&shiftPx<noteArea){
+            // 把音符区内容往上挪 shiftPx 像素（键盘区不动）
+            ctx.drawImage(cv,0,shiftPx,W,noteArea-shiftPx, 0,0,W,noteArea-shiftPx);
+            // 清除底部新露出的条带
+            ctx.fillStyle='#0a0a14';
+            ctx.fillRect(0,noteArea-shiftPx,W,shiftPx);
+            // 只画落入底部条带 + 当前可见的音符
+            const bottomTop=noteArea-shiftPx;
+            for(const n of _wfNotes){
+                if(n.time+n.dur<now-0.3)continue;
+                if(n.time>now+WF_LOOKAHEAD)continue;
+                const yEnd=noteArea-(n.time+n.dur-now)*pixPerSec;
+                const yStart=noteArea-(n.time-now)*pixPerSec;
+                if(yEnd>noteArea||yStart<bottomTop)continue; // 不在底部新条带内
+                const x=(n.pitch-_wfMinPitch)/nPitches*W;
+                const w=W/nPitches;
+                const ry=Math.max(bottomTop,Math.max(0,yEnd));
+                const rh=Math.max(2,Math.min(noteArea,yStart)-ry);
+                const hue=Math.round(240-(n.vel||0.5)*200);
+                ctx.fillStyle=`hsla(${hue},80%,55%,0.85)`;
+                ctx.fillRect(x,ry,w-1,rh);
+            }
+        }
+    } else {
+        // 首帧或时间跳回：全量重绘音符区
+        ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,noteArea);
+        for(const n of _wfNotes){
+            if(n.time+n.dur<now-0.3)continue;
+            if(n.time>now+WF_LOOKAHEAD)continue;
+            const yEnd=noteArea-(n.time+n.dur-now)*pixPerSec;
+            const yStart=noteArea-(n.time-now)*pixPerSec;
+            if(yEnd<0||yStart>noteArea)continue;
+            const x=(n.pitch-_wfMinPitch)/nPitches*W;
+            const w=W/nPitches;
+            const ry=Math.max(0,yEnd),rh=Math.max(2,Math.min(noteArea,yStart)-ry);
+            const hue=Math.round(240-(n.vel||0.5)*200);
+            ctx.fillStyle=`hsla(${hue},80%,55%,0.85)`;
+            ctx.fillRect(x,ry,w-1,rh);
+        }
+        _wfAccum=0;
     }
-    
-    // 当前时间线
-    const nowY=noteArea;
+    _wfLastTime=now;
+
+    // ── 当前时间线 ──
     ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(0,nowY);ctx.lineTo(W,nowY);ctx.stroke();
-    
-    // 绘制迷你钢琴键盘
+    ctx.beginPath();ctx.moveTo(0,noteArea);ctx.lineTo(W,noteArea);ctx.stroke();
+
+    // ── 迷你钢琴键盘（始终重绘，保持清晰）──
     const keyW=W/nPitches;
     const blackPattern=[0,1,0,1,0,0,1,0,1,0,1,0];
+    // 白键底色
+    ctx.fillStyle='#e8e8e8';ctx.fillRect(0,noteArea,W,keyH);
     for(let pitch=_wfMinPitch;pitch<=_wfMaxPitch;pitch++){
         if(blackPattern[pitch%12])continue;
         const x=(pitch-_wfMinPitch)*keyW;
-        // 白键主体
         const grad=ctx.createLinearGradient(x,noteArea,x,noteArea+keyH);
         grad.addColorStop(0,'#f8f8f8');grad.addColorStop(0.85,'#e8e8e8');grad.addColorStop(1,'#ccc');
         ctx.fillStyle=grad;
@@ -800,13 +830,13 @@ function renderWaterfall(){
         ctx.strokeStyle='#aaa';ctx.lineWidth=0.5;
         ctx.strokeRect(x+0.5,noteArea,keyW-1,keyH);
     }
-    // 再画黑键（叠在白键上方）
+    // 黑键
     for(let pitch=_wfMinPitch;pitch<=_wfMaxPitch;pitch++){
         if(!blackPattern[pitch%12])continue;
         const x=(pitch-_wfMinPitch)*keyW;
-        const bw=keyW*0.6; // 黑键宽度60%
-        const bx=x+(keyW-bw)/2; // 居中
-        const bh=keyH*0.62; // 黑键高度62%
+        const bw=keyW*0.6;
+        const bx=x+(keyW-bw)/2;
+        const bh=keyH*0.62;
         const grad=ctx.createLinearGradient(bx,noteArea,bx,noteArea+bh);
         grad.addColorStop(0,'#444');grad.addColorStop(0.3,'#1a1a1a');grad.addColorStop(1,'#000');
         ctx.fillStyle=grad;
@@ -818,8 +848,7 @@ function renderWaterfall(){
         ctx.roundRect(bx,noteArea,bw,bh,2);
         ctx.stroke();
     }
-    
-    // 白键音名标注 - 深色大字体
+
     const noteNames=['C','','D','','E','F','','G','','A','','B'];
     const fontSize=Math.max(7,Math.round(keyW*0.75));
     ctx.fillStyle='rgba(0,0,0,0.55)';
@@ -831,7 +860,7 @@ function renderWaterfall(){
         if(!nn)continue;
         ctx.fillText(nn,(pitch-_wfMinPitch+0.5)*keyW,noteArea+keyH-3);
     }
-    
+
     _wfAnimId=requestAnimationFrame(renderWaterfall);
 }
 
