@@ -756,7 +756,7 @@ function renderWaterfall(){
     if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
     ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,H);
     const now=Tone.Transport.seconds;
-    const keyH=Math.max(18,Math.round(H*0.15)); // 琴键区高度
+    const keyH=Math.max(22,Math.round(H*0.18)); // 琴键区高度
     const noteArea=H-keyH; // 音符滚动区高度
     const nPitches=_wfMaxPitch-_wfMinPitch+1;
     const pitchH=noteArea/nPitches;
@@ -816,11 +816,13 @@ function renderWaterfall(){
         ctx.stroke();
     }
     
-    // 白键音名标注
+    // 白键音名标注 - 深色大字体
     const noteNames=['C','','D','','E','F','','G','','A','','B'];
-    ctx.fillStyle='rgba(0,0,0,0.3)';
-    ctx.font=`${Math.max(6,Math.round(keyW*0.55))}px monospace`;
+    const fontSize=Math.max(7,Math.round(keyW*0.75));
+    ctx.fillStyle='rgba(0,0,0,0.55)';
+    ctx.font=`bold ${fontSize}px -apple-system,sans-serif`;
     ctx.textAlign='center';
+    ctx.textBaseline='bottom';
     for(let pitch=_wfMinPitch;pitch<=_wfMaxPitch;pitch++){
         const nn=noteNames[pitch%12];
         if(!nn)continue;
