@@ -707,7 +707,7 @@ function stopRecvPlay(){
 }
 
 // ══════ 瀑布图钢琴卷帘 ══════
-let _wfNotes=[],_wfAnimId=null,_wfMinPitch=60,_wfMaxPitch=84,_wfLastTime=null,_wfAccum=0;
+let _wfNotes=[],_wfAnimId=null,_wfMinPitch=60,_wfMaxPitch=84,_wfLastTime=null,_wfAccum=0,_wfOffCv=null;
 const WF_LOOKAHEAD=3; // 超前显示秒数
 
 function toggleWaterfall(){
@@ -769,8 +769,19 @@ function renderWaterfall(){
         const shiftPx=Math.floor(rawShift);
         _wfAccum=rawShift-shiftPx;
         if(shiftPx>0&&shiftPx<noteArea){
-            // 把音符区内容往上挪 shiftPx 像素（键盘区不动）
-            ctx.drawImage(cv,0,shiftPx,W,noteArea-shiftPx, 0,0,W,noteArea-shiftPx);
+            // 使用离屏 canvas 中转，避免 drawImage(cv,cv) 自绘制的兼容性问题
+            if(!_wfOffCv||_wfOffCv.width!==W||_wfOffCv.height!==noteArea){
+                _wfOffCv=document.createElement('canvas');
+                _wfOffCv.width=W;_wfOffCv.height=noteArea;
+            }
+            const offCtx=_wfOffCv.getContext('2d');
+            // 复制当前音符区到离屏
+            offCtx.drawImage(cv,0,0,W,noteArea, 0,0,W,noteArea);
+            // 清除主画布音符区
+            ctx.fillStyle='#0a0a14';
+            ctx.fillRect(0,0,W,noteArea);
+            // 从离屏上移后画回
+            ctx.drawImage(_wfOffCv,0,shiftPx,W,noteArea-shiftPx, 0,0,W,noteArea-shiftPx);
             // 清除底部新露出的条带
             ctx.fillStyle='#0a0a14';
             ctx.fillRect(0,noteArea-shiftPx,W,shiftPx);
