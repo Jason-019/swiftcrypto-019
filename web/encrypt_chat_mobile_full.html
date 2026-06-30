@@ -197,6 +197,11 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 .chat-auto-toggle .switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .3s}
 .chat-auto-toggle input:checked+.switch{background:var(--accent)}
 .chat-auto-toggle input:checked+.switch::after{left:18px}
+/* QR分享弹窗 */
+#qrShareModal .qr-preview{background:#fff;border-radius:12px;padding:12px;display:inline-block;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+#qrShareModal .qr-preview canvas{display:block;border-radius:4px}
+#qrShareHint{font-size:0.8rem;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);outline:none;width:100%;box-sizing:border-box}
+#qrShareHint:focus{border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -305,6 +310,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
                 <div class="share-menu">
                     <button onclick="shareAsEras()">🎨 Eras码</button>
                     <button onclick="shareAsText()">📝 纯文字</button>
+                    <button onclick="shareAsQRPDF()">📱 二维码PDF</button>
                 </div>
             </div>
             <button class="btn btn-outline" onclick="openShareModal()">🔗 链接</button>
@@ -314,8 +320,9 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     <div class="panel" id="panelDec">
         <textarea id="cipherInput" placeholder="粘贴密文…"></textarea>
         <div style="display:flex;gap:6px;align-items:center">
-            <span style="font-size:0.6rem;color:var(--dim)">🎨 或上传 Eras 色块图:</span>
-            <input type="file" id="eraFileInput" accept="image/*" onchange="decodeEraGrid()" style="flex:1;font-size:0.6rem;color:var(--dim)">
+            <span style="font-size:0.6rem;color:var(--dim)">🎨 或上传 Eras/二维码:</span>
+            <input type="file" id="eraFileInput" accept="image/*" onchange="handleDecFileInput()" style="flex:1;font-size:0.6rem;color:var(--dim)">
+            <button class="btn btn-outline" onclick="startCipherScan()" style="font-size:0.6rem;padding:2px 6px;flex-shrink:0">📷 扫二维码</button>
             <button class="icon-btn" onclick="clearFileInput('eraFileInput')" title="清除图片" style="font-size:1.0rem;flex-shrink:0">✕</button>
         </div>
         <div class="btn-row">
@@ -1256,6 +1263,215 @@ document.addEventListener('click',function(e){
     const dd=document.getElementById('shareDropdown');
     if(dd&&!dd.contains(e.target))dd.classList.remove('open');
 });
+
+// ─── 📱 二维码PDF分享 ───
+function shareAsQRPDF(){
+    document.getElementById('shareDropdown').classList.remove('open');
+    const b64=document.getElementById('cipherOutput').value;
+    if(!b64)return t('⚠️ 请先生成密文');
+    renderQRCode();
+    document.getElementById('qrShareModal').style.display='flex';
+}
+function closeQRShareModal(){document.getElementById('qrShareModal').style.display='none'}
+
+function drawAppIcon(ctx,cx,cy,size){
+    // 紫色渐变圆角矩形
+    const grad=ctx.createLinearGradient(cx-size/2,cy-size/2,cx+size/2,cy+size/2);
+    grad.addColorStop(0,'#7c3aed');grad.addColorStop(1,'#a78bfa');
+    const r=size*0.2;
+    ctx.beginPath();ctx.moveTo(cx-size/2+r,cy-size/2);
+    ctx.lineTo(cx+size/2-r,cy-size/2);ctx.arcTo(cx+size/2,cy-size/2,cx+size/2,cy-size/2+r,r);
+    ctx.lineTo(cx+size/2,cy+size/2-r);ctx.arcTo(cx+size/2,cy+size/2,cx+size/2-r,cy+size/2,r);
+    ctx.lineTo(cx-size/2+r,cy+size/2);ctx.arcTo(cx-size/2,cy+size/2,cx-size/2,cy+size/2-r,r);
+    ctx.lineTo(cx-size/2,cy-size/2+r);ctx.arcTo(cx-size/2,cy-size/2,cx-size/2+r,cy-size/2,r);
+    ctx.closePath();ctx.fill();
+    // 白色🔐文字
+    ctx.fillStyle='#fff';ctx.font=`bold ${size*0.5}px -apple-system,sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('🔐',cx,cy+size*0.02);
+}
+
+function renderQRCode(){
+    const b64=document.getElementById('cipherOutput').value;
+    const hint=document.getElementById('qrShareHint').value.trim();
+    const payload=JSON.stringify({v:1,c:b64,h:hint,t:Date.now()});
+    const canvas=document.getElementById('qrShareCanvas');
+    const ctx=canvas.getContext('2d');
+    canvas.width=canvas.height=280;
+    // 生成QR码到临时div
+    const tmp=document.createElement('div');
+    tmp.style.position='absolute';tmp.style.left='-9999px';
+    document.body.appendChild(tmp);
+    if(typeof QRCode!=='undefined'){
+        new QRCode(tmp,{text:payload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H});
+        setTimeout(()=>{
+            const img=tmp.querySelector('img');
+            if(img){
+                ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
+                ctx.drawImage(img,0,0,280,280);
+                // 中心白色覆盖 + 图标
+                const cx=140,cy=140,iconSize=52,coverSize=44;
+                ctx.fillStyle='#fff';ctx.fillRect(cx-coverSize/2,cy-coverSize/2,coverSize,coverSize);
+                drawAppIcon(ctx,cx,cy,iconSize);
+            }
+            tmp.remove();
+        },300);
+    }else{
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
+        ctx.fillStyle='#333';ctx.font='14px sans-serif';ctx.textAlign='center';
+        ctx.fillText('QR库未加载',140,140);
+        tmp.remove();
+    }
+}
+
+function exportQRPDF(){
+    const canvas=document.getElementById('qrShareCanvas');
+    if(!canvas||!canvas.width)return t('⚠️ 请先生成二维码');
+    const hint=document.getElementById('qrShareHint').value.trim();
+    try{
+        const {jsPDF}=window.jspdf;
+        const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+        const pageW=pdf.internal.pageSize.getWidth();
+        const qrSize=70; // mm
+        const qrX=(pageW-qrSize)/2;
+        const qrY=30;
+        // 标题
+        pdf.setFontSize(16);pdf.setTextColor(30,30,50);
+        pdf.text('SwiftCrypto 加密消息',pageW/2,qrY-8,{align:'center'});
+        // 二维码
+        const imgData=canvas.toDataURL('image/png');
+        pdf.addImage(imgData,'PNG',qrX,qrY,qrSize,qrSize);
+        // 密码提示
+        if(hint){
+            pdf.setFontSize(10);pdf.setTextColor(100,100,120);
+            pdf.text('密码提示：'+hint,pageW/2,qrY+qrSize+10,{align:'center'});
+        }
+        // Footer
+        pdf.setFontSize(8);pdf.setTextColor(150,150,160);
+        pdf.text('扫码或导入此PDF解密 | swiftcrypto',pageW/2,280,{align:'center'});
+        pdf.save('swiftcrypto_qr.pdf');
+        t('📥 PDF 已导出');
+    }catch(e){
+        console.error('PDF export failed:',e);
+        t('⚠️ PDF导出失败，请重试');
+    }
+}
+
+// ─── 📷 扫码/导入密文二维码 ───
+function parseQRPayload(data){
+    try{
+        const p=JSON.parse(data);
+        if(p.v===1&&p.c){
+            document.getElementById('cipherInput').value=p.c;
+            if(p.h){
+                // 显示密码提示
+                let hintEl=document.getElementById('qrHintDisplay');
+                if(!hintEl){
+                    hintEl=document.createElement('div');
+                    hintEl.id='qrHintDisplay';
+                    hintEl.style.cssText='font-size:0.7rem;color:#fbbf24;background:rgba(251,191,36,0.1);padding:8px 12px;border-radius:8px;text-align:center;line-height:1.4;margin-top:4px';
+                    const cipherInput=document.getElementById('cipherInput');
+                    cipherInput.parentNode.insertBefore(hintEl,cipherInput.nextSibling);
+                }
+                hintEl.textContent='💡 密码提示：'+p.h;
+                hintEl.style.display='block';
+            }
+            if(p.t){
+                const dt=new Date(p.t);
+                t('✅ 已识别密文二维码（'+dt.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})+'）');
+            }else{
+                t('✅ 已识别密文二维码');
+            }
+            return true;
+        }
+    }catch(e){}
+    // 兼容原始密文直接放QR中的情况
+    if(data&&data.length>20&&/^[A-Za-z0-9+/=]+$/.test(data)){
+        document.getElementById('cipherInput').value=data;
+        t('✅ 已识别密文（纯文本二维码）');
+        return true;
+    }
+    return false;
+}
+
+async function handleDecFileInput(){
+    const file=document.getElementById('eraFileInput').files[0];
+    if(!file)return;
+    try{
+        // 先尝试 jsQR 解析二维码
+        const img=new Image();
+        const url=URL.createObjectURL(file);
+        await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
+        URL.revokeObjectURL(url);
+        const cv=document.createElement('canvas');
+        cv.width=img.width;cv.height=img.height;
+        const ctx=cv.getContext('2d');
+        ctx.drawImage(img,0,0);
+        const imgData=ctx.getImageData(0,0,cv.width,cv.height);
+        if(typeof jsQR!=='undefined'){
+            const code=jsQR(imgData.data,cv.width,cv.height);
+            if(code&&code.data){
+                if(parseQRPayload(code.data))return;
+            }
+        }
+        // 回退到Eras解码
+        decodeEraGrid();
+    }catch(e){
+        console.warn('File input decode failed:',e);
+        // 回退到Eras解码
+        try{decodeEraGrid()}catch{}
+    }
+}
+
+let _cipherScanStream=null,_cipherScanTimer=null;
+async function startCipherScan(){
+    // 复用scanModal
+    document.getElementById('scanModal').style.display='flex';
+    document.getElementById('scanStatus').textContent='📷 正在启动摄像头…';
+    _scanMode='cipher';
+    try{
+        const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+        _cipherScanStream=stream;
+        const video=document.getElementById('scanVideo');
+        video.srcObject=stream;
+        document.getElementById('scanStatus').textContent='📷 将密文二维码对准框内…';
+        const cv=document.getElementById('scanCanvas');
+        const ctx=cv.getContext('2d');
+        _cipherScanTimer=setInterval(()=>{
+            if(video.readyState!==video.HAVE_ENOUGH_DATA)return;
+            cv.width=video.videoWidth;cv.height=video.videoHeight;
+            ctx.drawImage(video,0,0,cv.width,cv.height);
+            const imgData=ctx.getImageData(0,0,cv.width,cv.height);
+            if(typeof jsQR!=='undefined'){
+                const code=jsQR(imgData.data,cv.width,cv.height);
+                if(code&&code.data){
+                    if(parseQRPayload(code.data)){
+                        document.getElementById('scanStatus').textContent='✅ 密文已识别！';
+                        setTimeout(stopCipherScan,500);
+                    }
+                }
+            }
+        },200);
+    }catch(e){
+        document.getElementById('scanStatus').textContent='⚠️ 摄像头不可用';
+        stopCipherScan();
+        t('📷 摄像头不可用');
+    }
+}
+function stopCipherScan(){
+    if(_cipherScanTimer){clearInterval(_cipherScanTimer);_cipherScanTimer=null}
+    if(_cipherScanStream){_cipherScanStream.getTracks().forEach(t=>t.stop());_cipherScanStream=null}
+    document.getElementById('scanModal').style.display='none';
+}
+
+// Override stopScan to handle cipher scan mode
+const _origStopScan=stopScan;
+stopScan=function(){
+    if(_scanMode==='cipher'){stopCipherScan();_scanMode='pubkey';return}
+    _origStopScan();
+};
+let _scanMode='pubkey';
+
 function handleIncomingShare(){
     const params=new URLSearchParams(location.search);
     // ── PWA Share Target: 微信分享 .mid 文件 ──
@@ -2267,6 +2483,7 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
 <script src="lib/midi.bundle.js"></script>
 <script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="lib/jspdf.umd.min.js"></script>
 </script><script src="midi_stego.js?v=70"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
@@ -2309,6 +2526,22 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
     <p id="scanStatus" style="color:#fff;font-size:0.8rem;margin:12px 0">📷 将二维码对准框内…</p>
     <button class="btn btn-outline" onclick="stopScan()" style="color:#fff;border-color:rgba(255,255,255,0.3)">关闭</button>
 </div>
+
+<!-- 📱 二维码PDF分享弹窗 -->
+<div id="qrShareModal" style="display:none;position:fixed;inset:0;z-index:110;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);justify-content:center;align-items:center">
+    <div class="sheet" style="text-align:center;max-width:380px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:14px">
+        <h3 style="margin:0;font-size:1rem">📱 二维码分享</h3>
+        <label style="font-size:0.7rem;color:var(--dim);width:100%;text-align:left">💡 密码提示（可选，不要直接填密码！）</label>
+        <input type="text" id="qrShareHint" placeholder="例如：我们常用的那个密码…">
+        <div class="qr-preview"><canvas id="qrShareCanvas" width="280" height="280"></canvas></div>
+        <p style="font-size:0.65rem;color:var(--dim);margin:0">让对方用 SwiftCrypto 扫码或导入此 PDF</p>
+        <div class="btn-row">
+            <button class="btn btn-outline" onclick="closeQRShareModal()">关闭</button>
+            <button class="btn btn-primary" onclick="exportQRPDF()">📥 导出二维码为PDF</button>
+        </div>
+    </div>
+</div>
+<script>document.getElementById('qrShareModal').addEventListener('click',function(e){if(e.target===this)closeQRShareModal()});</script>
 
 </body>
 </html>
