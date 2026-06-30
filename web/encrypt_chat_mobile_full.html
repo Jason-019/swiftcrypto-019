@@ -1307,7 +1307,7 @@ function drawAppIcon(ctx,cx,cy,size){
     ctx.fillText('🔐',cx,cy+size*0.02);
 }
 
-let _qrRenderTimer=null; // 防抖定时器
+let _qrRenderTimer=null;
 function renderQRCode(){
     const b64=document.getElementById('cipherOutput').value;
     const hint=document.getElementById('qrShareHint').value.trim();
@@ -1316,7 +1316,6 @@ function renderQRCode(){
     const canvas=document.getElementById('qrShareCanvas');
     const ctx=canvas.getContext('2d');
     canvas.width=canvas.height=280;
-    // 显示"生成中"
     ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
     ctx.fillStyle='#999';ctx.font='13px -apple-system,sans-serif';ctx.textAlign='center';
     ctx.fillText('生成中…',140,140);
@@ -1342,36 +1341,19 @@ function renderQRCode(){
                 new QRCode(tmp,{text:minPayload,width:280,height:280,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
             }
         }
-        const _hintDropped=hintDropped;
-        // 用 onload 等待图片加载完成（移动端可能较慢）
-        const waitForImg=()=>{
-            const img=tmp.querySelector('img');
-            if(img){
-                if(img.complete&&img.naturalWidth>0){
-                    drawQRToCanvas(ctx,img);
-                    const warnEl=document.getElementById('qrHintWarning');
-                    if(warnEl)warnEl.style.display=_hintDropped&&hint?'block':'none';
-                    tmp.remove();
-                }else{
-                    img.onload=()=>{
-                        drawQRToCanvas(ctx,img);
-                        const warnEl=document.getElementById('qrHintWarning');
-                        if(warnEl)warnEl.style.display=_hintDropped&&hint?'block':'none';
-                        tmp.remove();
-                    };
-                    img.onerror=()=>{
-                        ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
-                        ctx.fillStyle='#e53e3e';ctx.font='12px -apple-system,sans-serif';
-                        ctx.fillText('QR生成失败',140,140);
-                        tmp.remove();
-                    };
-                }
+        // qrcodejs 生成 dataURL 是同步的，img 立即可用
+        const img=tmp.querySelector('img');
+        if(img){
+            if(img.complete){
+                drawQRToCanvas(ctx,img);
             }else{
-                // 还没生成img，轮询等待
-                _qrRenderTimer=setTimeout(waitForImg,100);
+                img.onload=()=>drawQRToCanvas(ctx,img);
+                img.onerror=()=>{ctx.fillText('QR失败',140,140)};
             }
-        };
-        _qrRenderTimer=setTimeout(waitForImg,50);
+        }
+        const warnEl=document.getElementById('qrHintWarning');
+        if(warnEl)warnEl.style.display=hintDropped&&hint?'block':'none';
+        tmp.remove();
     }else{
         ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
         ctx.fillStyle='#e53e3e';ctx.font='12px -apple-system,sans-serif';
