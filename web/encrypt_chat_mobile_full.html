@@ -1298,10 +1298,11 @@ function updateHintCount(){
 function drawAppIcon(ctx,cx,cy,size){
     // 跟随主题色的渐变圆角矩形
     const tc=THEMES[themeIdx];
-    const c1=tc.qr||'#7c3aed';
-    const c2=tc.qr?c1:'#a78bfa'; // 纯黑主题用双色渐变
+    const base=tc.qr||'#7c3aed';
+    // 生成比主题色稍亮的渐变色
+    const lighter=lightenHex(base,0.3);
     const grad=ctx.createLinearGradient(cx-size/2,cy-size/2,cx+size/2,cy+size/2);
-    grad.addColorStop(0,c1);grad.addColorStop(1,c2);
+    grad.addColorStop(0,lighter);grad.addColorStop(1,base);
     const r=size*0.2;
     ctx.beginPath();ctx.moveTo(cx-size/2+r,cy-size/2);
     ctx.lineTo(cx+size/2-r,cy-size/2);ctx.arcTo(cx+size/2,cy-size/2,cx+size/2,cy-size/2+r,r);
@@ -1322,86 +1323,68 @@ function renderQRCode(){
     const hintB64=hint?btoa(unescape(encodeURIComponent(hint))):'';
     const payload=JSON.stringify({v:1,c:b64,h:hintB64,t:Date.now()});
     const rawDiv=document.getElementById('qrShareRaw');
-    const canvas=document.getElementById('qrShareCanvas');
-    const ctx=canvas.getContext('2d');
-    canvas.width=canvas.height=280;
-    // 显示可见容器、隐藏canvas
+    const icon=document.getElementById('qrIconOverlay');
     rawDiv.style.display='block';rawDiv.innerHTML='';
-    canvas.style.display='none';
-    // 清除上一次
+    icon.style.display='none';
     if(_qrRenderTimer){clearTimeout(_qrRenderTimer);_qrRenderTimer=null}
     if(typeof QRCode!=='undefined'){
-        // 获取主题色作为QR码颜色
         const qrColor=THEMES[themeIdx].qr||'#7c3aed';
         let hintDropped=false;
-        const genQR=(pl)=>{rawDiv.innerHTML='';new QRCode(rawDiv,{text:pl,width:280,height:280,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M})};
-        try{
-            genQR(payload);
-        }catch(e){
+        const genQR=(pl)=>{rawDiv.innerHTML='';new QRCode(rawDiv,{text:pl,width:350,height:350,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M})};
+        try{genQR(payload)}catch(e){
             console.warn('QR M-level overflow, trying L:',e);
-            try{
-                rawDiv.innerHTML='';new QRCode(rawDiv,{text:payload,width:280,height:280,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});
-            }catch(e2){
-                console.warn('QR L-level overflow, removing hint');
-                hintDropped=true;
+            try{rawDiv.innerHTML='';new QRCode(rawDiv,{text:payload,width:350,height:350,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L})}catch(e2){
+                console.warn('QR L-level overflow, removing hint');hintDropped=true;
                 genQR(JSON.stringify({v:1,c:b64,h:'',t:Date.now()}));
             }
         }
-        // 等img加载后截取到canvas（visible容器确保移动端正常加载）
-        const captureToCanvas=()=>{
+        // 等img加载后显示图标覆盖层
+        const showIcon=()=>{
             const img=rawDiv.querySelector('img');
-            if(img&&img.complete){
-                drawQRToCanvas(ctx,img);
-                rawDiv.style.display='none';
-                canvas.style.display='block';
+            if(img&&img.complete&&img.naturalWidth>0){
+                icon.style.background='linear-gradient(135deg,'+lightenHex(qrColor,0.3)+','+qrColor+')';
+                icon.style.display='block';
                 const warnEl=document.getElementById('qrHintWarning');
                 if(warnEl)warnEl.style.display=hintDropped&&hint?'block':'none';
             }else if(img&&!img.complete){
                 img.onload=()=>{
-                    drawQRToCanvas(ctx,img);
-                    rawDiv.style.display='none';
-                    canvas.style.display='block';
-                    const warnEl=document.getElementById('qrHintWarning');
-                    if(warnEl)warnEl.style.display=hintDropped&&hint?'block':'none';
+                    icon.style.background='linear-gradient(135deg,'+lightenHex(qrColor,0.3)+','+qrColor+')';
+                    icon.style.display='block';
                 };
-                img.onerror=()=>{rawDiv.innerHTML='<span style="color:#e53e3e;font-size:12px">QR失败</span>'};
-            }else{
-                _qrRenderTimer=setTimeout(captureToCanvas,100);
-            }
+            }else{_qrRenderTimer=setTimeout(showIcon,100)}
         };
-        captureToCanvas();
-    }else{
-        rawDiv.innerHTML='<span style="color:#e53e3e;font-size:12px;line-height:280px">QR库未加载</span>';
-    }
-}
-function drawQRToCanvas(ctx,img){
-    ctx.fillStyle='#fff';ctx.fillRect(0,0,280,280);
-    ctx.drawImage(img,0,0,280,280);
-    const cx=140,cy=140,iconSize=52,coverSize=44;
-    ctx.fillStyle='#fff';ctx.fillRect(cx-coverSize/2,cy-coverSize/2,coverSize,coverSize);
-    drawAppIcon(ctx,cx,cy,iconSize);
+        showIcon();
+    }else{rawDiv.innerHTML='<span style="color:#e53e3e;font-size:12px;line-height:280px">QR库未加载</span>'}
 }
 
 function exportQRImage(){
-    const canvas=document.getElementById('qrShareCanvas');
-    if(!canvas)return t('⚠️ 请先生成二维码');
-    // 确保canvas有内容
-    if(canvas.style.display==='none'){
-        const rawDiv=document.getElementById('qrShareRaw');
-        const rawImg=rawDiv.querySelector('img');
-        if(rawImg&&rawImg.complete&&rawImg.naturalWidth>0){
-            const ctx=canvas.getContext('2d');
-            canvas.width=canvas.height=280;
-            drawQRToCanvas(ctx,rawImg);
-        }
-    }
-    if(!canvas.width||!canvas.toDataURL)return t('⚠️ 请先生成二维码');
-    const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
-    const a=document.createElement('a');
-    a.download='swiftcrypto_qr_'+ts+'.png';
-    a.href=canvas.toDataURL('image/png');
-    a.click();
-    t('📥 二维码图片已保存');
+    const rawDiv=document.getElementById('qrShareRaw');
+    const srcImg=rawDiv.querySelector('img');
+    if(!srcImg||!srcImg.src)return t('⚠️ 请先生成二维码');
+    // 用临时canvas合成：白边margin + QR + 图标
+    const margin=24, qrSize=350, total=qrSize+margin*2;
+    const cv=document.createElement('canvas');
+    cv.width=cv.height=total;
+    const ctx=cv.getContext('2d',{willReadFrequently:true});
+    // 白底
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,total,total);
+    // 等QR图加载后绘制
+    const qi=new Image();
+    qi.onload=()=>{
+        ctx.drawImage(qi,margin,margin,qrSize,qrSize);
+        const cx=total/2,cy=total/2,iconSize=52,coverSize=44;
+        ctx.fillStyle='#fff';ctx.fillRect(cx-coverSize/2,cy-coverSize/2,coverSize,coverSize);
+        drawAppIcon(ctx,cx,cy,iconSize);
+        const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
+        const a=document.createElement('a');
+        a.download='swiftcrypto_qr_'+ts+'.png';
+        a.href=cv.toDataURL('image/png');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        t('📥 二维码图片已保存');
+    };
+    qi.src=srcImg.src;
 }
 
 // ─── 📷 扫码/导入密文二维码 ───
@@ -2161,6 +2144,12 @@ function darkenHex(hex,factor){
     const b=Math.round(parseInt(hex.slice(5,7),16)*factor);
     return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');
 }
+function lightenHex(hex,factor){
+    const r=Math.round(parseInt(hex.slice(1,3),16)+(255-parseInt(hex.slice(1,3),16))*factor);
+    const g=Math.round(parseInt(hex.slice(3,5),16)+(255-parseInt(hex.slice(3,5),16))*factor);
+    const b=Math.round(parseInt(hex.slice(5,7),16)+(255-parseInt(hex.slice(5,7),16))*factor);
+    return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');
+}
 function hexToRgba(hex,alpha){
     const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
     return `rgba(${r},${g},${b},${alpha})`;
@@ -2588,9 +2577,9 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
             <span id="qrHintCount" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:0.6rem;color:var(--dim);pointer-events:none">0/60</span>
         </div>
         <div id="qrHintWarning" style="display:none;font-size:0.6rem;color:#f97316;text-align:left;margin-top:-8px">⚠️ 提示过长，已从二维码中省略（图片中仍保留）</div>
-        <div class="qr-preview" style="position:relative;min-height:280px">
-            <div id="qrShareRaw" style="width:280px;height:280px;background:#fff;border-radius:4px;overflow:hidden"></div>
-            <canvas id="qrShareCanvas" width="280" height="280" style="display:none;position:absolute;top:0;left:0;border-radius:4px"></canvas>
+        <div class="qr-preview" style="position:relative;display:inline-block">
+            <div id="qrShareRaw" style="width:350px;height:350px;background:#fff;border-radius:4px;overflow:hidden"></div>
+            <div id="qrIconOverlay" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:10px;pointer-events:none;text-align:center;line-height:52px;font-size:26px;color:#fff;z-index:3">🔐</div>
         </div>
         <p style="font-size:0.65rem;color:var(--dim);margin:0">让对方用 SwiftCrypto 扫码或导入此图片</p>
         <div class="btn-row">
