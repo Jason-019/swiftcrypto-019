@@ -2020,7 +2020,7 @@ function decodeEraGrid(){
     t('🔍 正在定位…');
     const img=new Image();img.onload=()=>{
         const cv=document.createElement('canvas');cv.width=img.width;cv.height=img.height;
-        let ctx=cv.getContext('2d');ctx.drawImage(img,0,0);
+        const ctx=cv.getContext('2d');ctx.drawImage(img,0,0);
         const W=img.width,H=img.height;
         let TARGET_RGB=ERA_COLORS.map(c=>[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)]); // 硬编码兜底
         // ── 找参考行：8个等间距亮色块（自适应阈值，多趟扫描）──
@@ -2058,58 +2058,24 @@ function decodeEraGrid(){
             }
         }
         if(refY<0){t('⚠️ 未找到参考色块');document.getElementById('eraFileInput').value='';return}
-        // ── 抗旋转：从8个参考块中心计算平均旋转角，整图校正 ──
+        // ── 抗旋转：从8个参考块中心线性回归，按角度变换readCell采样坐标 ──
+        let rotCos=1,rotSin=0,rotCx=0,rotCy=0;
         if(refRuns&&refRuns.length===8){
-            const centers=[];let allCY=0;
+            const centers=[];
             for(let i=0;i<8;i++){
                 const cx=Math.round((refRuns[i].s+refRuns[i].e)/2);
                 let top=refY,bot=refY;
                 while(top>0&&ctx.getImageData(cx,top-1,1,1).data[0]+ctx.getImageData(cx,top-1,1,1).data[1]+ctx.getImageData(cx,top-1,1,1).data[2]>120)top--;
                 while(bot<H-1&&ctx.getImageData(cx,bot+1,1,1).data[0]+ctx.getImageData(cx,bot+1,1,1).data[1]+ctx.getImageData(cx,bot+1,1,1).data[2]>120)bot++;
-                const cy=Math.round((top+bot)/2);
-                centers.push({x:cx,y:cy});allCY+=cy;
+                centers.push({x:cx,y:Math.round((top+bot)/2)});
             }
-            // 线性回归: y = slope*x + intercept
             let sumX=0,sumY=0,sumXY=0,sumX2=0;
             for(const c of centers){sumX+=c.x;sumY+=c.y;sumXY+=c.x*c.y;sumX2+=c.x*c.x;}
-            const n=8,slope=(n*sumXY-sumX*sumY)/(n*sumX2-sumX*sumX);
+            const slope=(8*sumXY-sumX*sumY)/(8*sumX2-sumX*sumX);
             const angle=Math.atan(slope);
-            if(Math.abs(angle)>0.008){ // > ~0.5deg, 执行旋转校正
-                const rc=document.createElement('canvas');rc.width=W;rc.height=H;
-                const rctx=rc.getContext('2d');
-                rctx.translate(W/2,H/2);rctx.rotate(-angle);rctx.translate(-W/2,-H/2);
-                rctx.drawImage(cv,0,0);
-                // 用旋转后的canvas替换
-                cv.width=W;cv.height=H;
-                const newCtx=cv.getContext('2d');newCtx.drawImage(rc,0,0);
-                // 更新ctx引用，重新检测参考行
-                ctx=cv.getContext('2d');
-                // 重新找参考行（校正后角度归零）
-                refY=-1;refRuns=null;
-                for(const brightThresh of [t0,t1,120,180,240]){
-                    if(refY>=0)break;
-                    for(let y=4;y<H*0.4&&refY<0;y++){
-                        const runs=[];let inB=false,rs=0;
-                        for(let x=0;x<W;x++){
-                            const px=ctx.getImageData(x,y,1,1).data;
-                            const b=px[0]+px[1]+px[2]>brightThresh;
-                            if(b&&!inB){inB=true;rs=x}
-                            if(!b&&inB){inB=false;if(x-rs>=8)runs.push({s:rs,e:x})}
-                        }
-                        if(runs.length>=8){
-                            for(let trimL=0;trimL<=runs.length-8;trimL++){
-                                const sub=runs.slice(trimL,trimL+8);
-                                const sp=[];for(let i=1;i<8;i++)sp.push(sub[i].s-sub[i-1].s);
-                                const avg=sp.reduce((a,b)=>a+b,0)/7;
-                                if(sp.every(s=>Math.abs(s-avg)<avg*0.3)){
-                                    refY=y;refX0=sub[0].s;refW=sub[0].e-sub[0].s;refSp=avg;refRuns=sub;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-                if(refY<0){t('⚠️ 旋转校正后仍未找到参考色块');document.getElementById('eraFileInput').value='';return}
+            if(Math.abs(angle)>0.005){ // > ~0.3deg
+                rotCos=Math.cos(angle);rotSin=-Math.sin(angle); // 负号：匹配图像坐标系
+                rotCx=centers[0].x;rotCy=centers[0].y;
             }
         }
         // 垂直扫描测参考块高度（固定阈值，参考块始终远亮于背景）
@@ -2168,7 +2134,12 @@ function decodeEraGrid(){
         t('📐 已定位，解码中…');
         // ── 逐格采样（中心加权） ──
         const readCell=(col,row)=>{
-            const cx=Math.round(refX0+col*cellSp+cellW/2),cy=Math.round(dataY0+row*cellSp+cellW/2);
+            // 名义网格位置
+            const nx=refX0+col*cellSp+cellW/2,ny=dataY0+row*cellSp+cellW/2;
+            // 抗旋转：按参考行倾角变换采样坐标
+            const dx=nx-rotCx,dy=ny-rotCy;
+            const cx=Math.round(rotCx+dx*rotCos-dy*rotSin);
+            const cy=Math.round(rotCy+dx*rotSin+dy*rotCos);
             if(cx<2||cy<2||cx+2>=W||cy+2>=H)return -1;
             const votes=[0,0,0,0,0,0,0,0];let total=0;
             const r=Math.max(3,Math.round(cellW*0.25)); // 采样半径(25%)
