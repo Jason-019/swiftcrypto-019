@@ -14,11 +14,14 @@
 <style>
 :root{
     --bg:#0a0a0f;--card:rgba(20,20,40,0.8);--accent:#a78bfa;--accent2:#7c3aed;
-    --text:#e2e0e7;--dim:#8888a0;--border:rgba(255,255,255,0.07);--r:14px;--rs:10px;
+    --text:#e2e0e7;--dim:#8888a0;--border:rgba(255,255,255,0.08);--r:16px;--rs:14px;
+    --glow:0 0 0 3px rgba(167,139,250,0.15);
+    --font-serif:'Palatino Linotype','Book Antiqua',Palatino,Georgia,'Songti SC','Noto Serif CJK SC',serif;
+    --font-sans:-apple-system,'PingFang SC',system-ui,sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{
-    font-family:-apple-system,'PingFang SC',system-ui,sans-serif;
+    font-family:var(--font-sans);
     background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;
     display:flex;flex-direction:column;color-scheme:dark;transition:background 0.5s;
     position:relative;
@@ -29,32 +32,36 @@ body::before{
 }
 .topbar{
     display:flex;align-items:center;gap:8px;padding:10px 12px;
-    background:rgba(10,10,20,0.9);border-bottom:1px solid var(--border);
-    position:sticky;top:0;z-index:10;backdrop-filter:blur(12px);
+    background:rgba(10,10,20,0.85);border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:10;backdrop-filter:blur(20px) saturate(1.4);
+    -webkit-backdrop-filter:blur(20px) saturate(1.4);
 }
-.topbar h1{font-size:1.15rem;font-weight:700;flex:1;
+.topbar h1{font-size:1.2rem;font-weight:700;flex:1;font-family:var(--font-serif);letter-spacing:0.02em;
     background:linear-gradient(135deg,var(--accent),#e879f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
     background-clip:text;}
 .topbar .badge{font-size:0.65rem;color:var(--dim);border:1px solid var(--border);border-radius:6px;padding:2px 6px;}
 .icon-btn{
-    width:34px;height:34px;border-radius:var(--rs);border:1px solid rgba(255,255,255,0.12);
-    background:rgba(255,255,255,0.08);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    width:34px;height:34px;border-radius:var(--rs);border:1px solid rgba(255,255,255,0.1);
+    background:rgba(255,255,255,0.06);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
     color:var(--text);font-size:1rem;
     display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
+    transition:transform .15s,background .2s,border-color .2s,box-shadow .2s;
 }
-.icon-btn:hover{background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.2)}
-.icon-btn:active{background:var(--accent2)}
+.icon-btn:hover{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.22);transform:scale(1.04);box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.icon-btn:active{background:var(--accent2);transform:scale(0.96)}
 .pwd-row{display:flex;gap:6px;padding:10px 12px;align-items:center;}
 .pwd-row input{
     flex:1;padding:10px 12px;border-radius:var(--rs);border:1px solid var(--border);
     background:rgba(255,255,255,0.04);color:var(--text);font-size:0.9rem;outline:none;min-width:0;
+    transition:border-color .25s,box-shadow .25s;
 }
-.pwd-row input:focus{border-color:var(--accent)}
+.pwd-row input:focus{border-color:var(--accent);box-shadow:var(--glow)}
 .tabs{display:flex;border-bottom:1px solid var(--border);margin:0 12px}
 .tab{
-    flex:1;text-align:center;padding:10px;font-size:0.85rem;font-weight:600;
-    color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;
+    flex:1;text-align:center;padding:11px 8px;font-size:0.85rem;font-weight:600;letter-spacing:0.01em;
+    color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,border-color .2s;
 }
+.tab:hover{color:#bbb}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .content{flex:1;display:flex;flex-direction:column;padding:10px 12px;gap:10px;overflow-y:auto}
 .panel{display:none;flex-direction:column;gap:8px;flex:1}
@@ -62,20 +69,24 @@ body::before{
 textarea{
     flex:1;min-height:140px;padding:12px;border-radius:var(--rs);border:1px solid var(--border);
     background:rgba(0,0,0,0.25);color:var(--text);font-size:0.9rem;line-height:1.55;
-    resize:none;outline:none;font-family:inherit;
+    resize:none;outline:none;font-family:var(--font-serif);transition:border-color .25s,box-shadow .25s;
 }
-textarea:focus{border-color:var(--accent)}
-textarea[readonly]{background:rgba(0,0,0,0.15)}
+textarea:focus{border-color:var(--accent);box-shadow:var(--glow)}
+textarea[readonly]{background:rgba(0,0,0,0.15);cursor:default}
 .btn-row{display:flex;gap:6px;flex-wrap:wrap}
 .btn{
     padding:10px 16px;border-radius:var(--rs);border:none;font-size:0.82rem;font-weight:600;
-    cursor:pointer;display:flex;align-items:center;gap:5px;transition:.15s;
+    cursor:pointer;display:flex;align-items:center;gap:5px;
+    transition:transform .15s,opacity .15s,background .2s,box-shadow .2s;
 }
-.btn-primary{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;flex:1;justify-content:center}
-.btn-primary:active{opacity:.85}
-.btn-copy{background:rgba(16,185,129,0.15);color:#6ee7b7;border:1px solid rgba(16,185,129,0.25);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.btn-outline{background:rgba(255,255,255,0.06);color:#aaa;border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);justify-content:center}
-.btn-outline:hover{background:rgba(255,255,255,0.1);color:#ccc;border-color:rgba(255,255,255,0.18)}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;flex:1;justify-content:center;box-shadow:0 2px 8px rgba(124,58,237,0.25)}
+.btn-primary:hover{box-shadow:0 4px 16px rgba(124,58,237,0.35)}
+.btn-primary:active{opacity:.9}
+.btn-copy{background:rgba(16,185,129,0.12);color:#6ee7b7;border:1px solid rgba(16,185,129,0.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.btn-copy:hover{background:rgba(16,185,129,0.18);border-color:rgba(16,185,129,0.3)}
+.btn-outline{background:rgba(255,255,255,0.05);color:#aaa;border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);justify-content:center}
+.btn-outline:hover{background:rgba(255,255,255,0.1);color:#ccc;border-color:rgba(255,255,255,0.16);box-shadow:0 2px 8px rgba(0,0,0,0.2)}
 .char-count{font-size:0.7rem;color:var(--dim);text-align:right}
 #lyricModal,#quizModal,#guideModal,#settingsModal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);
     backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch}
@@ -117,10 +128,13 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 #lyricModal .preview{padding:10px;border-radius:var(--rs);background:rgba(0,0,0,0.3);border:1px solid var(--border);font-size:0.85rem;font-style:italic;line-height:1.4}
 #lyricModal .modal-btns{display:flex;gap:8px}
 #lyricModal .modal-btns .btn{flex:1;justify-content:center}
-.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#10b981;
-    color:#fff;padding:8px 18px;border-radius:18px;font-size:0.8rem;z-index:200;
-    opacity:0;pointer-events:none;transition:opacity .3s}
-.toast.show{opacity:1}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);
+    background:rgba(16,185,129,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    color:#fff;padding:8px 20px;border-radius:20px;font-size:0.8rem;z-index:200;
+    opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;
+    box-shadow:0 4px 12px rgba(16,185,129,0.3);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-2px)}
 /* Emoji cipher mode */
 .emoji-cipher{font-size:1.25rem;line-height:1.8;word-break:break-all;letter-spacing:2px;min-height:60px;max-height:180px;overflow-y:auto;padding:12px;border-radius:var(--rs);background:rgba(0,0,0,0.25);border:1px solid var(--border);user-select:all;
     scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent}
@@ -165,6 +179,8 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 .pwd-strength{height:3px;border-radius:2px;margin:0 12px;background:rgba(255,255,255,0.06);overflow:hidden;transition:all .3s}
 .pwd-strength div{height:100%;transition:width .4s,background .4s;width:0}
 .pwd-label{font-size:0.6rem;text-align:right;padding:2px 12px 0;min-height:14px}
+/* 标题类使用衬线字体 */
+.sheet h3,.modal h3,#guideModal h3,#quizModal h3,#settingsModal h3,#lyricModal h3{font-family:var(--font-serif);letter-spacing:0.01em}
 .pwd-masked{-webkit-text-security:disc}
 /* Incognito toggle */
 .incog-toggle{display:flex;align-items:center;gap:4px;cursor:pointer;font-size:0.65rem}
@@ -242,12 +258,12 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     <div style="display:flex;gap:6px;width:100%;align-items:center">
         <button class="icon-btn" id="togglePwd" onclick="togglePwd()" title="显示/隐藏密码" style="flex:1;font-size:0.8rem">👁 显示</button>
         <button class="icon-btn" onclick="clearPassword()" title="清除密码" style="flex:1;font-size:0.8rem;color:var(--dim)">✕ 清除</button>
-        <button class="icon-btn" onclick="openQuizPicker()" title="趣味问答" style="flex:1;font-size:0.8rem;color:#f97316">❓ 问答</button>
+        <button class="icon-btn" onclick="openQuizPicker()" title="趣味问答" style="flex:1;font-size:0.8rem;color:#f97316">💎 问答</button>
     </div>
     <div style="display:flex;gap:6px;width:100%;align-items:center">
         <button class="icon-btn" onclick="genPwd()" title="生成随机密码" style="flex:1;font-size:0.8rem;color:#fbbf24">🎲 随机</button>
         <button class="icon-btn" onclick="copyPassword()" title="复制密码" style="flex:1;font-size:0.8rem;color:#22c55e">📋 复制</button>
-        <button class="icon-btn" onclick="openLyricPicker()" title="从歌词挑选" style="flex:1;font-size:0.8rem;color:var(--accent)">📜 歌词</button>
+        <button class="icon-btn" onclick="openLyricPicker()" title="从歌词挑选" style="flex:1;font-size:0.8rem;color:var(--accent)">🪶 歌词</button>
     </div>
     <div style="display:flex;gap:6px;width:100%;align-items:center">
         <select id="pwdHistorySelect" onchange="usePwdFromSelect()" style="flex:1;padding:6px 8px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);font-size:0.7rem;outline:none;min-width:0;color-scheme:dark">
@@ -1776,6 +1792,12 @@ function setTheme(){
     h1.style.webkitBackgroundClip='text';
     h1.style.backgroundClip='text';
     h1.style.webkitTextFillColor='transparent';
+    // 注入主题色到 CSS 变量，联动所有组件
+    const root=document.documentElement;
+    const darker=lightenHex(qr,-0.25); // 加深版用作accent2
+    root.style.setProperty('--accent',qr);
+    root.style.setProperty('--accent2',darker);
+    root.style.setProperty('--glow','0 0 0 3px '+hexToRgba(qr,0.18));
 }
 function prevTheme(){themeIdx=(themeIdx-1+THEMES.length)%THEMES.length;setTheme();}
 function nextTheme(){themeIdx=(themeIdx+1)%THEMES.length;setTheme();}
