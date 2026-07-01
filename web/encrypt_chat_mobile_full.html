@@ -21,7 +21,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{
-    font-family:var(--font-sans);
+    font-family:var(--font-serif);
     background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;
     display:flex;flex-direction:column;color-scheme:dark;transition:background 0.5s;
     position:relative;
@@ -43,7 +43,7 @@ body::before{
 .icon-btn{
     width:34px;height:34px;border-radius:var(--rs);border:1px solid rgba(255,255,255,0.1);
     background:rgba(255,255,255,0.06);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-    color:var(--text);font-size:1rem;
+    color:var(--text);font-size:1rem;font-family:inherit;
     display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
     transition:transform .15s,background .2s,border-color .2s,box-shadow .2s;
 }
@@ -52,7 +52,7 @@ body::before{
 .pwd-row{display:flex;gap:6px;padding:10px 12px;align-items:center;}
 .pwd-row input{
     flex:1;padding:10px 12px;border-radius:var(--rs);border:1px solid var(--border);
-    background:rgba(255,255,255,0.04);color:var(--text);font-size:0.9rem;outline:none;min-width:0;
+    background:rgba(255,255,255,0.04);color:var(--text);font-size:0.9rem;outline:none;min-width:0;font-family:inherit;
     transition:border-color .25s,box-shadow .25s;
 }
 .pwd-row input:focus{border-color:var(--accent);box-shadow:var(--glow)}
@@ -76,7 +76,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15);cursor:default}
 .btn-row{display:flex;gap:6px;flex-wrap:wrap}
 .btn{
     padding:10px 16px;border-radius:var(--rs);border:none;font-size:0.82rem;font-weight:600;
-    cursor:pointer;display:flex;align-items:center;gap:5px;
+    cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit;
     transition:transform .15s,opacity .15s,background .2s,box-shadow .2s;
 }
 .btn:active{transform:scale(0.97)}
@@ -275,14 +275,14 @@ textarea[readonly]{background:rgba(0,0,0,0.15);cursor:default}
 <div class="pwd-label" id="pwdStrengthLabel"></div>
 <div id="pwdHint" style="display:none;margin:2px 12px;padding:6px 10px;border-radius:var(--rs);background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2);font-size:0.7rem;color:#c4b5fd">💡 <span id="pwdHintText"></span></div>
 
-<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;font-size:0.75rem;color:var(--dim);">
+<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;font-size:0.85rem;color:var(--dim);">
     <span>🎨</span>
-    <button class="icon-btn" onclick="prevTheme()" style="width:24px;height:24px;font-size:0.65rem;flex-shrink:0">◀</button>
-    <span id="themeName" style="flex:1;min-width:0;text-align:center;font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">1989</span>
-    <button class="icon-btn" onclick="nextTheme()" style="width:24px;height:24px;font-size:0.65rem;flex-shrink:0">▶</button>
+    <button class="icon-btn" onclick="prevTheme()" style="width:28px;height:28px;font-size:0.8rem;flex-shrink:0">◀</button>
+    <span id="themeName" style="flex:1;min-width:0;text-align:center;font-size:1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">1989</span>
+    <button class="icon-btn" onclick="nextTheme()" style="width:28px;height:28px;font-size:0.8rem;flex-shrink:0">▶</button>
     <span style="flex-shrink:0">🌓</span>
     <input type="range" id="bgOpacity" min="0" max="100" value="75" oninput="updateBgOpacity(this.value)" style="width:60px;flex-shrink:0;accent-color:var(--accent);">
-    <span id="bgOpacityVal" style="width:32px;text-align:right;flex-shrink:0;font-size:0.7rem">75%</span>
+    <span id="bgOpacityVal" style="width:32px;text-align:right;flex-shrink:0;font-size:0.8rem">75%</span>
 </div>
 
 <div class="tabs">
