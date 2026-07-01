@@ -1,5 +1,6 @@
 // SwiftCrypto Service Worker — PWA + Share Target
 const CACHE_NAME = 'swiftcrypto-v5';
+const TONE_CACHE = 'swiftcrypto-tone-v1'; // 音色库独立缓存，不被更新清除
 const SALAMANDER = './lib/salamander/';
 const SHARED_FILE_KEY = 'swiftcrypto_shared_midi';
 const ASSETS = [
@@ -11,7 +12,7 @@ const ASSETS = [
   './lib/midi.bundle.js'
 ];
 
-// Install: cache all assets
+// Install: cache all assets (不影响音色库缓存)
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
@@ -19,11 +20,11 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Activate: clean old caches
+// Activate: clean old main caches，但保留音色库
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      keys.filter(k => k !== CACHE_NAME && k !== TONE_CACHE).map(k => caches.delete(k))
     ))
   );
   self.clients.claim();
@@ -65,10 +66,10 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // ── Salamander 钢琴采样：缓存优先 ──
+  // ── Salamander 钢琴采样：独立缓存，不受版本更新影响 ──
   if (url.pathname.includes('/lib/salamander/')) {
     event.respondWith(
-      caches.open(CACHE_NAME).then(cache =>
+      caches.open(TONE_CACHE).then(cache =>
         cache.match(event.request).then(cached => {
           if (cached) return cached;
           return fetch(event.request).then(response => {
