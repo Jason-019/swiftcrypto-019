@@ -1356,7 +1356,7 @@ function renderQRCode(){
 
 async function exportQRImage(){
     const srcImg=document.querySelector('#qrShareRaw img');
-    if(!srcImg||!srcImg.src)return t('⚠️ 请先生成二维码');
+    if(!srcImg)return t('⚠️ 请先生成二维码');
     const margin=24, qrSize=280, total=qrSize+margin*2;
     const cv=document.createElement('canvas');
     cv.width=cv.height=total;
@@ -1375,6 +1375,11 @@ async function exportQRImage(){
     const cx=total/2,cy=total/2,iconSize=48,coverSize=40;
     ctx.fillStyle='#fff';ctx.fillRect(cx-coverSize/2,cy-coverSize/2,coverSize,coverSize);
     drawAppIcon(ctx,cx,cy,iconSize);
+    // 检查QR是否真的画上去了
+    const test=ctx.getImageData(margin+10,margin+10,1,1).data;
+    if(test[0]===255&&test[1]===255&&test[2]===255){
+        return t('⚠️ 导出失败，请截图保存');
+    }
     const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
     const a=document.createElement('a');
     a.download='swiftcrypto_qr_'+ts+'.png';
