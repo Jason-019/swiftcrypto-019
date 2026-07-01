@@ -235,7 +235,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         <span style="flex-shrink:0;font-size:0.6rem;white-space:nowrap">📢 我的</span>
         <code id="hsMyPubKey" style="flex:1;min-width:0;background:rgba(0,0,0,0.2);padding:4px 6px;border-radius:4px;font-size:0.55rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</code>
         <button onclick="copyHSPubKey()" title="复制身份码" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);cursor:pointer;flex-shrink:0;line-height:1">📋</button>
-        <button onclick="showQRModal()" title="身份码二维码" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);cursor:pointer;flex-shrink:0;line-height:1">🐈</button>
+        <button onclick="showQRModal()" title="身份码二维码" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--dim);cursor:pointer;flex-shrink:0;line-height:1">ฅ’ω’ฅ</button>
         <button onclick="resetHSKeys()" title="重新生成" style="font-size:0.7rem;width:36px;height:36px;border-radius:6px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);color:#f87171;cursor:pointer;flex-shrink:0;line-height:1">🔄</button>
     </div>
     <!-- 对方身份码行 -->
@@ -283,8 +283,8 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 </div>
 
 <div class="tabs">
-    <div class="tab active" onclick="switchTab('enc')">🔒 加密</div>
-    <div class="tab" onclick="switchTab('dec')">🔓 解密</div>
+    <div class="tab active" onclick="switchTab('enc')">🐈‍⬛ 加密</div>
+    <div class="tab" onclick="switchTab('dec')">🐈 解密</div>
     <div class="tab" onclick="switchTab('midi')">🎵 MIDI</div>
     <div class="tab" onclick="switchTab('chat')">💬 记录</div>
 </div>
@@ -306,7 +306,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
             </span>
         </div>
         <div class="btn-row">
-            <button class="btn btn-primary" onclick="doEncrypt()">🔒 加密</button>
+            <button class="btn btn-primary" onclick="doEncrypt()">🐈‍⬛ 加密</button>
             <button class="btn btn-outline" onclick="clearEncrypt()">清空</button>
         </div>
         <textarea id="cipherOutput" placeholder="密文…" readonly></textarea>
@@ -328,14 +328,14 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     </div>
     <div class="panel" id="panelDec">
         <textarea id="cipherInput" placeholder="粘贴密文…"></textarea>
-        <div style="font-size:0.6rem;color:var(--dim);margin-bottom:2px">� 导入图片（Eras码 / 二维码）</div>
+        <div style="font-size:0.6rem;color:var(--dim);margin-bottom:2px">📂 导入图片（Eras码 / 二维码）</div>
         <div style="display:flex;gap:4px;align-items:stretch">
             <input type="file" id="eraFileInput" accept="image/*" onchange="handleDecFileInput()" style="flex:1;min-width:0;font-size:0.6rem;color:var(--dim);padding:4px 6px">
             <button class="btn btn-outline" onclick="startCipherScan()" title="仅支持二维码扫码" style="font-size:0.6rem;padding:4px 8px;flex-shrink:0;white-space:nowrap">📷 扫码(仅二维码)</button>
             <button class="btn btn-outline" onclick="clearFileInput('eraFileInput')" title="清除" style="font-size:0.6rem;padding:4px 8px;flex-shrink:0">✕</button>
         </div>
         <div class="btn-row">
-            <button class="btn btn-primary" onclick="doDecrypt()">🔓 解密</button>
+            <button class="btn btn-primary" onclick="doDecrypt()">🐈 解密</button>
             <button class="btn btn-outline" onclick="clearDecrypt()">清空</button>
         </div>
         <textarea id="plainOutput" placeholder="明文…" readonly></textarea>
@@ -910,7 +910,7 @@ async function toggleHS(){
     const cb=document.getElementById('hsMode'),panel=document.getElementById('hsPanel');
     if(cb.checked){
         const ok=await customConfirm('🛡 开启高安全模式？',
-            '开启后，你和对方各有一个"数字身份"。\n消息 = 你的密码 + 双方身份 → 双重加密。\n\n操作很简单：\n① 点 🐈 生成二维码，让对方扫码导入\n② 或点 📋 复制身份码发给对方\n③ 把对方的身份码粘贴（或 📷 扫码）导入\n④ 完成！之后的加密自动双重保护\n\n即使密码意外泄露，没有身份码也解不开。');
+            '开启后，你和对方各有一个"数字身份"。\n消息 = 你的密码 + 双方身份 → 双重加密。\n\n操作很简单：\n① 点 ฅ’ω’ฅ 生成二维码，让对方扫码导入\n② 或点 📋 复制身份码发给对方\n③ 把对方的身份码粘贴（或 📷 扫码）导入\n④ 完成！之后的加密自动双重保护\n\n即使密码意外泄露，没有身份码也解不开。');
         if(!ok){cb.checked=false;return;}
         _hsMode=true;localStorage.setItem('swiftcrypto_hs','1');
         panel.style.display='flex';
