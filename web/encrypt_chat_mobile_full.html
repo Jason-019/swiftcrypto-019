@@ -1355,37 +1355,21 @@ function renderQRCode(){
 }
 
 async function exportQRImage(){
-    const srcImg=document.querySelector('#qrShareRaw img');
-    if(!srcImg)return t('⚠️ 请先生成二维码');
-    const margin=24, qrSize=280, total=qrSize+margin*2;
-    const cv=document.createElement('canvas');
-    cv.width=cv.height=total;
-    const ctx=cv.getContext('2d');
-    ctx.fillStyle='#fff';ctx.fillRect(0,0,total,total);
+    const preview=document.querySelector('#qrShareModal .qr-preview');
+    if(!preview)return t('⚠️ 请先生成二维码');
+    if(typeof html2canvas==='undefined')return t('⚠️ 截屏库未加载，请刷新页面');
     try{
-        // createImageBitmap从dataURL直接解码，不依赖DOM img状态
-        const blob=await fetch(srcImg.src).then(r=>r.blob());
-        const bmp=await createImageBitmap(blob);
-        ctx.drawImage(bmp,margin,margin,qrSize,qrSize);
-        bmp.close();
+        const cv=await html2canvas(preview,{backgroundColor:'#fff',scale:2,useCORS:true,allowTaint:true});
+        const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
+        const a=document.createElement('a');
+        a.download='swiftcrypto_qr_'+ts+'.png';
+        a.href=cv.toDataURL('image/png');
+        a.click();
+        t('📥 二维码图片已保存');
     }catch(e){
-        // 回退：直接画DOM img
-        ctx.drawImage(srcImg,margin,margin,qrSize,qrSize);
+        console.error('html2canvas failed:',e);
+        t('⚠️ 导出失败，请截图保存');
     }
-    const cx=total/2,cy=total/2,iconSize=48,coverSize=40;
-    ctx.fillStyle='#fff';ctx.fillRect(cx-coverSize/2,cy-coverSize/2,coverSize,coverSize);
-    drawAppIcon(ctx,cx,cy,iconSize);
-    // 检查QR是否真的画上去了
-    const test=ctx.getImageData(margin+10,margin+10,1,1).data;
-    if(test[0]===255&&test[1]===255&&test[2]===255){
-        return t('⚠️ 导出失败，请截图保存');
-    }
-    const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
-    const a=document.createElement('a');
-    a.download='swiftcrypto_qr_'+ts+'.png';
-    a.href=cv.toDataURL('image/png');
-    a.click();
-    t('📥 二维码图片已保存');
 }
 
 // ─── 📷 扫码/导入密文二维码 ───
@@ -2525,6 +2509,7 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
 <script src="lib/midi.bundle.js"></script>
 <script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 </script><script src="midi_stego.js?v=70"></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
