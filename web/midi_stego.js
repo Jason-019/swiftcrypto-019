@@ -7,7 +7,7 @@ let _midiLoading=null; // 防止并发加载
 let _midiSDTimer=null;
 let _midiRecvBuf=null; // 接收到的MIDI文件buffer，用于试听
 let _midiRecvPlaying=false; // 接收文件独立播放状态
-const _midiMetaUrl='midi_meta.json?v=3';
+const _midiMetaUrl='midi_meta.json?v=5';
 
 async function initMidiTab(){
     if(_midiMeta){return} // Already loaded
@@ -529,16 +529,21 @@ async function initMidiSynth(){
     };
     
     const buffers={};
+    const toneCache=await caches.open('swiftcrypto-tone-v1');
     await Promise.all(sampleNames.map(async (note,i)=>{
         const file=sampleFiles[i];
+        const url=`./lib/salamander/${file}.mp3`;
         try{
-            const r=await fetch(`./lib/salamander/${file}.mp3`);
-            if(!r.ok)throw new Error('HTTP '+r.status);
-            // 显式存入 Cache API（不依赖 Service Worker）
-            try{
-                const toneCache=await caches.open('swiftcrypto-tone-v1');
-                await toneCache.put(`./lib/salamander/${file}.mp3`,r.clone());
-            }catch(e){}
+            // 缓存优先：先查缓存
+            let r=await toneCache.match(url);
+            if(r){
+                // 缓存命中，直接使用
+            }else{
+                r=await fetch(url);
+                if(!r.ok)throw new Error('HTTP '+r.status);
+                // 存入缓存
+                try{await toneCache.put(url,r.clone())}catch(e){}
+            }
             buffers[note]=await r.arrayBuffer();
             loaded++;updateProgress();
         }catch(e){
