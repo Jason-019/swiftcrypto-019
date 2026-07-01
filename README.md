@@ -1,6 +1,7 @@
 # 🐈 SwiftCrypto — Taylor Swift 主题加密聊天工具
 
 > *"You knew the password, so I let you in the door"*— Hoax
+
 > *"I don't trust nobody and nobody trusts me"* — Look What You Made Me Do
 
 **SwiftCrypto** 是一款以 Taylor Swift 为主题的端到端加密通信 PWA。将密码学变成一场 Eras 巡演——用 13 套专辑色卡加密消息、把密文藏进 MIDI 旋律中伪装成钢琴曲、用 167 道 Swiftie 冷知识生成密码。**全部运算在浏览器本地完成，零服务器，零追踪。**
