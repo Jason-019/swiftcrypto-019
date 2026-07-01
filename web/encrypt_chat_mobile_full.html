@@ -332,7 +332,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         </div>
         <div class="char-count" id="cipherCount">密文: 0 字</div>
     </div>
-    <button class="guide-btn" onclick="openGuide()" title="使用说明">📖<br><small>说明</small></button>
+    <button class="guide-btn" id="guideBtn" onclick="openGuide()" title="使用说明">📖<br><small>说明</small></button>
     <div class="panel" id="panelDec">
         <textarea id="cipherInput" placeholder="粘贴密文…"></textarea>
         <div style="font-size:0.6rem;color:var(--dim);margin-bottom:2px">📂 导入图片（Eras码 / 二维码）</div>
@@ -604,7 +604,11 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
                 <li>隐身模式 👻 关闭页面后不留任何痕迹</li>
             </ul>
         </div>
-        <div class="modal-btns" style="margin-top:10px">
+        <div class="modal-btns" style="margin-top:10px;flex-direction:column;gap:8px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--dim);cursor:pointer;justify-content:center">
+                <input type="checkbox" id="guideNoShow" onchange="toggleGuideNoShow()">
+                🔕 不再显示右下角按钮（仍可在设置中恢复）
+            </label>
             <button class="btn btn-primary" onclick="closeGuide()">知道了 ✌️</button>
         </div>
     </div>
@@ -1838,8 +1842,24 @@ document.getElementById('quizModal').addEventListener('click',function(e){if(e.t
 
 // ─── 📖 使用说明 ───
 function openGuide(){document.getElementById('guideModal').classList.add('show')}
-function closeGuide(){document.getElementById('guideModal').classList.remove('show')}
+function closeGuide(){
+    document.getElementById('guideModal').classList.remove('show');
+    // 检查"不再显示"
+    if(document.getElementById('guideNoShow').checked){
+        localStorage.setItem('swiftcrypto_hide_guide','1');
+        document.getElementById('guideBtn').style.display='none';
+    }
+}
+function toggleGuideNoShow(){
+    // 切换时保存偏好（点关闭时再应用）
+}
 document.getElementById('guideModal').addEventListener('click',function(e){if(e.target===this)closeGuide()});
+// 页面加载时恢复
+(function(){
+    if(localStorage.getItem('swiftcrypto_hide_guide')==='1'){
+        document.getElementById('guideBtn').style.display='none';
+    }
+})();
 
 function eh(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 document.getElementById('lyricModal').addEventListener('click',function(e){if(e.target===this)closeLyricPicker()});
