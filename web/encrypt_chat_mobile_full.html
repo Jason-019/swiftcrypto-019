@@ -1354,30 +1354,44 @@ function renderQRCode(){
     }else{rawDiv.innerHTML='<span style="color:#e53e3e;font-size:12px;line-height:280px">QR库未加载</span>'}
 }
 
-async function exportQRImage(){
+async function captureQRCanvas(){
     const preview=document.querySelector('#qrShareModal .qr-preview');
-    if(!preview)return t('⚠️ 请先生成二维码');
-    if(typeof html2canvas==='undefined')return t('⚠️ 截屏库未加载，请刷新页面');
+    if(!preview||typeof html2canvas==='undefined')return null;
+    return await html2canvas(preview,{backgroundColor:'#fff',scale:2,useCORS:true,allowTaint:true});
+}
+async function shareQRImage(){
+    const cv=await captureQRCanvas();
+    if(!cv)return t('⚠️ 请先生成二维码');
     try{
-        const cv=await html2canvas(preview,{backgroundColor:'#fff',scale:2,useCORS:true,allowTaint:true});
-        const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
         const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+        const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
         const file=new File([blob],'swiftcrypto_qr_'+ts+'.png',{type:'image/png'});
-        // 优先用系统分享（微信/保存图片/隔空投送等）
         if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
             await navigator.share({files:[file],title:'SwiftCrypto 加密消息'});
             t('✅ 已分享');
         }else{
-            const a=document.createElement('a');
-            a.download=file.name;a.href=URL.createObjectURL(blob);
-            a.click();URL.revokeObjectURL(a.href);
-            t('📥 二维码图片已保存');
+            saveQRFromCanvas(cv,ts);
         }
     }catch(e){
-        if(e.name==='AbortError'){t('👋 已取消分享');return}
-        console.error('export failed:',e);
-        t('⚠️ 导出失败，请截图保存');
+        if(e.name==='AbortError'){t('👋 已取消');return}
+        console.error('share failed:',e);
+        saveQRFromCanvas(cv,new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,''));
     }
+}
+async function saveQRImage(){
+    const cv=await captureQRCanvas();
+    if(!cv)return t('⚠️ 请先生成二维码');
+    const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
+    saveQRFromCanvas(cv,ts);
+}
+function saveQRFromCanvas(cv,ts){
+    cv.toBlob(blob=>{
+        const a=document.createElement('a');
+        a.download='swiftcrypto_qr_'+ts+'.png';
+        a.href=URL.createObjectURL(blob);
+        a.click();URL.revokeObjectURL(a.href);
+        t('💾 已保存');
+    },'image/png');
 }
 
 // ─── 📷 扫码/导入密文二维码 ───
@@ -2578,7 +2592,8 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
         <p style="font-size:0.65rem;color:var(--dim);margin:0">让对方用 SwiftCrypto 扫码或导入此图片</p>
         <div class="btn-row">
             <button class="btn btn-outline" onclick="closeQRShareModal()">关闭</button>
-            <button class="btn btn-primary" onclick="exportQRImage()">📥 保存二维码图片</button>
+            <button class="btn btn-primary" onclick="shareQRImage()">📤 分享</button>
+            <button class="btn btn-outline" onclick="saveQRImage()">💾 保存</button>
         </div>
     </div>
 </div>
