@@ -77,14 +77,14 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 .btn-outline{background:rgba(255,255,255,0.06);color:#aaa;border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);justify-content:center}
 .btn-outline:hover{background:rgba(255,255,255,0.1);color:#ccc;border-color:rgba(255,255,255,0.18)}
 .char-count{font-size:0.7rem;color:var(--dim);text-align:right}
-#lyricModal,#quizModal,#guideModal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);
+#lyricModal,#quizModal,#guideModal,#settingsModal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);
     backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch}
-#lyricModal.show,#quizModal.show,#guideModal.show{display:flex}
-#lyricModal .sheet,#quizModal .sheet,#guideModal .sheet{
+#lyricModal.show,#quizModal.show,#guideModal.show,#settingsModal.show{display:flex}
+#lyricModal .sheet,#quizModal .sheet,#guideModal .sheet,#settingsModal .sheet{
     background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;
     max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;
 }
-#lyricModal .sheet h3,#quizModal .sheet h3,#guideModal .sheet h3{font-size:1rem;text-align:center}
+#lyricModal .sheet h3,#quizModal .sheet h3,#guideModal .sheet h3,#settingsModal .sheet h3{font-size:1rem;text-align:center}
 #quizModal .preview{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:var(--rs);padding:10px}
 #quizModal .modal-btns{display:flex;gap:8px}
 #quizModal .modal-btns .btn{flex:1;justify-content:center}
@@ -332,7 +332,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         </div>
         <div class="char-count" id="cipherCount">密文: 0 字</div>
     </div>
-    <button class="guide-btn" id="guideBtn" onclick="openGuide()" title="使用说明">📖<br><small>说明</small></button>
+    <button class="guide-btn" id="guideBtn" onclick="openSettings()" title="设置">⚙️<br><small>设置</small></button>
     <div class="panel" id="panelDec">
         <textarea id="cipherInput" placeholder="粘贴密文…"></textarea>
         <div style="font-size:0.6rem;color:var(--dim);margin-bottom:2px">📂 导入图片（Eras码 / 二维码）</div>
@@ -564,6 +564,34 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
     </div>
 </div>
 
+<div id="settingsModal">
+    <div class="sheet">
+        <h3>⚙️ 设置</h3>
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:0.82rem;line-height:1.6">
+            <!-- 使用说明 -->
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <span>📖 使用说明</span>
+                <button class="btn btn-outline" onclick="closeSettings();openGuide()" style="font-size:0.7rem;padding:6px 12px;flex-shrink:0">查看</button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <span>🔕 显示右下角按钮</span>
+                <label class="incog-toggle" style="margin:0">
+                    <input type="checkbox" id="settingsShowGuide" onchange="toggleSettingsGuide()">
+                    <span class="switch"></span>
+                </label>
+            </div>
+            <hr style="border-color:var(--border);margin:2px 0">
+            <!-- 缓存管理 -->
+            <div style="font-size:0.75rem;color:var(--dim)">📦 浏览器缓存（Cache API）</div>
+            <div id="settingsCacheList" style="display:flex;flex-direction:column;gap:6px;font-size:0.78rem">检查中…</div>
+            <button class="btn btn-outline" onclick="clearAllCache()" style="font-size:0.75rem;color:#f87171;border-color:rgba(239,68,68,0.3)">🗑 清除以上所有缓存</button>
+        </div>
+        <div class="modal-btns" style="margin-top:10px">
+            <button class="btn btn-primary" onclick="closeSettings()">关闭</button>
+        </div>
+    </div>
+</div>
+
 <div id="guideModal">
     <div class="sheet" style="max-height:85vh">
         <h3>📖 使用说明</h3>
@@ -604,11 +632,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
                 <li>隐身模式 👻 关闭页面后不留任何痕迹</li>
             </ul>
         </div>
-        <div class="modal-btns" style="margin-top:10px;flex-direction:column;gap:8px">
-            <label style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--dim);cursor:pointer;justify-content:center">
-                <input type="checkbox" id="guideNoShow" onchange="toggleGuideNoShow()">
-                🔕 不再显示右下角按钮（仍可在设置中恢复）
-            </label>
+        <div class="modal-btns" style="margin-top:10px">
             <button class="btn btn-primary" onclick="closeGuide()">知道了 ✌️</button>
         </div>
     </div>
@@ -1840,21 +1864,54 @@ function useQuizAnswer(){
 
 document.getElementById('quizModal').addEventListener('click',function(e){if(e.target===this)closeQuizPicker()});
 
-// ─── 📖 使用说明 ───
-function openGuide(){document.getElementById('guideModal').classList.add('show')}
-function closeGuide(){
-    document.getElementById('guideModal').classList.remove('show');
-    // 检查"不再显示"
-    if(document.getElementById('guideNoShow').checked){
+// ─── ⚙️ 设置 ───
+function openSettings(){
+    document.getElementById('settingsModal').classList.add('show');
+    // 同步开关状态
+    document.getElementById('settingsShowGuide').checked = localStorage.getItem('swiftcrypto_hide_guide')!=='1';
+    // 刷新缓存计数
+    refreshCacheCounts();
+}
+function closeSettings(){document.getElementById('settingsModal').classList.remove('show')}
+function toggleSettingsGuide(){
+    if(document.getElementById('settingsShowGuide').checked){
+        localStorage.removeItem('swiftcrypto_hide_guide');
+        document.getElementById('guideBtn').style.display='';
+    }else{
         localStorage.setItem('swiftcrypto_hide_guide','1');
         document.getElementById('guideBtn').style.display='none';
     }
 }
-function toggleGuideNoShow(){
-    // 切换时保存偏好（点关闭时再应用）
+async function refreshCacheCounts(){
+    const list=document.getElementById('settingsCacheList');
+    try{
+        const names=await caches.keys();
+        if(names.length===0){list.innerHTML='<span style="color:var(--dim)">暂无缓存</span>';return}
+        let html='';
+        for(const name of names){
+            const cache=await caches.open(name);
+            const keys=await cache.keys();
+            const label=name.includes('midi')?'🎵 MIDI曲库':name.includes('tone')?'🎹 音色库':name.includes('workbox')?'⚙️ ServiceWorker':'📦 '+name;
+            html+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span>${label}</span><span style="font-size:0.7rem;color:var(--dim)">${keys.length} 个文件</span></div>`;
+        }
+        list.innerHTML=html;
+    }catch(e){list.innerHTML='<span style="color:#f87171">检测失败</span>'}
 }
+async function clearAllCache(){
+    try{
+        const names=await caches.keys();
+        for(const name of names)await caches.delete(name);
+        refreshCacheCounts();
+        t('🗑 已清除 '+names.length+' 个缓存');
+    }catch(e){t('⚠️ 清除失败')}
+}
+document.getElementById('settingsModal').addEventListener('click',function(e){if(e.target===this)closeSettings()});
+
+// ─── 📖 使用说明 ───
+function openGuide(){document.getElementById('guideModal').classList.add('show')}
+function closeGuide(){document.getElementById('guideModal').classList.remove('show')}
 document.getElementById('guideModal').addEventListener('click',function(e){if(e.target===this)closeGuide()});
-// 页面加载时恢复
+// 页面加载时恢复按钮状态
 (function(){
     if(localStorage.getItem('swiftcrypto_hide_guide')==='1'){
         document.getElementById('guideBtn').style.display='none';
