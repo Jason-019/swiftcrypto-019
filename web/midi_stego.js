@@ -534,6 +534,11 @@ async function initMidiSynth(){
         try{
             const r=await fetch(`./lib/salamander/${file}.mp3`);
             if(!r.ok)throw new Error('HTTP '+r.status);
+            // 显式存入 Cache API（不依赖 Service Worker）
+            try{
+                const toneCache=await caches.open('swiftcrypto-tone-v1');
+                await toneCache.put(`./lib/salamander/${file}.mp3`,r.clone());
+            }catch(e){}
             buffers[note]=await r.arrayBuffer();
             loaded++;updateProgress();
         }catch(e){
