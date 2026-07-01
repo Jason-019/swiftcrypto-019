@@ -2447,29 +2447,39 @@ function renderEraCard(){
     const cells=[];for(const c of b64){const i=B64.indexOf(c);if(i>=0){cells.push(i>>3,i&7)}}
     const rows=Math.ceil(cells.length/COLS);
     const gridW=COLS*cellSp+GAP;
-    const gridH=rows*cellSp+GAP+40+GAP; // +40 for ref row
+    const gridH=rows*cellSp+GAP+40+GAP;
     const cardW=gridW+40,cardH=gridH+90;
     cv.width=cardW;cv.height=cardH;
+    cv.style.width='100%';cv.style.maxWidth='340px';
     const ctx=cv.getContext('2d');
-    // 背景：解析当前主题渐变色，暗化后用于卡片
+    const cw=cardW,ch=cardH;
+
+    // 全黑铺底防白边
+    ctx.fillStyle='#000';ctx.fillRect(0,0,cw,ch);
+
+    // ── 1. 精美背景 ──
     const t=THEMES[themeIdx];
     const themeColors=(t.grad&&t.grad.match(/#[0-9a-fA-F]{6}/g))||['#1a1a2e','#16213e','#0f0f1a'];
     const accent=themeColors[1]||ERA_COLORS[4];
-    const grad=ctx.createLinearGradient(0,0,cardW,cardH);
-    grad.addColorStop(0,darkenHex(themeColors[0]||'#1a1a2e',0.45));
-    grad.addColorStop(0.5,darkenHex(themeColors[1]||'#16213e',0.40));
-    grad.addColorStop(1,darkenHex((themeColors[2]||themeColors[0]||'#0f0f1a'),0.35));
-    ctx.fillStyle=grad;roundRect(ctx,0,0,cardW,cardH,16);ctx.fill();
-    ctx.strokeStyle=hexToRgba(accent,0.4);ctx.lineWidth=2;
-    roundRect(ctx,1,1,cardW-2,cardH-2,16);ctx.stroke();
-    // 标题使用主题强调色的高亮版，与深色背景形成对比，不影响网格解码
-    ctx.fillStyle=accent;ctx.font='bold 16px -apple-system,sans-serif';ctx.textAlign='center';
+    const bgGrad=ctx.createLinearGradient(0,0,cw,ch);
+    bgGrad.addColorStop(0,darkenHex(themeColors[0]||'#1a1a2e',0.35));
+    bgGrad.addColorStop(0.4,darkenHex(themeColors[1]||'#16213e',0.30));
+    bgGrad.addColorStop(1,darkenHex(themeColors[2]||themeColors[0]||'#0f0f1a',0.25));
+    ctx.fillStyle=bgGrad;roundRect(ctx,0,0,cw,ch,16);ctx.fill();
+    // 边框
+    ctx.strokeStyle=hexToRgba(accent,0.2);ctx.lineWidth=1.5;
+    roundRect(ctx,1,1,cw-2,ch-2,16);ctx.stroke();
+
+    // ── 3. 标题区 ──
+    ctx.fillStyle=accent;ctx.font='bold 16px "Palatino Linotype","Book Antiqua",Palatino,Georgia,serif';ctx.textAlign='center';
     ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=4;
-    ctx.fillText('🔐 SwiftCrypto',cardW/2,26);
+    ctx.fillText('🔐  SwiftCrypto',cw/2,24);
     ctx.shadowColor='transparent';ctx.shadowBlur=0;
-    // 网格纯黑底色，隔离卡片渐变
-    const ox=Math.floor((cardW-gridW)/2),oy=36;
+
+    // ── 4. 网格区（坐标与旧版解码器严格对齐）──
+    const ox=Math.floor((cw-gridW)/2),oy=36;
     ctx.fillStyle='#000';ctx.fillRect(ox,oy,gridW,gridH);
+
     const refW=EC_REF_W,refH=EC_REF_H,refGap=(gridW-GAP*2-refW*8)/7,refY=oy+GAP;
     for(let i=0;i<8;i++){ctx.fillStyle=ERA_COLORS[i];ctx.fillRect(ox+GAP+i*(refW+refGap),refY,refW,refH)}
     const dataY0=oy+GAP+refH+GAP;
@@ -2478,11 +2488,24 @@ function renderEraCard(){
         ctx.fillStyle=ERA_COLORS[cells[i]];
         ctx.fillRect(ox+GAP+col*cellSp,dataY0+row*cellSp,CELL,CELL);
     }
-    // 底部信息
+
+    // ── 5. 底部信息区（不影响加解密）──
+    const footerY=cardH-36;
+    // 底部渐变条
+    const ftGrad=ctx.createLinearGradient(0,footerY-8,0,cardH);
+    ftGrad.addColorStop(0,'rgba(0,0,0,0)');ftGrad.addColorStop(1,hexToRgba(accent,0.12));
+    ctx.fillStyle=ftGrad;ctx.fillRect(0,footerY-8,cw,cardH-footerY+8);
+    // 装饰线
+    ctx.strokeStyle=hexToRgba(accent,0.25);ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(cw*0.15,footerY-2);ctx.lineTo(cw*0.85,footerY-2);ctx.stroke();
+    // 日期
     const now=new Date();
-    ctx.fillStyle='rgba(255,255,255,0.35)';ctx.font='11px monospace';
-    ctx.fillText(now.toLocaleDateString('zh-CN')+' '+now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),cardW/2,cardH-28);
-    ctx.fillText('🎨 '+document.getElementById('themeName').textContent+' · Eras Cipher',cardW/2,cardH-12);
+    ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='11px "Palatino Linotype","Book Antiqua",Palatino,Georgia,serif';
+    ctx.textAlign='center';
+    ctx.fillText(now.toLocaleDateString('zh-CN')+'  '+now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),cw/2,footerY+12);
+    // 主题名
+    ctx.fillStyle=accent;ctx.font='bold italic 13px "Palatino Linotype","Book Antiqua",Palatino,Georgia,serif';
+    ctx.fillText(t.name+' · Eras Cipher',cw/2,footerY+30);
 }
 
 async function shareEraCard(){
