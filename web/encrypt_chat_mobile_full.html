@@ -625,7 +625,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 
             <p><b>�💡 小贴士</b></p>
             <ul style="margin:4px 0;padding-left:18px">
-                <li>密码越长越好——中文密码 6 个字就很安全</li>
+                <li>密码越长越好——中文 8 个字或英文 12 位混搭就很安全</li>
                 <li>不要用生日、手机号等容易猜到的密码</li>
                 <li>Eras 码截图后对方用「文件导入」就能识别</li>
                 <li>定时焚毁的消息一旦到期就永久消失，无法恢复</li>
@@ -841,10 +841,14 @@ function updatePwdStrength(){
     const hasLow=/[a-z]/.test(p), hasUp=/[A-Z]/.test(p);
     const hasDig=/[0-9]/.test(p);
     const spChars=p.match(/[^A-Za-z0-9]/g)||[];
+    // CJK字符: 常用汉字约5000个，单独计算
+    const cjkChars=p.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g)||[];
+    const otherSp=spChars.filter(c=>!/[\u4e00-\u9fff\u3400-\u4dbf]/.test(c));
     if(hasLow) charset+=26;
     if(hasUp) charset+=26;
     if(hasDig) charset+=10;
-    if(spChars.length) charset+=new Set(spChars).size;
+    if(cjkChars.length) charset+=5000; // 常用汉字池
+    if(otherSp.length) charset+=new Set(otherSp).size;
     charset=Math.max(charset,10);
 
     // 2. 基础熵: log2(字符集) × 长度
@@ -893,7 +897,7 @@ function updatePwdStrength(){
 
     // --- 单类字符
     const classes=[hasLow,hasUp,hasDig,spChars.length>0].filter(Boolean).length;
-    if(classes===1) penalty-=0.40;
+    if(classes===1) penalty-=cjkChars.length?0.15:0.40; // CJK单类惩罚减半
     else if(classes===2&&p.length<12) penalty-=0.15;
 
     // --- 常见密码词典
