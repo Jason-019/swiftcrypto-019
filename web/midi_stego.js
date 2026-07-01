@@ -550,13 +550,17 @@ async function initMidiSynth(){
     }
     _midiSynth=new Tone.Sampler({
         urls:urlMap,
-        release:1,
-        onload:()=>{t(`🎹 钢琴音源就绪 (${loaded}/${total})`)},
+        attack:0.01,
+        release:1.2,
+        curve:'linear',
+        onload:()=>{
+            t(`🎹 钢琴音源就绪 (${loaded}/${total})`);
+            // Sampler加载完成后再清理Blob URLs
+            for(const url of Object.values(urlMap)){URL.revokeObjectURL(url)}
+        },
         onerror:(e)=>{console.warn('Sampler error:',e)}
     }).toDestination();
     await Tone.loaded();
-    // 清理 Blob URLs
-    for(const url of Object.values(urlMap)){URL.revokeObjectURL(url)}
     return _midiSynth;
 }
 
