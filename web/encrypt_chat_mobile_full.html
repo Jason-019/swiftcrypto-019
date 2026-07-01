@@ -1362,29 +1362,29 @@ function exportQRImage(){
     cv.width=cv.height=total;
     const ctx=cv.getContext('2d');
     ctx.fillStyle='#fff';ctx.fillRect(0,0,total,total);
-    const doDraw=(img)=>{
-        ctx.drawImage(img,margin,margin,qrSize,qrSize);
+    ctx.drawImage(srcImg,margin,margin,qrSize,qrSize);
+    // 检查是否真的画上去了（有些浏览器drawImage静默失败）
+    const test=ctx.getImageData(margin+10,margin+10,1,1).data;
+    if(test[0]===255&&test[1]===255&&test[2]===255){
+        // 空白——用Image重试
+        const qi=new Image();
+        qi.onload=()=>{ctx.drawImage(qi,margin,margin,qrSize,qrSize);finish()};
+        qi.onerror=()=>{t('⚠️ 导出失败，请截图保存')};
+        qi.src=srcImg.src;
+        return;
+    }
+    finish();
+    function finish(){
         const cx=total/2,cy=total/2,iconSize=48,coverSize=40;
         ctx.fillStyle='#fff';ctx.fillRect(cx-coverSize/2,cy-coverSize/2,coverSize,coverSize);
         drawAppIcon(ctx,cx,cy,iconSize);
-        saveCanvas(cv);
-    };
-    // 创建新Image从dataURL加载（移动端DOM img可能无法drawImage）
-    const qi=new Image();
-    qi.onload=()=>doDraw(qi);
-    qi.onerror=()=>{t('⚠️ 导出失败')};
-    qi.src=srcImg.src;
-    // 保险：500ms后dataURL肯定加载完了
-    setTimeout(()=>{if(!qi.complete)qi.src=srcImg.src},500);
-}
-
-function saveCanvas(cv){
-    const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
-    const a=document.createElement('a');
-    a.download='swiftcrypto_qr_'+ts+'.png';
-    a.href=cv.toDataURL('image/png');
-    a.click();
-    t('📥 二维码图片已保存');
+        const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
+        const a=document.createElement('a');
+        a.download='swiftcrypto_qr_'+ts+'.png';
+        a.href=cv.toDataURL('image/png');
+        a.click();
+        t('📥 二维码图片已保存');
+    }
 }
 
 // ─── 📷 扫码/导入密文二维码 ───
