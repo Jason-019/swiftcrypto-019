@@ -1916,6 +1916,7 @@ async function refreshCacheCounts(){
     }catch(e){document.getElementById('settingsStorageEst').textContent=''}
 }
 async function clearAllCache(){
+    if(!await customConfirm('🗑 清除应用缓存？','将清空所有 Cache API 缓存（含MIDI曲库、音色库）。\n此操作不可撤销。'))return;
     try{
         const names=await caches.keys();
         for(const name of names)await caches.delete(name);
@@ -1924,7 +1925,7 @@ async function clearAllCache(){
     }catch(e){t('⚠️ 清除失败')}
 }
 async function clearAllSiteData(){
-    // 1. Cache API
+    if(!await customConfirm('⚠️ 清除所有站点数据？','将清空：\n• Cache API 缓存\n• 密码历史\n• 聊天记录\n• 草稿\n• HS 密钥\n• Service Worker\n\n此操作不可撤销，确定继续？'))return;
     try{const names=await caches.keys();for(const n of names)await caches.delete(n)}catch(e){}
     // 2. Service Worker 注销
     try{
