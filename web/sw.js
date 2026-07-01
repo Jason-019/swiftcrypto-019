@@ -7,6 +7,7 @@ const ASSETS = [
   './encrypt_chat_mobile_full.html',
   './manifest.json',
   './midi_stego.js',
+  './lyric_data.js',
   './icon.svg',
   './lib/tone.min.js',
   './lib/midi.bundle.js'
