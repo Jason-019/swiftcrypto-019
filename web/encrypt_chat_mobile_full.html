@@ -584,7 +584,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
             <button class="btn btn-outline" onclick="clearAllCache()" style="font-size:0.75rem;color:#f87171;border-color:rgba(239,68,68,0.3)">🗑 清除应用缓存</button>
             <button class="btn btn-outline" onclick="clearAllSiteData()" style="font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.5)">⚠️ 清除所有站点数据</button>
             <div id="settingsStorageEst" style="font-size:0.65rem;color:var(--dim);margin-top:4px;line-height:1.4"></div>
-            <div style="font-size:0.6rem;color:var(--dim);line-height:1.4">💡 「清除所有站点数据」会同时清空密码历史、聊天记录、草稿、HS密钥。音色库 HTTP 缓存请在浏览器设置中清除。</div>
+            <div style="font-size:0.6rem;color:var(--dim);line-height:1.4">💡 「清除所有站点数据」会同时清空密码历史、聊天记录、草稿、HS密钥。音色库 HTTP 缓存请在浏览器设置中清除（≈2MB）。</div>
         </div>
         <div class="modal-btns" style="margin-top:10px">
             <button class="btn btn-primary" onclick="closeSettings()">关闭</button>
@@ -994,7 +994,7 @@ async function toggleHS(){
     const cb=document.getElementById('hsMode'),panel=document.getElementById('hsPanel');
     if(cb.checked){
         const ok=await customConfirm('🛡 开启高安全模式？',
-            '开启后，你和对方各有一个"数字身份"。\n消息 = 你的密码 + 双方身份 → 双重加密。\n\n操作很简单：\n① 点 ฅ’ω’ฅ 生成二维码，让对方扫码导入\n② 或点 📋 复制身份码发给对方\n③ 把对方的身份码粘贴（或 📷 扫码）导入\n④ 完成！之后的加密自动双重保护\n\n即使密码意外泄露，没有身份码也解不开。');
+            '开启后，你和对方各有一个"临时数字身份"。\n消息 = 你的密码 + 双方身份 → 双重加密。\n\n操作很简单：\n① 点 ฅ’ω’ฅ 生成二维码，让对方扫码导入\n② 或点 📋 复制身份码发给对方\n③ 把对方的身份码粘贴（或 📷 扫码）导入\n④ 完成！之后的加密自动双重保护\n\n即使密码意外泄露，没有身份码也解不开。');
         if(!ok){cb.checked=false;return;}
         _hsMode=true;localStorage.setItem('swiftcrypto_hs','1');
         panel.style.display='flex';
