@@ -77,14 +77,14 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 .btn-outline{background:rgba(255,255,255,0.06);color:#aaa;border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);justify-content:center}
 .btn-outline:hover{background:rgba(255,255,255,0.1);color:#ccc;border-color:rgba(255,255,255,0.18)}
 .char-count{font-size:0.7rem;color:var(--dim);text-align:right}
-#lyricModal,#quizModal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);
+#lyricModal,#quizModal,#guideModal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);
     backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch}
-#lyricModal.show,#quizModal.show{display:flex}
-#lyricModal .sheet,#quizModal .sheet{
+#lyricModal.show,#quizModal.show,#guideModal.show{display:flex}
+#lyricModal .sheet,#quizModal .sheet,#guideModal .sheet{
     background:rgba(20,20,45,0.98);border-radius:16px 16px 0 0;padding:16px;
     max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;
 }
-#lyricModal .sheet h3,#quizModal .sheet h3{font-size:1rem;text-align:center}
+#lyricModal .sheet h3,#quizModal .sheet h3,#guideModal .sheet h3{font-size:1rem;text-align:center}
 #quizModal .preview{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:var(--rs);padding:10px}
 #quizModal .modal-btns{display:flex;gap:8px}
 #quizModal .modal-btns .btn{flex:1;justify-content:center}
@@ -165,6 +165,12 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 .pwd-strength{height:3px;border-radius:2px;margin:0 12px;background:rgba(255,255,255,0.06);overflow:hidden;transition:all .3s}
 .pwd-strength div{height:100%;transition:width .4s,background .4s;width:0}
 .pwd-label{font-size:0.6rem;text-align:right;padding:2px 12px 0;min-height:14px}
+.pwd-masked{-webkit-text-security:disc}
+/* Guide button - 右下角固定正方形 */
+.guide-btn{position:fixed;bottom:80px;right:12px;width:52px;height:52px;border-radius:14px;border:1.5px solid rgba(167,139,250,0.35);background:rgba(20,20,45,0.9);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#c4b5fd;font-size:1.1rem;cursor:pointer;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;box-shadow:0 2px 12px rgba(167,139,250,0.15);transition:transform .2s,box-shadow .2s}
+.guide-btn:hover{transform:scale(1.08);box-shadow:0 4px 20px rgba(167,139,250,0.3);border-color:rgba(167,139,250,0.6)}
+.guide-btn:active{transform:scale(0.95)}
+.guide-btn small{font-size:0.55rem;font-weight:400;opacity:0.8}
 /* Incognito toggle */
 .incog-toggle{display:flex;align-items:center;gap:4px;cursor:pointer;font-size:0.65rem}
 .incog-toggle input{display:none}
@@ -250,8 +256,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 
 <div class="pwd-row" style="flex-direction:column;gap:6px">
     <div style="display:flex;gap:6px;width:100%">
-        <input type="password" id="password" placeholder="共享密码…" autocomplete="off" maxlength="128" oninput="updatePwdStrength()" style="flex:1"
-            oncompositionstart="this.type='text'" oncompositionend="if(document.getElementById('togglePwd').textContent!=='🙈')this.type='password'">
+        <input type="text" id="password" placeholder="共享密码…" autocomplete="off" maxlength="128" oninput="updatePwdStrength()" class="pwd-masked" style="flex:1">
     </div>
     <div style="display:flex;gap:6px;width:100%;align-items:center">
         <button class="icon-btn" id="togglePwd" onclick="togglePwd()" title="显示/隐藏密码" style="flex:1;font-size:0.8rem">👁 显示</button>
@@ -327,6 +332,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
         </div>
         <div class="char-count" id="cipherCount">密文: 0 字</div>
     </div>
+    <button class="guide-btn" onclick="openGuide()" title="使用说明">📖<br><small>说明</small></button>
     <div class="panel" id="panelDec">
         <textarea id="cipherInput" placeholder="粘贴密文…"></textarea>
         <div style="font-size:0.6rem;color:var(--dim);margin-bottom:2px">📂 导入图片（Eras码 / 二维码）</div>
@@ -554,6 +560,50 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
             <button class="btn btn-outline" id="quizShowBtn" onclick="showQuizAnswer()">👁 显示答案</button>
             <button class="btn btn-outline" onclick="closeQuizPicker()">取消</button>
             <button class="btn btn-primary" id="useQuizBtn" onclick="useQuizAnswer()">🔑 将答案作为密码</button>
+        </div>
+    </div>
+</div>
+
+<div id="guideModal">
+    <div class="sheet" style="max-height:85vh">
+        <h3>📖 使用说明</h3>
+        <div style="overflow-y:auto;max-height:65vh;font-size:0.8rem;line-height:1.7;color:var(--text);padding-right:4px">
+            <p><b>🔐 这是什么？</b><br>SwiftCrypto 是一款加密聊天工具——你输入文字，它变成一串乱码（密文），只有知道密码的人才能解开。密码不会上传到任何服务器，一切都在你手机/电脑上运算。</p>
+
+            <p><b>🔑 1. 设置共享密码</b><br>你和朋友约定一个密码，双方都输入。密码可以是中文、英文、Emoji 混搭。下面有随机生成（🎲）、歌词挑选（📜）、趣味问答（❓）帮你选密码。</p>
+
+            <p><b>🐈‍⬛ 2. 加密消息</b><br>在「加密」面板输入想说的话 → 点加密按钮 → 得到一串密文。<br>如果开启「🔥 定时焚毁」，消息到期后会自动消失，对方再也看不到。</p>
+
+            <p><b>📤 3. 分享密文（5 种方式）</b></p>
+            <ul style="margin:4px 0;padding-left:18px">
+                <li><b>📱 二维码</b> — 生成图片，对方扫码或保存后导入。可附加密码提示（如「我们常吃的那个」）</li>
+                <li><b>🎨 Eras 码</b> — 彩色色块图片，专为微信/QQ 压缩优化。截图发过去，对方保存图片导入即可</li>
+                <li><b>📝 纯文字</b> — 直接复制密文粘贴到聊天框</li>
+                <li><b>🔗 链接</b> — 生成一个网址发给对方</li>
+                <li><b>🎵 MIDI</b> — 把密文藏进钢琴曲 .mid 文件里，外观就是一普通音乐文件</li>
+            </ul>
+
+            <p><b>🐈 4. 解密消息</b><br>切换到「解密」面板 → 粘贴密文（或导入图片/扫码）→ 点解密 → 看到原文。<br>📂 文件导入支持 Eras 名片图片和二维码图片，📷 扫码仅支持二维码。</p>
+
+            <p><b>🎨 5. Eras 主题</b><br>顶部的 ◀ ▶ 切换 13 套主题，每套致敬一张 Taylor Swift 专辑。主题色会影响页面背景、二维码、Eras 名片的外观。</p>
+
+            <p><b>🛡️ 6. 高安全模式</b><br>顶部 🛡 开关。开启后你和朋友各有一个「数字身份码」，双方交换身份码后，加密会变成双重保护——即使密码泄露，没有身份码也解不开。</p>
+
+            <p><b>🎵 7. MIDI 隐写</b><br>在「MIDI」面板选一首钢琴曲 → 输入文字 → 编码 → 得到一个 .mid 文件。对方收到后导入同一个密码解密。建议先「📦 预缓存 MIDI」下载歌曲，之后离线也能用。</p>
+
+            <p><b>💬 8. 密聊模式</b><br>在「记录」面板可以和对方来回加密聊天——你发一句密文，对方粘贴解密回复。</p>
+
+            <p><b>💡 小贴士</b></p>
+            <ul style="margin:4px 0;padding-left:18px">
+                <li>密码越长越好——中文密码 6 个字就很安全</li>
+                <li>不要用生日、手机号等容易猜到的密码</li>
+                <li>Eras 码截图后对方用「文件导入」就能识别</li>
+                <li>定时焚毁的消息一旦到期就永久消失，无法恢复</li>
+                <li>隐身模式 👻 关闭页面后不留任何痕迹</li>
+            </ul>
+        </div>
+        <div class="modal-btns" style="margin-top:10px">
+            <button class="btn btn-primary" onclick="closeGuide()">知道了 ✌️</button>
         </div>
     </div>
 </div>
@@ -1151,7 +1201,7 @@ function loadDrafts(){
     let restored=false;
     if(dp){p.value=dp;restored=true}
     if(dc){c.value=dc;restored=true}
-    if(dw){pw.value=dw;pw.type='text';document.getElementById('togglePwd').textContent='🙈';updatePwdStrength();restored=true}
+    if(dw){pw.value=dw;pw.classList.remove('pwd-masked');document.getElementById('togglePwd').textContent='🙈 隐藏';updatePwdStrength();restored=true}
     if(restored) t('📝 草稿已恢复');
 }
 
@@ -1171,16 +1221,16 @@ function usePwdFromSelect(){
     const v=sel.value;
     if(v==='__clear__'){clearPwdHistory();sel.value='';return}
     if(!v)return;
-    document.getElementById('password').value=v;
-    document.getElementById('password').type='text';
-    document.getElementById('togglePwd').textContent='🙈';
+    const pwEl=document.getElementById('password');
+    pwEl.value=v;pwEl.classList.remove('pwd-masked');
+    document.getElementById('togglePwd').textContent='🙈 隐藏';
     sel.value='';
     t('🔐 已填入: '+v.slice(0,12)+(v.length>12?'…':''));
 }
 function clearPassword(){
-    document.getElementById('password').value='';
-    document.getElementById('password').type='password';
-    document.getElementById('togglePwd').textContent='👁';
+    const pw=document.getElementById('password');
+    pw.value='';pw.classList.add('pwd-masked');
+    document.getElementById('togglePwd').textContent='👁 显示';
     updatePwdStrength();
     t('🔓 密码已清除');
 }
@@ -1189,7 +1239,7 @@ function copyPassword(){
     navigator.clipboard.writeText(p).then(()=>t('📋 密码已复制')).catch(()=>t('⚠️ 复制失败'));
 }
 function autoSavePwd(){const p=gp();if(p)savePwdHistory(p);}
-function togglePwd(){const e=document.getElementById('password'),b=document.getElementById('togglePwd');if(e.type==='password'){e.type='text';b.textContent='🙈'}else{e.type='password';b.textContent='👁'}}
+function togglePwd(){const e=document.getElementById('password'),b=document.getElementById('togglePwd');if(e.classList.contains('pwd-masked')){e.classList.remove('pwd-masked');b.textContent='🙈 隐藏'}else{e.classList.add('pwd-masked');b.textContent='👁 显示'}}
 function switchTab(tab){document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));if(tab==='enc'){document.querySelector('.tab:nth-child(1)').classList.add('active');document.getElementById('panelEnc').classList.add('active')}else if(tab==='dec'){document.querySelector('.tab:nth-child(2)').classList.add('active');document.getElementById('panelDec').classList.add('active')}else if(tab==='midi'){document.querySelector('.tab:nth-child(3)').classList.add('active');document.getElementById('panelMidi').classList.add('active');initMidiTab()}else if(tab==='chat'){document.querySelector('.tab:nth-child(4)').classList.add('active');document.getElementById('panelChat').classList.add('active');renderChat()}}
 function openEraModal(){document.getElementById('eraModal').style.display='flex'}
 function closeEraModal(){document.getElementById('eraModal').style.display='none'}
@@ -1655,8 +1705,9 @@ function genPwd(){
     const digs=[1,2,1,3,1,9,8,9,5,7].sort(()=>Math.random()-0.5).join('');
     const parts=[words[i],digs,words[j]].sort(()=>Math.random()-0.5);
     const p=parts.join('-');
-    document.getElementById('password').value=p;document.getElementById('password').type='text';
-    document.getElementById('togglePwd').textContent='🙈';t('🎲 '+p);updatePwdStrength();
+    const pwEl2=document.getElementById('password');
+    pwEl2.value=p;pwEl2.classList.remove('pwd-masked');
+    document.getElementById('togglePwd').textContent='🙈 隐藏';t('🎲 '+p);updatePwdStrength();
 }
 // Theme gradients (inspired by album color palettes)
 const THEMES=[
@@ -1738,8 +1789,8 @@ function pickLyric(el){
 function openLyricPicker(){document.getElementById('lyricModal').classList.add('show')}
 function closeLyricPicker(){document.getElementById('lyricModal').classList.remove('show')}
 function useLyric(){
-    const pw=document.getElementById('password');pw.value=_selectedLyric;pw.type='text';
-    document.getElementById('togglePwd').textContent='🙈';closeLyricPicker();t('✅ 歌词已填入');updatePwdStrength();
+    const pw=document.getElementById('password');pw.value=_selectedLyric;pw.classList.remove('pwd-masked');
+    document.getElementById('togglePwd').textContent='🙈 隐藏';closeLyricPicker();t('✅ 歌词已填入');updatePwdStrength();
 }
 
 // ─── ❓ 趣味问答 ───
@@ -1774,14 +1825,19 @@ function useQuizAnswer(){
     const userAnswer=document.getElementById('quizAnswer').value.trim();
     const pw=userAnswer||_currentQuiz.a; // 用户没填则用正确答案
     const pwEl=document.getElementById('password');
-    pwEl.value=pw;pwEl.type='text';
-    document.getElementById('togglePwd').textContent='🙈';
+    pwEl.value=pw;pwEl.classList.remove('pwd-masked');
+    document.getElementById('togglePwd').textContent='🙈 隐藏';
     closeQuizPicker();
     t(userAnswer?'✅ 你的答案已填入密码':'✅ 正确答案已填入密码');
     updatePwdStrength();
 }
 
 document.getElementById('quizModal').addEventListener('click',function(e){if(e.target===this)closeQuizPicker()});
+
+// ─── 📖 使用说明 ───
+function openGuide(){document.getElementById('guideModal').classList.add('show')}
+function closeGuide(){document.getElementById('guideModal').classList.remove('show')}
+document.getElementById('guideModal').addEventListener('click',function(e){if(e.target===this)closeGuide()});
 
 function eh(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 document.getElementById('lyricModal').addEventListener('click',function(e){if(e.target===this)closeLyricPicker()});
