@@ -250,7 +250,8 @@ textarea[readonly]{background:rgba(0,0,0,0.15)}
 
 <div class="pwd-row" style="flex-direction:column;gap:6px">
     <div style="display:flex;gap:6px;width:100%">
-        <input type="password" id="password" placeholder="共享密码…" autocomplete="off" oninput="updatePwdStrength()" style="flex:1">
+        <input type="password" id="password" placeholder="共享密码…" autocomplete="off" maxlength="128" oninput="updatePwdStrength()" style="flex:1"
+            oncompositionstart="this.type='text'" oncompositionend="if(document.getElementById('togglePwd').textContent!=='🙈')this.type='password'">
     </div>
     <div style="display:flex;gap:6px;width:100%;align-items:center">
         <button class="icon-btn" id="togglePwd" onclick="togglePwd()" title="显示/隐藏密码" style="flex:1;font-size:0.8rem">👁 显示</button>
@@ -859,7 +860,10 @@ function updatePwdStrength(){
     ];
     const lv=levels[lvl];
     bar.style.width=lv.w;bar.style.background=lv.c;
-    lbl.textContent=lv.t+' ('+Math.round(entropy)+' bits)';
+    const bytes=new TextEncoder().encode(p).length;
+    const hasCJK=/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/.test(p);
+    const charInfo=p.length+'字符'+(hasCJK?' 含中文':'')+(bytes!==p.length?' | '+bytes+'B':'');
+    lbl.textContent=lv.t+' ('+Math.round(entropy)+' bits)  |  '+charInfo;
     lbl.style.color=lv.c;
 }
 // ─── 💬 自定义确认弹窗（替代原生confirm，支持emoji） ───
