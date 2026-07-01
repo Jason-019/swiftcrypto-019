@@ -1361,13 +1361,21 @@ async function exportQRImage(){
     try{
         const cv=await html2canvas(preview,{backgroundColor:'#fff',scale:2,useCORS:true,allowTaint:true});
         const ts=new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'');
-        const a=document.createElement('a');
-        a.download='swiftcrypto_qr_'+ts+'.png';
-        a.href=cv.toDataURL('image/png');
-        a.click();
-        t('📥 二维码图片已保存');
+        const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+        const file=new File([blob],'swiftcrypto_qr_'+ts+'.png',{type:'image/png'});
+        // 优先用系统分享（微信/保存图片/隔空投送等）
+        if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+            await navigator.share({files:[file],title:'SwiftCrypto 加密消息'});
+            t('✅ 已分享');
+        }else{
+            const a=document.createElement('a');
+            a.download=file.name;a.href=URL.createObjectURL(blob);
+            a.click();URL.revokeObjectURL(a.href);
+            t('📥 二维码图片已保存');
+        }
     }catch(e){
-        console.error('html2canvas failed:',e);
+        if(e.name==='AbortError'){t('👋 已取消分享');return}
+        console.error('export failed:',e);
         t('⚠️ 导出失败，请截图保存');
     }
 }
