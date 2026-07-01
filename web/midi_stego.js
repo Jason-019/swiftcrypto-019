@@ -560,6 +560,7 @@ async function initMidiSynth(){
         },
         onerror:(e)=>{console.warn('Sampler error:',e)}
     }).toDestination();
+    _midiSynth.volume.value=-4;
     await Tone.loaded();
     return _midiSynth;
 }
@@ -641,7 +642,7 @@ function scheduleMidiPlayback(synth,events,division,tempo){
                 time:on.tick*secPerTick,
                 note:Tone.Frequency(on.pitch,'midi').toNote(),
                 duration:dur,
-                velocity:on.velocity/127
+                velocity:Math.min(on.velocity/127,0.85),
             });
             delete pending[e.pitch];
         }
