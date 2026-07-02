@@ -1,5 +1,5 @@
 // SwiftCrypto Service Worker — PWA + Share Target
-const CACHE_NAME = 'swiftcrypto-v5';
+const CACHE_NAME = 'swiftcrypto-v6';
 const TONE_CACHE = 'swiftcrypto-tone-v1'; // 音色库独立缓存，不被更新清除
 const SALAMANDER = './lib/salamander/';
 const SHARED_FILE_KEY = 'swiftcrypto_shared_midi';

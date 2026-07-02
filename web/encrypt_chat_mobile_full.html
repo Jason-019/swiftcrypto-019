@@ -444,7 +444,7 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
     <div class="panel" id="panelMidi">
         <div style="display:flex;gap:4px;align-items:center">
             <button class="icon-btn" onclick="openMidiPicker()" title="挑选MIDI" style="flex:1;width:auto;font-size:0.8rem;gap:6px">🎹 挑选MIDI…</button>
-            <button class="icon-btn" id="midiPlayBtn" onclick="toggleMidiPlay()" title="试听原曲" disabled style="font-size:0.7rem;padding:4px 8px;flex-shrink:0;white-space:nowrap;width:auto">▶ 试听</button>
+            <button class="icon-btn" id="midiPlayBtn" onclick="toggleMidiPlay()" title="试听原曲" style="font-size:0.7rem;padding:4px 8px;flex-shrink:0;white-space:nowrap;width:auto">▶ 试听</button>
             <button class="icon-btn" onclick="cacheAllMidi()" title="预缓存全部 MIDI，纯离线可用" style="font-size:0.65rem;padding:4px 8px;flex-shrink:0;white-space:nowrap;width:auto">📦 预缓存MIDI(可离线)</button>
         </div>
         <label style="display:flex;align-items:center;gap:4px;font-size:0.6rem;color:var(--dim);cursor:pointer;margin-top:2px">
@@ -1927,7 +1927,8 @@ function updateBgOpacity(v){
 let LYRIC_DATA=null,_lyricDataLoaded=!1;
 function loadLyricData(){return new Promise((resolve)=>{
     if(_lyricDataLoaded){resolve(LYRIC_DATA);return}
-    const s=document.createElement('script');s.src='lyric_data.js?v=1';
+    t('⏳ 正在加载歌词库…');
+    const s=document.createElement('script');s.src='lyric_data.js?v=2';
     s.onload=()=>{_lyricDataLoaded=!0;resolve(LYRIC_DATA)};
     s.onerror=()=>{t('⚠️ 歌词库加载失败');resolve('')};
     document.head.appendChild(s);

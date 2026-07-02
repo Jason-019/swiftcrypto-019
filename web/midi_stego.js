@@ -10,8 +10,8 @@ let _midiRecvPlaying=false; // 接收文件独立播放状态
 const _midiMetaUrl='midi_meta.json?v=5';
 
 async function initMidiTab(){
-    if(_midiMeta){return} // Already loaded
-    if(_midiLoading){return _midiLoading} // Loading in progress
+    if(_midiMeta){return}
+    if(_midiLoading){return _midiLoading}
     _midiLoading=(async()=>{
         try{
             const r=await fetch(_midiMetaUrl);
@@ -21,7 +21,9 @@ async function initMidiTab(){
         }catch(e){console.warn('initMidiTab:',e)}
         _midiLoading=null;
     })();
-    return _midiLoading;
+    await _midiLoading;
+    // Pre-warm piano synth in background (no await, fire-and-forget)
+    if(!_midiSynth&&typeof Tone!=='undefined') initMidiSynth().catch(()=>{});
 }
 
 // ─── 🎹 MIDI 挑选 Modal ───
@@ -509,18 +511,20 @@ function compareArrayBuffers(a,b){
 // ═══════════════════════════════════════════════════════════════
 // 🎧 MIDI 轻量播放 (Tone.js + Salamander 钢琴采样)
 // ═══════════════════════════════════════════════════════════════
-let _midiSynth=null,_midiPlaying=false,_midiPlayBuf=null;
+let _midiSynth=null,_midiPlaying=false,_midiPlayBuf=null,_midiSynthLoading=null;
 let _midiAutoStop=null;
 
 async function initMidiSynth(){
     if(_midiSynth)return _midiSynth;
+    if(_midiSynthLoading)return _midiSynthLoading;
     if(typeof Tone==='undefined'){t('⚠️ Tone.js 未加载');return null}
+    _midiSynthLoading=(async()=>{
     try{
         await Tone.start();
         if(Tone.getContext().rawContext.state!=='running'){
             await Tone.getContext().rawContext.resume();
         }
-    }catch(e){t('⚠️ 音频初始化失败，请点击页面任意位置后重试');return null}
+    }catch(e){t('⚠️ 音频初始化失败，请点击页面任意位置后重试');_midiSynthLoading=null;return null}
     
     const sampleNames=['A0','C1','D#1','F#1','A1','C2','D#2','F#2','A2','C3','D#3','F#3','A3','C4','D#4','F#4','A4','C5','D#5','F#5','A5','C6','D#6','F#6','A6','C7','D#7','F#7','A7','C8'];
     const sampleFiles=['A0','C1','Ds1','Fs1','A1','C2','Ds2','Fs2','A2','C3','Ds3','Fs3','A3','C4','Ds4','Fs4','A4','C5','Ds5','Fs5','A5','C6','Ds6','Fs6','A6','C7','Ds7','Fs7','A7','C8'];
@@ -537,14 +541,10 @@ async function initMidiSynth(){
         const file=sampleFiles[i];
         const url=`./lib/salamander/${file}.mp3`;
         try{
-            // 缓存优先：先查缓存
             let r=await toneCache.match(url);
-            if(r){
-                // 缓存命中，直接使用
-            }else{
+            if(!r){
                 r=await fetch(url);
                 if(!r.ok)throw new Error('HTTP '+r.status);
-                // 存入缓存
                 try{await toneCache.put(url,r.clone())}catch(e){}
             }
             buffers[note]=await r.arrayBuffer();
@@ -555,8 +555,7 @@ async function initMidiSynth(){
         }
     }));
     
-    if(loaded===0){t('⚠️ 所有音源加载失败');return null}
-    // 用 Blob URLs 创建 Sampler
+    if(loaded===0){t('⚠️ 所有音源加载失败');_midiSynthLoading=null;return null}
     const urlMap={};
     for(const [name,buf] of Object.entries(buffers)){
         urlMap[name]=URL.createObjectURL(new Blob([buf],{type:'audio/mpeg'}));
@@ -568,14 +567,16 @@ async function initMidiSynth(){
         curve:'linear',
         onload:()=>{
             t(`🎹 钢琴音源就绪 (${loaded}/${total})`);
-            // Sampler加载完成后再清理Blob URLs
             for(const url of Object.values(urlMap)){URL.revokeObjectURL(url)}
         },
         onerror:(e)=>{console.warn('Sampler error:',e)}
     }).toDestination();
     _midiSynth.volume.value=-4;
     await Tone.loaded();
+    _midiSynthLoading=null;
     return _midiSynth;
+    })();
+    return _midiSynthLoading;
 }
 
 function parseMidiTimedEvents(buf){
@@ -604,15 +605,18 @@ function parseMidiTimedEvents(buf){
 async function toggleMidiPlay(){
     const btn=document.getElementById('midiPlayBtn');
     if(_midiPlaying){stopMidiPlay();return}
+    // Check song selection BEFORE loading synth
+    let buf=_midiRecvBuf||_midiPlayBuf;
+    if(!buf){
+        const songId=document.getElementById('midiSongSelect').value;
+        if(!songId){t('⚠️ 请先挑选歌曲或接收MIDI文件');return}
+    }
     t('⏳ 正在加载音色库…');
     const synth=await initMidiSynth();
     if(!synth)return;
     try{
-        let buf=_midiRecvBuf||_midiPlayBuf;
-        // If no buffer yet, try loading by song ID
         if(!buf){
             const songId=document.getElementById('midiSongSelect').value;
-            if(!songId){t('⚠️ 请先挑选歌曲或接收MIDI文件');return}
             buf=await loadMidiOriginal(songId);
             _midiPlayBuf=buf;
         }
