@@ -308,6 +308,7 @@ async function midiEncodeAndShare(){
     if(!pw){status.textContent='⚠️ 请先设置共享密码';return t('请先设置共享密码');}
     if(!_midiMeta||!_midiMeta.songs[songId]){status.textContent='⚠️ 歌曲元数据未加载';return t('歌曲元数据未加载');}
     const song=_midiMeta.songs[songId];
+    const midiBtn=document.querySelector('[onclick*="midiEncodeAndShare"]');showPaw(midiBtn,'编码中…');
     status.textContent='🔒 正在加密…';
     try{
         const k=await dk(pw);
@@ -387,7 +388,9 @@ async function midiEncodeAndShare(){
             if(document.getElementById('panelChat')&&document.getElementById('panelChat').classList.contains('active')&&typeof renderChat==='function')renderChat();
         }
         autoSavePwd();
+        hidePaw(midiBtn);
     }catch(e){
+        hidePaw(midiBtn);
         status.textContent='❌ '+e.message;
         t('❌ '+e.message);
     }

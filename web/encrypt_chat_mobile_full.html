@@ -39,6 +39,19 @@ body::before{
 .topbar h1{font-size:1.2rem;font-weight:700;flex:1;font-family:var(--font-serif);letter-spacing:0.02em;
     background:linear-gradient(135deg,var(--accent),#e879f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
     background-clip:text;}
+.hat-i{position:relative;background:inherit;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.top-hat{position:absolute;bottom:calc(100% + 1px);left:50%;transform:translateX(-50%);width:1.1em}
+.top-hat .hat-body{fill:#d4c8e8}
+.top-hat .hat-band{fill:var(--accent)}
+/* Cat paw loader */
+.paw-loader{display:inline-flex;align-items:flex-end;gap:2px;height:1em;vertical-align:middle;margin-right:4px}
+.paw-pad{display:inline-block;border-radius:50%;background:var(--accent);animation:pawBounce .6s ease-in-out infinite}
+.paw-pad.lg{width:8px;height:8px;animation-delay:0s}
+.paw-pad.sm{width:5px;height:5px}
+.paw-pad.sm:nth-child(2){animation-delay:.1s}
+.paw-pad.sm:nth-child(3){animation-delay:.2s}
+.paw-pad.sm:nth-child(4){animation-delay:.3s}
+@keyframes pawBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 .topbar .badge{font-size:0.65rem;color:var(--dim);border:1px solid var(--border);border-radius:6px;padding:2px 6px;}
 .icon-btn{
     width:34px;height:34px;border-radius:var(--rs);border:1px solid rgba(255,255,255,0.1);
@@ -232,7 +245,7 @@ textarea[readonly]{background:rgba(0,0,0,0.15);cursor:default}
 <body>
 
 <div class="topbar">
-    <h1>SwiftCrypto</h1>
+    <h1>Sw<span class="hat-i">i<svg class="top-hat" viewBox="0 0 24 20"><rect class="hat-body" x="2" y="14" width="20" height="3" rx="1"/><rect class="hat-body" x="6" y="2" width="12" height="14" rx="1"/><rect class="hat-band" x="6" y="10" width="12" height="3"/></svg></span>ftCrypto</h1>
     <button class="icon-btn" onclick="openSettings()" title="设置" style="width:36px;height:36px;font-size:1.1rem">⚙️</button>
 </div>
 
@@ -704,12 +717,16 @@ async function dk(p){
     const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(km),'PBKDF2',false,['deriveKey']);
     return crypto.subtle.deriveKey({name:'PBKDF2',salt:ST,iterations:IT,hash:'SHA-256'},m,{name:'AES-GCM',length:KS},false,['encrypt','decrypt']);
 }
+// ---- 🐾 Paw loading helpers ----
+function showPaw(btn,text){btn._oh=btn.innerHTML;btn.innerHTML='<span class="paw-loader"><span class="paw-pad sm"></span><span class="paw-pad lg"></span><span class="paw-pad sm"></span><span class="paw-pad sm"></span></span>'+text;btn.disabled=true}
+function hidePaw(btn){if(btn._oh){btn.innerHTML=btn._oh;delete btn._oh}btn.disabled=false}
 async function doEncrypt(){
     let p=document.getElementById('plainInput').value;if(!p)return t('请输入明文');
     if(!gp())return t('请先输入共享密码');
     const sdm=getSDMeta();if(sdm)p=sdm+p;
     // 附加设备标识
     const payload='['+getDeviceId()+']'+p;
+    const encBtn=document.querySelector('#panelEnc .btn-primary');showPaw(encBtn,'加密中…');
     try{const k=await dk(gp()),n=crypto.getRandomValues(new Uint8Array(NS)),c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(payload)),m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);
         const b64=btoa(String.fromCharCode(...m));
         document.getElementById('cipherOutput').value=b64;uc();updateEmojiDisplay();autoSavePwd();
@@ -717,12 +734,14 @@ async function doEncrypt(){
         const sdExp=sdm?parseInt(sdm.match(/^🔥(\d+)\|/)?.[1]||'0'):0;
         chatMsgs.push({role:'me',text:p.replace(/^🔥\d+\|/,''),cipher:b64,time:Date.now(),device:getDeviceId(),sd:!!sdm,sdExpiry:sdExp});
         saveChat();if(document.getElementById('panelChat').classList.contains('active'))renderChat();
-        t(sdm?'🔥 开启焚毁程序 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 加密完成')}catch(e){t('❌ '+e.message)}
+        t(sdm?'🔥 开启焚毁程序 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 加密完成');
+        hidePaw(document.querySelector('#panelEnc .btn-primary'))}catch(e){hidePaw(document.querySelector('#panelEnc .btn-primary'));t('❌ '+e.message)}
 }
 async function doDecrypt(){
     let b=document.getElementById('cipherInput').value.trim();if(!b)return t('请输入密文');
     if(isEmojiCipher(b)){b=emojiToCipher(b);document.getElementById('cipherInput').value=b;t('🎭 已识别Emoji密文')}
     stopDecryptCountdown();
+    const decBtn=document.querySelector('#panelDec .btn-primary');showPaw(decBtn,'解密中…');
     try{const k=await dk(gp()),r=Uint8Array.from(atob(b),c=>c.charCodeAt(0)),p=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));let pt=new TextDecoder().decode(p);
         const sd=checkSelfDestruct(pt);
         if(!sd.valid){document.getElementById('plainOutput').value=sd.message;uc();t('🔥 '+sd.message);return}
@@ -739,7 +758,7 @@ async function doDecrypt(){
         chatMsgs.push({role:'them',text,cipher:b,time:Date.now(),device:senderId,sd:sd.wasSD,sdExpiry:sd.expiry});
         saveChat();if(document.getElementById('panelChat').classList.contains('active'))renderChat();
         if(sd.wasSD)startChatSDWatch();
-        t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功')}catch(e){const hint=localStorage.getItem('swiftcrypto_hs')?'（高安全模式已开启，请确认双方已交换身份码）':'';t(e.name==='OperationError'?'❌ 密码错误'+hint:'❌ '+e.message)}
+        t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功');hidePaw(decBtn)}catch(e){hidePaw(decBtn);const hint=localStorage.getItem('swiftcrypto_hs')?'（高安全模式已开启，请确认双方已交换身份码）':'';t(e.name==='OperationError'?'❌ 密码错误'+hint:'❌ '+e.message)}
 }
 function gp(){return document.getElementById('password').value}
 // ---- ⌨️ Typewriter effect for decryption ----
