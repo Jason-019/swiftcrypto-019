@@ -90,7 +90,7 @@ body::after{
 .pwd-row{display:flex;gap:6px;padding:10px 12px;align-items:center;}
 .pwd-row input{
     flex:1;padding:12px 14px;border-radius:var(--r);border:2px solid var(--border);
-    background:rgba(20,20,35,0.5);color:var(--text);font-size:0.9rem;outline:none;min-width:0;font-family:inherit;
+    background:rgba(45,30,60,0.75);color:var(--text);font-size:0.9rem;outline:none;min-width:0;font-family:inherit;
     transition:border-color .4s,box-shadow .4s;font-weight:600;
     filter:url(#fluffy-edge);
     box-shadow:inset 0 1px 4px rgba(0,0,0,0.15);
@@ -131,8 +131,8 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
 .btn-primary:active{opacity:.9}
 .btn-copy{background:rgba(16,185,129,0.1);color:#6ee7b7;border:1px solid rgba(16,185,129,0.15);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .btn-copy:hover{background:rgba(16,185,129,0.16);border-color:rgba(16,185,129,0.25);box-shadow:0 0 16px rgba(16,185,129,0.1)}
-.btn-outline{background:rgba(255,255,255,0.04);color:var(--dim);border:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);justify-content:center}
-.btn-outline:hover{background:rgba(255,255,255,0.08);color:var(--text);border-color:rgba(255,255,255,0.12);box-shadow:0 0 12px rgba(255,255,255,0.04)}
+.btn-outline{background:rgba(255,255,255,0.1);color:#ddd;border:1px solid rgba(255,255,255,0.12);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);justify-content:center}
+.btn-outline:hover{background:rgba(255,255,255,0.16);color:#fff;border-color:rgba(255,255,255,0.2);box-shadow:0 0 12px rgba(255,255,255,0.06)}
 .char-count{font-size:0.7rem;color:var(--dim);text-align:right}
 #lyricModal,#quizModal,#guideModal,#settingsModal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);
     backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch}
@@ -279,7 +279,7 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
 <svg style="position:absolute;width:0;height:0" aria-hidden="true"><defs><filter id="fluffy-edge" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G"/></filter><filter id="fluffy-light" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xChannelSelector="R" yChannelSelector="G"/></filter></defs></svg>
 <div class="topbar">
     <h1><span class="tall-letter">S</span>w<span class="hat-i">I<svg class="top-hat" viewBox="0 0 28 5.5"><rect class="hat-body" x="4" y="4" width="20" height="1.5" rx="0.5"/><rect class="hat-body" x="7" y="0" width="14" height="4.5" rx="0.5"/><rect class="hat-band" x="7" y="3" width="14" height="1"/></svg></span>ft<span class="tall-letter">C</span>rypto<span class="cat-tint"><svg class="cat-on-letter" viewBox="0 0 300 200"><path d="M0 0 C4.62 0 9.24 0 14 0 C14 0.33 14 0.66 14 1 C9.38 1 4.76 1 0 1 C0 0.67 0 0.34 0 0 Z M-4 1 C0 2 0 2 0 2 Z M14 1 C18 2 18 2 18 2 Z M-7 2 C-4 3 -4 3 -4 3 Z M16.44306946 2.48742676 C23.00403543 4.1712338 28.76898893 7.29826262 34.39476013 10.99487305 C35.5962062 11.77432849 36.81781354 12.42327293 38.11328125 13.03125 C39.63015095 13.75316856 40.85508507 14.58008567 42.0793457 15.7512207 C42.28003662 15.95706787 42.48072754 16.16291504 42.6875 16.375 C42.90172607 16.59051514 43.11595215 16.80603027 43.33666992 17.02807617 C44.10385446 17.843266 44.80552014 18.61971707 45.31738281 19.62060547 C45.73085563 20.72896763 45.92725439 21.8162305 46 23 C46.495 23.165 46.495 23.165 49 24 C50.01546191 25.58705618 51.02504721 27.17759482 52.02558708 28.77409554 C52.49080594 29.51595003 52.9581006 30.25627496 53.43115234 30.99316406 C55.88947086 34.82672521 57.81459581 38.56797861 59 43 C61.98763242 44.74037807 61.98763242 44.74037807 63.50860596 45.13043213 C64.69155972 45.33151207 65.86772143 45.33457583 67.0625 45.3125 C67.25019958 45.31200653 67.43789917 45.31151306 67.63128662 45.31100464 C71.60554296 45.27980402 75.26079651 44.28023201 79.04199219 43.13574219 C81.66212711 42.34445937 84.07675064 41.79132228 86.8125 41.5625 C87.91032538 41.46130289 88.94275832 41.31860297 90 41 C92.17877016 39.93379333 94.09863746 38.49741006 96 37 C97.65 37.33 99.3 37.66 101 38 C101.33 40.31 101.66 42.62 102 45 C110.57446809 52.76595745 110.57446809 52.76595745 115 55 C116.93012258 60.31827754 118.47206477 65.33834974 119 71 C117.68 71.33 116.36 71.66 115 72 C115.24102951 72.02344986 115.24102951 72.02344986 116.46078491 72.14212036 C121.35799993 72.66107884 125.95707829 73.64988641 130.68108034 75.02189016 C131.62076988 75.293724 132.56216331 75.55955344 133.50326538 75.82644653 C135.07926406 76.2744212 136.65379819 76.72726748 138.22753906 77.18310547 C140.02739734 77.70435856 141.82955355 78.21696384 143.63312399 78.72521007 C145.20492361 79.16839784 146.77531105 79.61634983 148.34467828 80.0680753 C149.27187967 80.33495821 150.1994192 80.60037645 151.12828445 80.86141586 C155.18083234 82.00282312 158.95584192 83.30877246 162.67440796 85.33206177 C164.06506089 86.07418664 165.49591868 86.53484899 167 87 C166.67 88.65 166.34 90.3 166 92 C160.06199077 92.82069309 154.19459304 93.08195662 148.203125 93.02734375 C148.0278793 93.02583415 147.8526336 93.02432456 147.67207742 93.02276921 C146.01899416 93.00848541 144.36593687 92.99206259 142.71289539 92.97356892 C129.54231714 92.82670767 116.45299755 92.99679642 103.3125 93.9375 C103.00222366 93.95944805 102.69194733 93.9813961 102.37226868 94.00400925 C97.08120326 94.37945744 91.79121179 94.75824716 86.52697754 95.41792297 C80.46979823 96.17627861 74.41180161 96.24855462 68.3125 96.25 C68.16931084 96.25007364 68.16931084 96.25007364 67.44468689 96.25044632 C50.22194743 96.24226417 50.22194743 96.24226417 42.57421875 93.58642578 C35.88543708 91.13947822 29.38594394 88.15878287 23.8984375 83.54296875 C21.49451515 81.47064283 19.21280173 79.27413905 17 77 C15.68 77 14.36 77 13 77 C13.20625 77.185625 13.20625 77.185625 14.25 78.125 C15.77122152 79.56884245 16.82658512 81.23231442 17.9375 83 C18.97365769 84.6126776 19.9696573 86.1517137 21.45239258 87.38745117 C23.74393864 89.10005606 26.32467561 90.03391064 29 91 C28.67 92.98 28.34 94.96 28 97 C24.2731289 97.93171777 20.44634674 98.53297354 16.59500122 98.25047302 C14.86381407 98.06039892 13.3525129 97.46539457 11.78930664 96.71948242 C10.14377632 95.89310928 8.56134074 94.97491736 7 94 C6.77828125 93.86158691 6.5565625 93.72317383 6.328125 93.58056641 C5.13158302 92.80746284 4.06986425 91.9381156 3 91 C2.84949188 90.86988022 2.69898376 90.73976044 2.54391479 90.60569763 C0.07009574 88.42709958 -1.73531751 86.07581704 -3.34054565 83.19815063 C-3.64218061 82.64304505 -3.94116526 82.08649154 -4.23754883 81.52856445 C-4.68529711 80.69161772 -5.15116475 79.86678322 -5.61914062 79.04101562 C-7.05640544 76.42203196 -8.1193482 73.98830122 -8.58247375 71.03999329 C-8.75726426 69.69569308 -8.90112779 68.35202272 -9 67 C-9.66 67 -10.32 67 -11 67 C-11 65.02 -11 63.04 -11 61 C-11.66 60.34 -12.32 59.68 -13 59 C-13.7398959 58.25096958 -14.3851394 57.50746321 -14.8359375 56.54638672 C-15.40570662 54.64885206 -15.13883572 52.45736324 -15.03173828 50.50317383 C-15.02650146 50.42015015 -15.02650146 50.42015015 -15 50 C-15.66 50 -16.32 50 -17 50 C-18.33333333 44 -19.66666667 38 -21 32 C-22.98 31.34 -24.96 30.68 -27 30 C-27.49673756 28.62017345 -27.89803314 27.45400827 -28 26 C-27.86362142 23.64615808 -27.4304751 21.3153899 -27 19 C-23.48690769 15.0708836 -19.29282272 12.01576585 -15 9 C-14.82837341 8.87929138 -14.65674683 8.75858276 -14.47991943 8.63421631 C-11.19020892 6.33278722 -7.72069769 3.94241188 -3.875 2.6875 C2.41042466 1.01413203 10.14347975 1.03783724 16.44306946 2.48742676 Z M-18 42 C-17 44 -17 44 -17 44 Z M-17 45 C-16 47 -16 47 -16 47 Z M115 61 C116 64 116 64 116 64 Z M116 65 C116 66.65 116 68.3 116 70 C116.33 70 116.66 70 117 70 C117 68.35 117 66.7 117 65 C116.67 65 116.34 65 116 65 Z M27 92 C28 95 28 95 28 95 Z M18 2 C21 3 21 3 21 3 Z M-9 3 C-7 4 -7 4 -7 4 Z M21 3 C24 4 24 4 24 4 Z M-11 4 C-9 5 -9 5 -9 5 Z M24 4 C26 5 26 5 26 5 Z M26 5 C28 6 28 6 28 6 Z M-14 6 C-12 7 -12 7 -12 7 Z M29 7 C31 8 31 8 31 8 Z M-17 8 C-15 9 -15 9 -15 9 Z M32 9 C34 10 34 10 34 10 Z M-26 32 C-24.35 32 -22.7 32 -21 32 C-21.33 32.66 -21.66 33.32 -22 34 C-23.32 33.34 -24.64 32.68 -26 32 Z M-21 34 C-20 38 -20 38 -20 38 Z M96 35 C100 36 100 36 100 36 Z M94 36 C96 37 96 37 96 37 Z M92 37 C94 38 94 38 94 38 Z M102 38 C102.33 38 102.66 38 103 38 C103 39.65 103 41.3 103 43 C102.67 43 102.34 43 102 43 C102 41.35 102 39.7 102 38 Z M89 39 C89.66 39.33 90.32 39.66 91 40 C90.67 40.33 90.34 40.66 90 41 C87.69 41 85.38 41 83 41 C83 40.67 83 40.34 83 40 C84.98 39.67 86.96 39.34 89 39 Z M78 41 C79.65 41 81.3 41 83 41 C83 41.33 83 41.66 83 42 C81.35 42 79.7 42 78 42 C78 41.67 78 41.34 78 41 Z M59 42 C61 43 61 43 61 43 Z M76 42 C78 43 78 43 78 43 Z M61 43 C63 44 63 44 63 44 Z M72 43 C76 44 76 44 76 44 Z M63 44 C65.97 44 68.94 44 72 44 C72 44.33 72 44.66 72 45 C69.03 45 66.06 45 63 45 C63 44.67 63 44.34 63 44 Z M102 44 C104 45 104 45 104 45 Z M119 71 C123 72 123 72 123 72 Z M123 72 C126 73 126 73 126 73 Z M127 73 C130 74 130 74 130 74 Z M130 74 C134 75 134 75 134 75 Z M134 75 C138 76 138 76 138 76 Z M14 76 C16 77 16 77 16 77 Z M138 76 C141 77 141 77 141 77 Z M141 77 C145 78 145 78 145 78 Z M145 78 C148 79 148 79 148 79 Z M148 79 C151 80 151 80 151 80 Z M151 80 C155 81 155 81 155 81 Z M155 81 C158 82 158 82 158 82 Z M158 82 C161 83 161 83 161 83 Z M161 83 C163 84 163 84 163 84 Z M24 85 C26 86 26 86 26 86 Z M20 86 C22 87 22 87 22 87 Z M22 87 C24 88 24 88 24 88 Z M27 87 C29 88 29 88 29 88 Z M24 88 C26 89 26 89 26 89 Z M30 89 C32 90 32 90 32 90 Z M32 90 C34 91 34 91 34 91 Z M34 91 C36 92 36 92 36 92 Z M36 92 C38 93 38 93 38 93 Z M38 93 C41 94 41 94 41 94 Z M121 93 C132.55 93 144.1 93 156 93 C156 93.33 156 93.66 156 94 C144.45 94 132.9 94 121 94 C121 93.67 121 93.34 121 93 Z M162 93 C164 94 164 94 164 94 Z M41 94 C44 95 44 95 44 95 Z M101 94 C107.27 94 113.54 94 120 94 C120 94.33 120 94.66 120 95 C113.73 95 107.46 95 101 95 C101 94.67 101 94.34 101 94 Z M156 94 C157.98 94 159.96 94 162 94 C162 94.33 162 94.66 162 95 C160.02 95 158.04 95 156 95 C156 94.67 156 94.34 156 94 Z M44 95 C48 96 48 96 48 96 Z M90 95 C93.3 95 96.6 95 100 95 C100 95.33 100 95.66 100 96 C96.7 96 93.4 96 90 96 C90 95.67 90 95.34 90 95 Z M8 96 C10 97 10 97 10 97 Z M48 96 C49.98 96 51.96 96 54 96 C54 96.33 54 96.66 54 97 C52.02 97 50.04 97 48 97 C48 96.67 48 96.34 48 96 Z M81 96 C83.97 96 86.94 96 90 96 C90 96.33 90 96.66 90 97 C87.03 97 84.06 97 81 97 C81 96.67 81 96.34 81 96 Z M10 97 C12 98 12 98 12 98 Z M55 97 C63.58 97 72.16 97 81 97 C81 97.33 81 97.66 81 98 C72.42 98 63.84 98 55 98 C55 97.67 55 97.34 55 97 Z M12 98 C15 99 15 99 15 99 Z M23 98 C25 99 25 99 25 99 Z M15 99 C17.64 99 20.28 99 23 99 C23 99.33 23 99.66 23 100 C20.36 100 17.72 100 15 100 C15 99.67 15 99.34 15 99 Z " fill="#98897B" transform="translate(90,50)"/></svg><span class=purr-text>~Purr</span></span></h1>
-    <button class="icon-btn" onclick="openSettings()" title="设置" style="width:36px;height:36px;font-size:1.1rem">⚙️</button>
+    <button class="icon-btn" onclick="openSettings()" title="设置" style="width:44px;height:44px;font-size:1.3rem">⚙️</button>
 </div>
 
 <div id="hsPanel" style="display:none;padding:8px 10px;margin:0 10px;border-radius:8px;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.15);font-size:0.7rem;color:var(--dim);flex-direction:column;gap:6px">
@@ -313,7 +313,7 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
     <div style="display:flex;gap:6px;width:100%;align-items:center">
         <button class="icon-btn" onclick="genPwd()" title="生成随机密码" style="flex:1;font-size:0.8rem;color:#fbbf24">🎲 随机</button>
         <button class="icon-btn" onclick="copyPassword()" title="复制密码" style="flex:1;font-size:0.8rem;color:#22c55e">📋 复制</button>
-        <button class="icon-btn" onclick="openLyricPicker()" title="从歌词挑选" style="flex:1;font-size:0.8rem;color:var(--accent)">🪶 歌词</button>
+        <button class="icon-btn" onclick="openLyricPicker()" title="从歌词挑选" style="flex:1;font-size:0.8rem;color:#c4b5fd">🪶 歌词</button>
     </div>
     <div style="display:flex;gap:6px;width:100%;align-items:center;position:relative">
         <div class="pwd-custom-select" id="csPwdHistory" style="flex:1">
@@ -326,7 +326,7 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
 <div class="pwd-label" id="pwdStrengthLabel"></div>
 <div id="pwdHint" style="display:none;margin:2px 12px;padding:6px 10px;border-radius:var(--rs);background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2);font-size:0.7rem;color:#c4b5fd">💡 <span id="pwdHintText"></span></div>
 
-<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;font-size:0.85rem;color:var(--dim);">
+<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;font-size:0.75rem;color:var(--text);">
     <span>🎨</span>
     <button class="icon-btn" onclick="prevTheme()" style="width:28px;height:28px;font-size:0.8rem;flex-shrink:0">◀</button>
     <span id="themeName" style="flex:1;min-width:0;text-align:center;font-size:1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">1989</span>
@@ -1518,8 +1518,8 @@ let _qrRenderTimer=null;
 function renderQRCode(){
     const b64=document.getElementById('cipherOutput').value;
     const hint=document.getElementById('qrShareHint').value.trim();
-    const hintB64=hint?btoa(unescape(encodeURIComponent(hint))):'';
-    const payload=JSON.stringify({v:1,c:b64,h:hintB64,t:Date.now()});
+    const baseUrl='https://jason-019.github.io/swiftcrypto/web/encrypt_chat_mobile_full.html';
+    const payload=baseUrl+'#c='+encodeURIComponent(b64)+(hint?'&h='+encodeURIComponent(hint):'');
     const rawDiv=document.getElementById('qrShareRaw');
     const icon=document.getElementById('qrIconOverlay');
     rawDiv.style.display='block';rawDiv.innerHTML='';
@@ -1533,7 +1533,7 @@ function renderQRCode(){
             console.warn('QR M-level overflow, trying L:',e);
             try{rawDiv.innerHTML='';new QRCode(rawDiv,{text:payload,width:280,height:280,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L})}catch(e2){
                 console.warn('QR L-level overflow, removing hint');hintDropped=true;
-                genQR(JSON.stringify({v:1,c:b64,h:'',t:Date.now()}));
+                genQR(baseUrl+'#c='+encodeURIComponent(b64));
             }
         }
         // 等img加载后显示图标覆盖层
@@ -1594,6 +1594,31 @@ function saveQRFromCanvas(cv,ts){
 
 // ─── 📷 扫码/导入密文二维码 ───
 function parseQRPayload(data){
+    // 如果是网站URL，解析hash参数
+    if(/^https?:\/\//i.test(data)){
+        try{
+            const url=new URL(data);
+            const c=url.searchParams.get('c')||(url.hash?new URLSearchParams(url.hash.slice(1)).get('c'):null);
+            const h=url.searchParams.get('h')||(url.hash?new URLSearchParams(url.hash.slice(1)).get('h'):null);
+            if(c){
+                document.getElementById('cipherInput').value=c;
+                if(h){
+                    let hintEl=document.getElementById('qrHintDisplay');
+                    if(!hintEl){
+                        hintEl=document.createElement('div');
+                        hintEl.id='qrHintDisplay';
+                        hintEl.style.cssText='font-size:0.7rem;color:#fbbf24;background:rgba(251,191,36,0.1);padding:8px 12px;border-radius:8px;text-align:center;line-height:1.4;margin-top:4px';
+                        const cipherInput=document.getElementById('cipherInput');
+                        cipherInput.parentNode.insertBefore(hintEl,cipherInput.nextSibling);
+                    }
+                    hintEl.textContent='💡 密码提示：'+decodeURIComponent(h);
+                    hintEl.style.display='block';
+                }
+                t('✅ 已识别密文二维码');
+                return true;
+            }
+        }catch(e){}
+    }
     try{
         const p=JSON.parse(data);
         if(p.v===1&&p.c){
@@ -1836,7 +1861,7 @@ async function genPwd(){
 const THEMES=[
     {name:'纯黑',grad:'',qr:'#7c3aed'},
     {name:'Debut',grad:'linear-gradient(135deg,#0a4a3a,#1a6b5a,#0d5c8a)',qr:'#1a6b5a'},
-    {name:'Fearless',grad:'linear-gradient(135deg,#4a3500,#8b6d00,#e6c200)',qr:'#b88600'},
+    {name:'Fearless',grad:'linear-gradient(135deg,#dabe4c,#b8860b,#4a2a00)',qr:'#d4a017'},
     {name:'Speak Now',grad:'linear-gradient(135deg,#4a0a2a,#c44a7a,#7a3ac4)',qr:'#c44a7a'},
     {name:'Red',grad:'linear-gradient(135deg,#3d0a0a,#8b1a1a,#d44a2a)',qr:'#e74c3c'},
     {name:'1989',grad:'linear-gradient(135deg,#1a3a5c,#4a8ab5,#c4ddf0)',qr:'#3a7ab5'},
