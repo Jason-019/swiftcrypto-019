@@ -1981,7 +1981,17 @@ function useLyric(){
 }
 
 // ─── 💎 趣味问答 ───
-let _currentQuiz=null,_quizMode='trivia',_currentLyricQuiz=null,_recentSongs=[];
+let _currentQuiz=null,_quizMode='trivia',_currentLyricQuiz=null,_recentSongs=[],_allSongEntries=null;
+function _buildSongEntries(){
+    if(_allSongEntries)return;
+    _allSongEntries=[];
+    for(const album of Object.keys(am)){
+        for(const song of Object.keys(am[album])){
+            const lines=am[album][song];
+            if(lines&&lines.length)_allSongEntries.push({album,song,lines});
+        }
+    }
+}
 const LYRIC_STOP_WORDS=new Set(['the','a','an','and','or','but','in','on','at','to','for','of','with','is','are','was','were','be','been','it','i','you','he','she','we','they','me','my','your','his','her','our','their','that','this','so','if','no','not','do','dont','can','cant','oh','ooh','yeah','la','na','da','mm','hmm','ah','just','all','up','out','down','when','where','how','what','who','why','will','would','could','should','ever','never','always','from','like','go','got','get','cause','em','its','im','ive','youre','hes','shes','did','didnt','had','has','have','then','now','there','here','too','very','much','some','any','one','two','say','said','back','off','over','into','about','more','still','only','every','way','lot','make','made','come','came','going','know','seen','think','tell','take','give','let','put','want','wanna','gonna','need','really','right','well','good','bad','thing','things','day','night','time','life','love','baby','girl','boy','heart','eyes','hand','hands','head','face','mind','home','door','room','long','old','new','high','low','big','small','cold','dark','light','first','last','next','keep','kept','hold','held','left','run','ran','stay','wait','die','dead','away','far','near','hard','soft','even','though','again','yet','once','twice','without','each','other','everything','nothing','through','around','after','before','between','because','while','until','dancing','shake','shook']);
 const NUM_WORDS=new Set(['one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety','hundred','thousand','million','billion','first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth','eleventh','twelfth','twentieth','hundredth','thousandth','once','twice','half','double','triple','dozen','zero','couple','several','many','few','single','sole']);
 const COLOR_WORDS=new Set(['black','white','red','blue','green','yellow','purple','pink','orange','brown','grey','gray','gold','silver','scarlet','crimson','violet','indigo','amber','maroon','beige','teal','aqua','navy','olive','plum','tan','rose','coral','ivory','ebony','ruby','jade','sage','mauve','cyan','magenta','turquoise','lavender','burgundy','champagne','midnight','hazel','charcoal','slate','rust','peach','mint','lilac','blonde','blond','brunette','ginger']);
@@ -2039,24 +2049,21 @@ function randomQuiz(){
     document.getElementById('quizShowBtn').textContent='👁 显示答案';
 }
 function randomLyricQuiz(){
-    const albums=Object.keys(am);
-    if(!albums.length){t('⚠️ 歌词库未加载');switchQuizMode('trivia');return}
+    _buildSongEntries();
+    if(!_allSongEntries.length){t('⚠️ 歌词库未加载');switchQuizMode('trivia');return}
     let line,album,song,words,blankWord;
-    for(let tries=0;tries<200;tries++){
-        // crypto-grade random for better entropy
-        const r1=new Uint32Array(3);crypto.getRandomValues(r1);
-        album=albums[r1[0]%albums.length];
-        const songs=Object.keys(am[album]);
-        if(!songs.length)continue;
-        song=songs[r1[1]%songs.length];
+    for(let tries=0;tries<300;tries++){
+        // crypto-grade pick: uniform per-song probability
+        const r1=new Uint32Array(2);crypto.getRandomValues(r1);
+        const entry=_allSongEntries[r1[0]%_allSongEntries.length];
+        album=entry.album;song=entry.song;
         // Skip if recently used (last 5 songs)
         const songKey=album+'||'+song;
         if(_recentSongs.includes(songKey))continue;
-        const lines=am[album][song];
-        if(!lines.length)continue;
-        line=lines[r1[2]%lines.length];
+        const lines=entry.lines;
+        line=lines[r1[1]%lines.length];
         words=line.split(/\s+/);
-        if(words.length<7)continue;
+        if(words.length<5)continue;
         const candidates=words.filter(w=>{
             const clean=w.replace(/[^a-zA-Z0-9]/g,'');
             if(!clean)return false;
