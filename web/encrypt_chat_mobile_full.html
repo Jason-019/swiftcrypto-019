@@ -22,7 +22,6 @@
     --font-sans:-apple-system,'PingFang SC',system-ui,sans-serif;
     --fuzz:0 0 0 1px rgba(139,115,85,0.06),0 0 0 3px rgba(139,115,85,0.03);
 }
-}
 *{margin:0;padding:0;box-sizing:border-box}
 body{
     font-family:var(--font-serif);
@@ -112,7 +111,7 @@ textarea{
     flex:1;min-height:140px;padding:16px;border-radius:var(--r);border:2px solid var(--border);
     background:rgba(20,20,35,0.55);color:var(--text);font-size:0.9rem;line-height:1.6;
     resize:none;outline:none;font-family:var(--font-serif);transition:border-color .4s,box-shadow .4s;font-weight:600;
-    -webkit-text-stroke:0.35px var(--text);text-stroke:0.35px var(--text);
+    -webkit-text-stroke:0.35px var(--text);
     text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:4px;text-decoration-thickness:0.5px;
     filter:url(#fluffy-edge);
     box-shadow:inset 0 1px 4px rgba(0,0,0,0.15);
@@ -718,8 +717,9 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
                 <li>隐身模式 👻 关闭页面后不留任何痕迹</li>
             </ul>
         </div>
-        <div class="modal-btns" style="margin-top:10px">
-            <button class="btn btn-primary" onclick="closeGuide()">知道了 ✌️</button>
+        <div class="modal-btns" style="margin-top:10px;display:flex;flex-direction:row;gap:8px">
+            <button class="btn btn-outline" onclick="dismissGuideForever()" style="flex:1;font-size:0.75rem">不再提示</button>
+            <button class="btn btn-primary" onclick="closeGuide()" style="flex:1;font-size:0.75rem">知道了 ✌️</button>
         </div>
     </div>
 </div>
@@ -1406,6 +1406,7 @@ async function showMidiCacheStatus(){
 }
 async function cacheAllMidi(){
     if(!_midiMeta||!_midiMeta.songs){t('⚠️ 请等待歌曲列表加载');return}
+    t('⏳ 正在预缓存 MIDI…');
     const songs=Object.entries(_midiMeta.songs);
     const total=songs.length;
     const cache=await caches.open(MIDI_CACHE);
@@ -2207,6 +2208,11 @@ document.getElementById('settingsModal').addEventListener('click',function(e){if
 // ─── 📖 使用说明 ───
 function openGuide(){document.getElementById('guideModal').classList.add('show')}
 function closeGuide(){document.getElementById('guideModal').classList.remove('show')}
+function dismissGuideForever(){
+    try{localStorage.setItem('guide_dismissed','1')}catch(e){}
+    closeGuide();
+    const e=document.getElementById('toast');e.textContent='💡 使用说明可随时在右上角 ⚙️ 设置中查看';e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2700);
+}
 document.getElementById('guideModal').addEventListener('click',function(e){if(e.target===this)closeGuide()});
 
 function eh(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
@@ -3121,6 +3127,7 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
     </div>
 </div>
 <script>document.getElementById('qrShareModal').addEventListener('click',function(e){if(e.target===this)closeQRShareModal()});</script>
+<script>(function(){try{if(!localStorage.getItem('guide_dismissed')){setTimeout(()=>openGuide(),600)}}catch(e){}})()</script>
 
 </body>
 </html>

@@ -604,6 +604,7 @@ function parseMidiTimedEvents(buf){
 async function toggleMidiPlay(){
     const btn=document.getElementById('midiPlayBtn');
     if(_midiPlaying){stopMidiPlay();return}
+    t('⏳ 正在加载音色库…');
     const synth=await initMidiSynth();
     if(!synth)return;
     try{
@@ -690,6 +691,7 @@ async function toggleRecvPlay(){
     const btn=document.getElementById('midiRecvPlayBtn');
     if(_midiRecvPlaying){stopRecvPlay();return}
     if(!_midiRecvBuf){t('⚠️ 请先接收MIDI文件');return}
+    t('⏳ 正在加载音色库…');
     const synth=await initMidiSynth();
     if(!synth)return;
     try{
