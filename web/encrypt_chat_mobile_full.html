@@ -44,9 +44,9 @@ body::before{
 .top-hat{position:absolute;bottom:calc(100% - 11px);left:50%;transform:translateX(-50%) rotate(-14deg);width:1.15em}
 .top-hat .hat-body{fill:#d4c8e8}
 .top-hat .hat-band{fill:var(--accent)}
-.cat-on-letter{display:inline;width:5em;height:1.85em;vertical-align:baseline;margin-left:-34px;transform:translateY(10.5px) scaleX(1.3) scaleY(0.85)}
+.cat-on-letter{display:inline;width:5em;height:1.85em;vertical-align:baseline;margin-left:-30.5px;transform:translateY(10.5px) scaleX(1.3) scaleY(0.85);filter:brightness(0.35) sepia(0.8) saturate(0.6) drop-shadow(0 0 4px var(--accent)) drop-shadow(0 0 0 var(--accent));opacity:0.5}
 .cat-tint{position:relative;display:inline-block}
-.cat-tint::after{content:"";position:absolute;inset:0;background:var(--accent);opacity:0.25;mix-blend-mode:color;pointer-events:none;border-radius:3px}
+.cat-tint::after{display:none}
 .cat-tint::before{display:none}
 .purr-text{position:absolute;top:calc(-1.4em + 11px);right:-0.5em;font-size:0.55em;font-style:italic;color:var(--bg);-webkit-text-fill-color:var(--bg);font-family:var(--font-serif);pointer-events:none;white-space:nowrap;background:var(--accent);padding:2px 8px;border-radius:9px 9px 2px 9px;line-height:1.2}
 .purr-text::after{content:"";position:absolute;bottom:-3px;left:4px;width:0;height:0;border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid var(--accent)}
