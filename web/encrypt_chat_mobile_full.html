@@ -324,7 +324,7 @@ textarea[readonly]{background:rgba(0,0,0,0.3);cursor:default;border-style:dashed
     <button class="icon-btn" onclick="prevTheme()" style="width:28px;height:28px;font-size:0.8rem;flex-shrink:0">◀</button>
     <span id="themeName" style="flex:1;min-width:0;text-align:center;font-size:1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">1989</span>
     <button class="icon-btn" onclick="nextTheme()" style="width:28px;height:28px;font-size:0.8rem;flex-shrink:0">▶</button>
-    <span style="flex-shrink:0">🌓</span>
+    <span style="flex-shrink:0">�️</span>
     <input type="range" id="bgOpacity" min="0" max="100" value="75" oninput="updateBgOpacity(this.value)" style="width:60px;flex-shrink:0;accent-color:var(--accent);">
     <span id="bgOpacityVal" style="width:32px;text-align:right;flex-shrink:0;font-size:0.8rem">75%</span>
 </div>
@@ -1862,14 +1862,17 @@ function setTheme(){
 function prevTheme(){themeIdx=(themeIdx-1+THEMES.length)%THEMES.length;setTheme();}
 function nextTheme(){themeIdx=(themeIdx+1)%THEMES.length;setTheme();}
 function updateBgOpacity(v){
-    // Black overlay on ::before: 0% → overlay opacity 1 (fully black), 100% → overlay opacity 0 (gradient visible)
+    // Atmosphere slider: controls accent glow + film grain intensity
+    // 0% = clean/dark, 100% = full glow + heavy grain
+    var glowOp = 0.2 + (v/100) * 0.8;
+    var noiseOp = 0.01 + (v/100) * 0.1;
     let style = document.getElementById('bgOverlayStyle');
     if(!style){
         style = document.createElement('style');
         style.id = 'bgOverlayStyle';
         document.head.appendChild(style);
     }
-    style.textContent = 'body::before{opacity:'+(1-v/100)+'}';
+    style.textContent = 'body::before{opacity:'+glowOp+'} body::after{opacity:'+noiseOp+'}';
     document.getElementById('bgOpacityVal').textContent=v+'%';
 }
 
