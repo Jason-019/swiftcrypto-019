@@ -1,0 +1,28 @@
+{
+  "buildCommand": "",
+  "outputDirectory": "web",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/encrypt_chat_mobile_full.html" }
+  ],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Service-Worker-Allowed", "value": "/" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/encrypt_chat_mobile_full.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    }
+  ]
+}
