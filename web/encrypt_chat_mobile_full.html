@@ -2289,7 +2289,7 @@ function renderChat(){
         const expStyle=m.expired?'opacity:0.5;font-style:italic':'';
         const cp=m.cipher?`<div class="cipher-preview" onclick="copyChatMsgCipher('${eh(m.cipher)}')" title="点击复制完整密文">🔐 ${eh(m.cipher.slice(0,40))}…</div>`:'';
         const fullTime=`${new Date(m.time).toLocaleString('zh-CN')}`;
-        html+=`<div class="chat-msg ${cls}" style="${expStyle}" title="${eh(fullTime)}"><div class="meta"><span>${label}${devLabel}${sdBadge}${sdRemain}</span><span>${time}</span></div><div>${eh(m.text)}</div>${cp}</div>`;
+        html+=`<div class="chat-msg ${cls}" style="${expStyle}" title="${eh(fullTime)}"><div class="meta"><span>${label}${devLabel}${sdBadge}${sdRemain}</span><span>${time}</span></div><div style="filter:url(#fluffy-edge)">${eh(m.text)}</div>${cp}</div>`;
     }
     area.innerHTML=html;
     area.scrollTop=area.scrollHeight;
