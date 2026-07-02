@@ -11,6 +11,7 @@
 <link rel="apple-touch-icon" href="./icon.svg">
 <link rel="manifest" href="./manifest.webmanifest">
 <title>🔐 SwiftCrypto</title>
+<script defer src="lyric_data.js"></script>
 <style>
 :root{
     --bg:#040408;--card:rgba(20,20,40,0.8);--accent:#a78bfa;--accent2:#7c3aed;
@@ -1928,10 +1929,19 @@ let LYRIC_DATA=null,_lyricDataLoaded=!1;
 function loadLyricData(){return new Promise((resolve)=>{
     if(_lyricDataLoaded){resolve(LYRIC_DATA);return}
     t('⏳ 正在加载歌词库…');
-    const s=document.createElement('script');s.src='lyric_data.js?v=2';
-    s.onload=()=>{_lyricDataLoaded=!0;resolve(LYRIC_DATA)};
-    s.onerror=()=>{t('⚠️ 歌词库加载失败');resolve('')};
-    document.head.appendChild(s);
+    const maxWait=120000,interval=200,start=Date.now();
+    const check=()=>{
+        if(typeof LD==='string'&&LD){
+            // Reconstruct lyric-only text for genPwd compatibility
+            let text='';
+            const lines=LD.split('\n');
+            for(const l of lines){const p=l.split('|',3);if(p.length>=3)text+=p[2]+' '}
+            LYRIC_DATA=text;_lyricDataLoaded=true;resolve(LYRIC_DATA);return;
+        }
+        if(Date.now()-start>maxWait){t('⚠️ 歌词库加载超时');resolve('')}
+        else setTimeout(check,interval);
+    };
+    check();
 })}
 let am={},_selectedLyric='';
 
@@ -1941,14 +1951,16 @@ const QUIZ_DATA=[{"q":"Taylor Swift 哪年出生？","a":"1989"},{"q":"Taylor Sw
 function toggleCS(id){document.querySelectorAll('.lyric-custom-select,.pwd-custom-select').forEach(e=>{if(e.id!==id)e.classList.remove('open')});document.getElementById(id).classList.toggle('open')}
 document.addEventListener('click',e=>{if(!e.target.closest('.lyric-custom-select')&&!e.target.closest('.pwd-custom-select'))document.querySelectorAll('.lyric-custom-select,.pwd-custom-select').forEach(el=>el.classList.remove('open'))});
 (async function initLyrics(){
-    const lyricData=await loadLyricData();
-    if(!lyricData)return;
-    const lines=lyricData.trim().split('\n');
+    // Wait for compact format: A=albums[], S=songs[], LD="ai|si|lyric\n..."
+    await loadLyricData();
+    if(typeof LD!=='string'||!LD)return;
+    const lines=LD.split('\n');
     for(const line of lines){
         const parts=line.split('|');
         if(parts.length>=3){
-            const a=parts[0],s=parts[1],l=parts.slice(2).join('|');
-            if(!am[a])am[a]={};if(!am[a][s])am[a][s]=[];if(!am[a][s].includes(l))am[a][s].push(l);
+            const ai=parseInt(parts[0]),si=parseInt(parts[1]),l=parts.slice(2).join('|');
+            const a=A[ai],s=S[si];
+            if(a&&s){if(!am[a])am[a]={};if(!am[a][s])am[a][s]=[];if(!am[a][s].includes(l))am[a][s].push(l)}
         }
     }
     const o=document.getElementById('optsAlbum');
