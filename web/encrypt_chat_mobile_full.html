@@ -64,7 +64,7 @@ body::after{
 .cat-tint::before{display:none}
 .purr-text{position:absolute;top:calc(-1.4em + 11px);right:-0.5em;font-size:0.55em;font-style:italic;color:var(--bg);-webkit-text-fill-color:var(--bg);font-family:var(--font-serif);pointer-events:none;white-space:nowrap;background:var(--accent);padding:2px 8px;border-radius:9px 9px 2px 9px;line-height:1.2}
 .purr-text::after{content:"";position:absolute;bottom:-3px;left:4px;width:0;height:0;border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid var(--accent)}
-@media(max-width:768px){.hat-i{font-size:1.75em}.top-hat{width:1.5em;bottom:calc(100% - 15px)}}
+@media(max-width:768px){.hat-i{font-size:1.75em}.top-hat{width:1.5em;bottom:calc(100% - 15px)}.tab{font-size:0.68rem;padding:11px 2px}}
 /* Cat paw loader */
 .paw-loader{display:inline-flex;align-items:flex-end;gap:2px;height:1em;vertical-align:middle;margin-right:4px}
 .paw-pad{display:inline-block;border-radius:50%;background:var(--accent);animation:pawBounce .6s ease-in-out infinite}
@@ -94,8 +94,9 @@ body::after{
 .pwd-row input:focus{border-color:var(--accent);box-shadow:var(--glow),var(--fuzz)}
 .tabs{display:flex;border-bottom:1px solid var(--border);margin:0 12px}
 .tab{
-    flex:1;text-align:center;padding:11px 8px;font-size:0.85rem;font-weight:600;letter-spacing:0.01em;
+    flex:1;text-align:center;padding:11px 4px;font-size:0.85rem;font-weight:600;letter-spacing:0.01em;
     color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,border-color .2s;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .tab:hover{color:#bbb}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
@@ -324,7 +325,7 @@ textarea[readonly]{background:rgba(0,0,0,0.3);cursor:default;border-style:dashed
     <button class="icon-btn" onclick="prevTheme()" style="width:28px;height:28px;font-size:0.8rem;flex-shrink:0">◀</button>
     <span id="themeName" style="flex:1;min-width:0;text-align:center;font-size:1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">1989</span>
     <button class="icon-btn" onclick="nextTheme()" style="width:28px;height:28px;font-size:0.8rem;flex-shrink:0">▶</button>
-    <span style="flex-shrink:0">�️</span>
+    <span style="flex-shrink:0">☀️</span>
     <input type="range" id="bgOpacity" min="0" max="100" value="75" oninput="updateBgOpacity(this.value)" style="width:60px;flex-shrink:0;accent-color:var(--accent);">
     <span id="bgOpacityVal" style="width:32px;text-align:right;flex-shrink:0;font-size:0.8rem">75%</span>
 </div>
