@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -2220,7 +2220,10 @@ document.getElementById('settingsModal').addEventListener('click',function(e){if
 
 // ─── 📖 使用说明 ───
 function openGuide(){document.getElementById('guideModal').classList.add('show')}
-function closeGuide(){document.getElementById('guideModal').classList.remove('show')}
+function closeGuide(){
+    document.getElementById('guideModal').classList.remove('show');
+    const e=document.getElementById('toast');e.textContent='💡 使用说明可随时在右上角 🐱 设置中查看';e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2700);
+}
 function dismissGuideForever(){
     try{localStorage.setItem('guide_dismissed','1')}catch(e){}
     closeGuide();
