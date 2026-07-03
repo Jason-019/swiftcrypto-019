@@ -988,7 +988,8 @@ function updatePwdStrength(){
                 else phraseEntropy+=Math.log2(5000);
             }
             phraseEntropy+=Math.log2(4);
-            entropy=Math.min(entropy, phraseEntropy);
+            // Take weighted average: character-based is upper bound, phrase-based is lower bound
+            entropy=Math.max(entropy*0.3+phraseEntropy*0.7, phraseEntropy);
         }
     }
 
