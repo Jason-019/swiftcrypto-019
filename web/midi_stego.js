@@ -372,7 +372,7 @@ async function midiEncodeAndShare(){
             // ③ 文字分享 + 下载保底
             if(!shared){
                 try{
-                    const msg=`🎵 SwiftCrypto MIDI 隐写\n歌曲: ${song.name}\n接收方请用 SwiftCrypto 解码\nhttps://jason-019.github.io/swiftcrypto/`;
+                    const msg=`🎵 SwiftCrypto MIDI 隐写\n歌曲: ${song.name}\n接收方请用 SwiftCrypto 解码\n${location.origin}${location.pathname.replace(/midi_stego\.js$/,'encrypt_chat_mobile_full.html')}`;
                     await navigator.share({title:'SwiftCrypto MIDI',text:msg});
                     t('✅ 已分享链接');shared=true;
                 }catch(e2){if(e2.name==='AbortError'){t('👋 已取消分享'); return;}}

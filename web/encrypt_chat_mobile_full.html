@@ -276,6 +276,15 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
 #qrShareModal .qr-preview canvas{display:block;border-radius:4px}
 #qrShareHint{font-size:0.8rem;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);outline:none;width:100%;box-sizing:border-box}
 #qrShareHint:focus{border-color:var(--accent)}
+/* 🐢 海龟汤 */
+#soupChatArea{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;min-height:120px;max-height:40vh;padding:4px 0}
+.soup-msg{max-width:88%;padding:8px 12px;border-radius:12px;font-size:0.78rem;line-height:1.5;animation:msgIn .3s ease}
+.soup-msg.them{align-self:flex-start;background:rgba(255,255,255,0.08);border:1px solid var(--border);border-bottom-left-radius:4px}
+.soup-msg.me{align-self:flex-end;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.2);border-bottom-right-radius:4px;color:var(--accent)}
+.soup-typing{color:var(--dim);font-style:italic}
+#soupModal .sheet{max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:16px}
+#soupModal .sheet h3{font-size:0.95rem;text-align:center}
+#soupHintBar{font-size:0.6rem;color:var(--dim);text-align:center;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.1);border-radius:6px;padding:4px 8px;line-height:1.4}
 </style>
 </head>
 <body>
@@ -495,6 +504,9 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
         <h3>🔗 分享加密消息</h3>
         <label style="font-size:0.75rem;color:var(--dim)">密码提示（可选，不要直接填密码！）</label>
         <input type="text" id="shareHint" placeholder="例如：我们常用的那个密码…" oninput="updateShareLink()">
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.7rem;color:var(--dim);cursor:pointer;margin-top:2px">
+            <input type="checkbox" id="soupMode" onchange="updateShareLink()"> 🐢 海龟汤模式 — 接收方可向 AI 提问推理密码
+        </label>
         <label style="font-size:0.75rem;color:var(--dim)">🎨 Eras 色块名片 — 截图发微信</label>
         <div style="overflow-y:auto;max-height:35vh;min-height:80px;border-radius:8px;background:rgba(0,0,0,0.15);padding:6px;text-align:center"><canvas id="eraCardCanvas" style="width:100%;max-width:340px;border-radius:8px"></canvas></div>
         <div id="shareLink">生成中…</div>
@@ -1480,8 +1492,8 @@ let _qrRenderTimer=null;
 function renderQRCode(){
     const b64=document.getElementById('cipherOutput').value;
     const hint=document.getElementById('qrShareHint').value.trim();
-    const baseUrl='https://jason-019.github.io/swiftcrypto/web/encrypt_chat_mobile_full.html';
-    const payload=baseUrl+'#c='+encodeURIComponent(b64)+(hint?'&h='+encodeURIComponent(hint):'');
+    const base=location.origin+location.pathname;
+    const payload=base+'#c='+encodeURIComponent(b64)+(hint?'&h='+encodeURIComponent(hint):'');
     const rawDiv=document.getElementById('qrShareRaw');
     const icon=document.getElementById('qrIconOverlay');
     rawDiv.style.display='block';rawDiv.innerHTML='';
@@ -2206,7 +2218,49 @@ function buildShareUrl(){
     if(!b64)return '';
     const hint=document.getElementById('shareHint').value.trim()||'';
     const base=location.origin==='null'||location.protocol==='file:'?location.href.split('#')[0]:location.origin+location.pathname;
-    return base+'#c='+encodeURIComponent(b64)+(hint?'&h='+encodeURIComponent(hint):'');
+    let url=base+'#c='+encodeURIComponent(b64)+(hint?'&h='+encodeURIComponent(hint):'');
+    // 🐢 海龟汤模式
+    if(document.getElementById('soupMode').checked&&hint){
+        const v=generateSoupValidator(hint);
+        if(v)url+='&soup='+encodeURIComponent(btoa(JSON.stringify(v)));
+    }
+    return url;
+}
+function generateSoupValidator(hint){
+    // 从密码提示提取不可逆元数据
+    const len=hint.length;
+    const r=(typeof zxcvbn!=='undefined')?zxcvbn(hint):null;
+    const bits=r?Math.round(r.guesses_log10*3.321928):0;
+    // 尝试从歌词数据匹配 POS
+    let pos='?', eraTag='unknown';
+    try{
+        const hintLower=hint.toLowerCase().replace(/[^a-z0-9]/g,'');
+        for(const album of Object.keys(am)){
+            for(const song of Object.keys(am[album])){
+                for(const item of am[album][song]){
+                    const words=item.text.split(/\s+/);
+                    const posWords=(item.pos||'').split(' ');
+                    for(let i=0;i<words.length;i++){
+                        const clean=words[i].replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
+                        if(clean&&hintLower.includes(clean)&&posWords[i]&&posWords[i]!=='X'){
+                            pos=posWords[i];break;
+                        }
+                    }
+                    if(pos!=='?')break;
+                }
+                if(pos!=='?')break;
+            }
+            if(pos!=='?')break;
+        }
+    }catch(e){}
+    eraTag=THEMES[themeIdx].name.slice(0,4);
+    return{
+        v:1,
+        l:Math.min(len,99),      // 长度（模糊化：实际值，在前端显示时模糊）
+        p:pos,                    // POS: N/V/J/R/D/?
+        e:eraTag,                 // 当前 era
+        d:Math.min(5,Math.max(1,Math.ceil(bits/25))) // 难度 1-5
+    };
 }
 function updateShareLink(){
     const url=buildShareUrl();if(url)document.getElementById('shareLink').textContent=url;
@@ -3067,6 +3121,25 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
 </div>
 <script>document.getElementById('qrShareModal').addEventListener('click',function(e){if(e.target===this)closeQRShareModal()});</script>
 <script>(function(){try{if(!localStorage.getItem('guide_dismissed')){setTimeout(()=>openGuide(),600)}}catch(e){}})()</script>
+
+<!-- 🐢 海龟汤密码提示 -->
+<div id="soupModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
+    <div class="sheet">
+        <h3>🐢 海龟汤密码提示</h3>
+        <div id="soupHintBar">💡 AI 提示仅基于元数据，不含密码原文</div>
+        <div id="soupChatArea">
+            <div class="soup-msg them soup-typing">🐢 主持人：欢迎来到海龟汤！你可以问我 yes/no 问题来推理密码。比如"是名词吗？""和某张专辑有关吗？"</div>
+        </div>
+        <div style="display:flex;gap:4px">
+            <input id="soupInput" placeholder="输入问题…" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-size:0.78rem;outline:none" onkeydown="if(event.key==='Enter')askSoup()">
+            <button class="btn btn-primary" onclick="askSoup()" style="flex:none;padding:8px 14px;font-size:0.78rem">发送</button>
+        </div>
+        <div class="modal-btns">
+            <button class="btn btn-outline" onclick="closeSoup()">关闭</button>
+            <button class="btn btn-outline" onclick="clearSoupHistory()">🗑 清除记录</button>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
