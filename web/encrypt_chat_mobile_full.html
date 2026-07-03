@@ -1904,12 +1904,14 @@ document.addEventListener('click',e=>{if(!e.target.closest('.lyric-custom-select
     await loadLyricData();
     if(typeof LD!=='string'||!LD)return;
     const lines=LD.split('\n');
-    for(const line of lines){
+    const posLines=(typeof POS==='string'&&POS)?POS.split('\n'):[];
+    for(let i=0;i<lines.length;i++){
+        const line=lines[i];
         const parts=line.split('|');
         if(parts.length>=3){
             const ai=parseInt(parts[0]),si=parseInt(parts[1]),l=parts.slice(2).join('|');
             const a=A[ai],s=S[si];
-            if(a&&s){if(!am[a])am[a]={};if(!am[a][s])am[a][s]=[];if(!am[a][s].includes(l))am[a][s].push(l)}
+            if(a&&s){if(!am[a])am[a]={};if(!am[a][s])am[a][s]=[];am[a][s].push({text:l,pos:posLines[i]||''})}
         }
     }
     const o=document.getElementById('optsAlbum');
@@ -1928,13 +1930,13 @@ function pickSong(el){
     const v=el.dataset.v;document.getElementById('trigSong').textContent=v;toggleCS('csSong');
     const a=document.getElementById('trigAlbum').textContent;const ls=document.getElementById('trigLyric');const o=document.getElementById('optsLyric');
     ls.disabled=false;ls.textContent='— 歌词 —';
-    o.innerHTML=(am[a][v]||[]).map((l,i)=>`<div class="lcs-opt" data-v="${i}" onclick="pickLyric(this)">${eh(l.length>50?l.slice(0,50)+'…':l)}</div>`).join('');
+    o.innerHTML=(am[a][v]||[]).map((item,i)=>`<div class="lcs-opt" data-v="${i}" onclick="pickLyric(this)">${eh(item.text.length>50?item.text.slice(0,50)+'…':item.text)}</div>`).join('');
     document.getElementById('lyricPreview').textContent='选择后预览…';document.getElementById('useLyricBtn').disabled=true;
 }
 function pickLyric(el){
     const i=el.dataset.v;document.getElementById('trigLyric').textContent=el.textContent;toggleCS('csLyric');
     const a=document.getElementById('trigAlbum').textContent;const s=document.getElementById('trigSong').textContent;
-    _selectedLyric=am[a][s][parseInt(i)];document.getElementById('lyricPreview').textContent=`"${_selectedLyric}"`;document.getElementById('useLyricBtn').disabled=false;
+    _selectedLyric=am[a][s][parseInt(i)].text;document.getElementById('lyricPreview').textContent=`"${_selectedLyric}"`;document.getElementById('useLyricBtn').disabled=false;
 }
 function openLyricPicker(){document.getElementById('lyricModal').classList.add('show')}
 function closeLyricPicker(){document.getElementById('lyricModal').classList.remove('show')}
@@ -1945,34 +1947,6 @@ function useLyric(){
 
 // ─── 💎 趣味问答 ───
 let _currentQuiz=null,_quizMode='trivia',_currentLyricQuiz=null,_recentSongs=[];
-const LYRIC_STOP_WORDS=new Set(['the','a','an','and','or','but','in','on','at','to','for','of','with','is','are','was','were','be','been','it','i','you','he','she','we','they','me','my','your','his','her','our','their','that','this','so','if','no','not','do','dont','can','cant','oh','ooh','yeah','la','na','da','mm','hmm','ah','just','all','up','out','down','when','where','how','what','who','why','will','would','could','should','ever','never','always','from','like','go','got','get','cause','em','its','im','ive','youre','hes','shes','did','didnt','had','has','have','then','now','there','here','too','very','much','some','any','one','two','say','said','back','off','over','into','about','more','still','only','every','way','lot','make','made','come','came','going','know','seen','think','tell','take','give','let','put','want','wanna','gonna','need','really','right','well','good','bad','thing','things','day','night','time','life','love','baby','girl','boy','heart','eyes','hand','hands','head','face','mind','home','door','room','long','old','new','high','low','big','small','cold','dark','light','first','last','next','keep','kept','hold','held','left','run','ran','stay','wait','die','dead','away','far','near','hard','soft','even','though','again','yet','once','twice','without','each','other','someone','everyone','anyone','nobody','somebody','anybody','everybody','something','everything','nothing','through','around','after','before','between','because','while','until','dancing','shake','shook']);
-const NUM_WORDS=new Set(['one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety','hundred','thousand','million','billion','first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth','eleventh','twelfth','twentieth','hundredth','thousandth','once','twice','half','double','triple','dozen','zero','couple','several','many','few','single','sole']);
-const COLOR_WORDS=new Set(['black','white','red','blue','green','yellow','purple','pink','orange','brown','grey','gray','gold','silver','scarlet','crimson','violet','indigo','amber','maroon','beige','teal','aqua','navy','olive','plum','tan','rose','coral','ivory','ebony','ruby','jade','sage','mauve','cyan','magenta','turquoise','lavender','burgundy','champagne','midnight','hazel','charcoal','slate','rust','peach','mint','lilac','blonde','blond','brunette','ginger']);
-function isContentWord(word,clean){
-    // Numbers (digits) — always accept
-    if(/^\d+$/.test(clean))return true;
-    // Number words — always accept
-    if(NUM_WORDS.has(clean))return true;
-    // Color words
-    if(COLOR_WORDS.has(clean))return true;
-    // Proper nouns (capitalized words like names, places)
-    if(word!==clean&&word[0]>='A'&&word[0]<='Z')return true;
-    // Noun suffixes: -tion/-sion, -ment, -ness, -ity, -ance/-ence, -hood, -ship, -dom, etc.
-    if(/(tion|sion|ment|ness|ance|ence|hood|ship|dom|ture|sure|ism|ist|ics|ery|ory|ary|cide|phobia|graph|logy|nomy|scope|meter|gram|phone)$/.test(clean))return true;
-    // Agent/instrument nouns: -er, -or, -ar, -eer, -ier, -ess
-    if(/([b-df-hj-np-tv-xz]er|[^aeiou]or|eer|ier|ess|trix)$/.test(clean)&&clean.length>3)return true;
-    // Verb suffixes: -ate, -ify, -ize/-ise, -en
-    if(/(ate|ify|ize|ise)$/.test(clean)&&clean.length>4)return true;
-    if(/en$/.test(clean)&&clean.length>4&&!/[aeiou]{2}n$/.test(clean))return true;
-    // Participles and gerunds: -ing, -ed
-    if(/(ing|ed)$/.test(clean)&&clean.length>5)return true;
-    // Adjective suffixes: -able/-ible, -ful, -less, -ous/-ious, -ive, -ical, -ish, -like, -some, -worthy, -ant/-ent, -ary, -al, -ic, -id, -ile
-    if(/(able|ible|ful|less|ous|ious|ive|ical|ish|like|some|worthy|escent|ulent|ulent)$/.test(clean))return true;
-    if(/(al|ic|id|ile|ant|ent|ary)$/.test(clean)&&clean.length>4)return true;
-    // Adverb suffix: -ly
-    if(/ly$/.test(clean)&&clean.length>4)return true;
-    return false;
-}
 function openQuizPicker(){
     document.getElementById('quizModal').classList.add('show');
     randomQuiz();
@@ -2002,31 +1976,38 @@ function randomQuiz(){
 function randomLyricQuiz(){
     const albums=Object.keys(am);
     if(!albums.length){t('⚠️ 歌词库未加载');switchQuizMode('trivia');return}
-    let line,album,song,words,blankWord;
+    // 按歌曲数加权：每张专辑的权重 = 其歌曲数，避免小专辑被过度代表
+    const albumWeights=albums.map(a=>Object.keys(am[a]).length);
+    const totalWeight=albumWeights.reduce((s,w)=>s+w,0);
+    let text,posStr,album,song,words,posTags,blankWord;
     for(let tries=0;tries<200;tries++){
-        // crypto-grade random for better entropy
-        const r1=new Uint32Array(3);crypto.getRandomValues(r1);
-        album=albums[r1[0]%albums.length];
+        const r1=new Uint32Array(4);crypto.getRandomValues(r1);
+        // 加权随机选专辑
+        let w=r1[0]%totalWeight,ai=0;
+        while(w>=albumWeights[ai]){w-=albumWeights[ai];ai++}
+        album=albums[ai];
         const songs=Object.keys(am[album]);
         if(!songs.length)continue;
         song=songs[r1[1]%songs.length];
-        // Skip if recently used (last 5 songs)
         const songKey=album+'||'+song;
         if(_recentSongs.includes(songKey))continue;
         const lines=am[album][song];
         if(!lines.length)continue;
-        line=lines[r1[2]%lines.length];
-        words=line.split(/\s+/);
+        const item=lines[r1[2]%lines.length];
+        text=item.text;posStr=item.pos||'';
+        words=text.split(/\s+/);
+        posTags=posStr.split(' ');
         if(words.length<7)continue;
-        const candidates=words.filter(w=>{
+        // POS-based filtering: N/V/J/R/D/P are content words, X is excluded
+        const candidates=words.filter((w,i)=>{
             const clean=w.replace(/[^a-zA-Z0-9]/g,'');
             if(!clean)return false;
             // 排除含特殊符号的词（字母数字+撇号放行，如 don't / I'm）
             if(/[^a-zA-Z0-9']/.test(w))return false;
-            if(LYRIC_STOP_WORDS.has(clean.toLowerCase()))return false;
-            if(!isContentWord(w,clean))return false;
-            // Numbers (word or digit) are exempt from length; others need ≥5
-            if(/^\d+$/.test(clean)||NUM_WORDS.has(clean.toLowerCase()))return true;
+            const tag=posTags[i]||'X';
+            if(tag==='X')return false; // pronouns, prepositions, etc.
+            // Numbers (digit or word) always OK regardless of length
+            if(tag==='D'||/^\d+$/.test(clean))return true;
             return clean.length>=5;
         });
         if(!candidates.length)continue;
@@ -2034,13 +2015,12 @@ function randomLyricQuiz(){
         break;
     }
     if(!blankWord){t('⚠️ 暂无合适的填空题，请换一题');switchQuizMode('trivia');return}
-    // Track recent songs (keep last 5, avoid repeats)
     const songKey=album+'||'+song;
     _recentSongs.push(songKey);
-    if(_recentSongs.length>5)_recentSongs.shift();
-    _currentLyricQuiz={lyricLine:line,blankWord,album,song};
+    if(_recentSongs.length>15)_recentSongs.shift();
+    _currentLyricQuiz={lyricLine:text,blankWord,album,song};
     _currentQuiz=null;
-    const display=line.replace(blankWord,'______');
+    const display=text.replace(blankWord,'______');
     document.getElementById('quizQuestion').textContent='🎵 '+display;
     document.getElementById('quizHint').textContent='💿 '+album+' · 🎶 '+song;
     document.getElementById('quizHint').style.display='none';
