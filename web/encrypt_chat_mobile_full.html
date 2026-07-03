@@ -970,9 +970,10 @@ function updatePwdStrength(){
     bar.style.width=lv.w;bar.style.background=lv.c;
 
     const crackTime=r.crack_times_display.offline_fast_hashing_1e10_per_second;
+    const bits=Math.round(r.guesses_log10*3.321928);
     let fb=r.feedback.warning||'';
     if(r.feedback.suggestions.length) fb+=' '+r.feedback.suggestions.join(' ');
-    lbl.textContent=lv.t+' | ⏱️ '+crackTime+(fb?' | 💡 '+fb:'');
+    lbl.textContent=lv.t+' | ~'+bits+' bit | ⏱️ '+crackTime+(fb?' | 💡 '+fb:'');
     lbl.style.color=lv.c;
 }
 // ─── 💬 自定义确认弹窗（替代原生confirm，支持emoji） ───
