@@ -1,5 +1,0 @@
-# SwiftCrypto Web — 数据构建工具依赖
-# 安装: pip install -r requirements.txt
-
-mido>=1.3       # MIDI 文件元数据提取 (build_midi_meta.py)
-openpyxl>=3.1   # Excel → CSV 转换 (convert_xlsx.py)
