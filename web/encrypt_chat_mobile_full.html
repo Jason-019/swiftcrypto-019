@@ -1824,7 +1824,7 @@ async function genPwd(){
     const digs=[1,2,1,3,1,9,8,9,5,7].map((d,k)=>({d,k})).sort((a,b)=>r2[a.k]-r2[b.k]).map(x=>x.d).join('');
     const r3=new Uint32Array(3);crypto.getRandomValues(r3);
     const parts=[words[i],digs,words[j]].map((p,k)=>({p,k})).sort((a,b)=>r3[a.k]-r3[b.k]).map(x=>x.p);
-    const p=parts.join('-');
+    const p=parts.join('');
     const pwEl2=document.getElementById('password');
     pwEl2.value=p;pwEl2.classList.remove('pwd-masked');
     document.getElementById('togglePwd').textContent='🙈 隐藏';t('🎲 '+p);updatePwdStrength();
@@ -2702,11 +2702,17 @@ function renderEraCard(){
     // 装饰线
     ctx.strokeStyle=hexToRgba(accent,0.25);ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(cw*0.15,footerY-2);ctx.lineTo(cw*0.85,footerY-2);ctx.stroke();
-    // 日期
-    const now=new Date();
+    // 时间戳哈希 (48-bit → 12 hex)
+    const ts=Date.now().toString();
+    let h1=0,h2=0;
+    for(let i=0;i<ts.length;i++){
+        h1=((h1<<5)-h1)+ts.charCodeAt(i);h1|=0;
+        h2=((h2<<3)+h2)^ts.charCodeAt(i);h2|=0;
+    }
+    const hashStr='#'+(Math.abs(h1).toString(16).toUpperCase().padStart(8,'0')+Math.abs(h2).toString(16).toUpperCase().padStart(8,'0')).slice(0,12);
     ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='11px "Palatino Linotype","Book Antiqua",Palatino,Georgia,serif';
     ctx.textAlign='center';
-    ctx.fillText(now.toLocaleDateString('zh-CN')+'  '+now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),cw/2,footerY+12);
+    ctx.fillText(hashStr,cw/2,footerY+12);
     // 主题名
     ctx.fillStyle=accent;ctx.font='bold italic 13px "Palatino Linotype","Book Antiqua",Palatino,Georgia,serif';
     ctx.fillText(t.name+' · Eras Cipher',cw/2,footerY+30);
