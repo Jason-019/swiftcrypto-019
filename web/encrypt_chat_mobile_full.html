@@ -1801,11 +1801,9 @@ async function genPwd(){
     const r3=new Uint32Array(3);crypto.getRandomValues(r3);
     const parts=[words[i],digs,words[j]].map((p,k)=>({p,k})).sort((a,b)=>r3[a.k]-r3[b.k]).map(x=>x.p);
     const p=parts.join('-');
-    // 实际熵：两词(按1/2词库估算) + 10位数排列(10!/(3!·2!)=302400) + 三部分排列(3!=6)
-    const realEnt=Math.round(Math.log2(words.length/2)*2+Math.log2(302400)+Math.log2(6));
     const pwEl2=document.getElementById('password');
     pwEl2.value=p;pwEl2.classList.remove('pwd-masked');
-    document.getElementById('togglePwd').textContent='🙈 隐藏';t('🎲 '+p+' (≈'+realEnt+' bit)');updatePwdStrength();
+    document.getElementById('togglePwd').textContent='🙈 隐藏';t('🎲 '+p);updatePwdStrength();
 }
 // Theme gradients (inspired by album color palettes)
 const THEMES=[
