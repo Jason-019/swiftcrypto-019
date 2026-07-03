@@ -2095,38 +2095,47 @@ async function refreshCacheCounts(){
     try{
         const names=await caches.keys();
         if(names.length===0){list.innerHTML='<span style="color:var(--dim)">暂无 Cache API 缓存<br><small>（file:// 协议或 ServiceWorker 未激活时不可用）</small></span>';return}
-        let html='', totalCache=0;
+        // 合并 swiftcrypto-v* 为一个"应用缓存"，MIDI 和 Tone 独立
+        const groups={app:[],midi:[],tone:[]};
         for(const name of names){
-            const cache=await caches.open(name);
-            const reqs=await cache.keys();
-            let cacheSize=0;
-            const files=[];
-            // Use matchAll for efficiency
-            const responses=await cache.matchAll();
-            for(const resp of responses){
-                try{
-                    const blob=await resp.clone().blob();
-                    cacheSize+=blob.size;
-                    const url=resp.url||'';
-                    const fname=url.split('/').pop()||url;
-                    files.push({name:decodeURIComponent(fname).slice(0,40),size:blob.size});
-                }catch(e){}
-            }
-            totalCache+=cacheSize;
-            const label=name.includes('midi')?'🎵 MIDI曲库':name.includes('tone')?'🎹 音色库':name.includes('workbox')?'⚙️ ServiceWorker':'📦 '+name;
-            const sizeStr=fmtSize(cacheSize);
-            const uid='cachedetail_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
-            html+=`<div style="margin-bottom:4px"><div style="display:flex;align-items:center;justify-content:space-between;gap:4px;cursor:pointer;padding:3px 0" onclick="document.getElementById('${uid}').style.display=document.getElementById('${uid}').style.display==='none'?'block':'none'"><span>${label}</span><span style="font-size:0.7rem;color:var(--dim)">${reqs.length}个 · ${sizeStr}</span></div>`;
-            html+=`<div id="${uid}" style="display:none;font-size:0.65rem;color:var(--dim);padding-left:12px;line-height:1.6">`;
-            if(files.length===0){
-                html+='<span style="color:var(--dim)">（空缓存或无法读取）</span>';
-            }else{
-                for(const f of files){
-                    html+=`<div>${eh(f.name)} <span style="opacity:0.6">${fmtSize(f.size)}</span></div>`;
+            if(name.includes('midi'))groups.midi.push(name);
+            else if(name.includes('tone')||name.includes('salamander'))groups.tone.push(name);
+            else if(/^swiftcrypto-v\d/.test(name))groups.app.push(name);
+            // 其他旧命名也算 app
+            else groups.app.push(name);
+        }
+        let html='',totalCache=0;
+        const renderGroup=async(label,groupNames)=>{
+            if(!groupNames.length)return'';
+            let size=0,reqCount=0,allFiles=[];
+            for(const name of groupNames){
+                const cache=await caches.open(name);
+                const reqs=await cache.keys();reqCount+=reqs.length;
+                const responses=await cache.matchAll();
+                for(const resp of responses){
+                    try{
+                        const blob=await resp.clone().blob();size+=blob.size;
+                        const url=resp.url||'';
+                        const fname=url.split('/').pop()||url;
+                        const seen=allFiles.find(f=>f.name===fname);
+                        if(!seen)allFiles.push({name:decodeURIComponent(fname).slice(0,40),size:blob.size});
+                    }catch(e){}
                 }
             }
-            html+='</div></div>';
-        }
+            totalCache+=size;
+            const uid='cd_'+Math.random().toString(36).slice(2,8);
+            // 去重排序
+            allFiles.sort((a,b)=>b.size-a.size);
+            let detail='';
+            if(allFiles.length){
+                for(const f of allFiles)detail+=`<div>${eh(f.name)} <span style="opacity:0.6">${fmtSize(f.size)}</span></div>`;
+            }else{detail='<span style="color:var(--dim)">（空缓存或无法读取）</span>'}
+            const countLabel=groupNames.length>1?`${reqCount}个文件 · ${fmtSize(size)}`:`${reqCount}个 · ${fmtSize(size)}`;
+            return `<div style="margin-bottom:4px"><div style="display:flex;align-items:center;justify-content:space-between;gap:4px;cursor:pointer;padding:3px 0" onclick="const e=document.getElementById('${uid}');e.style.display=e.style.display==='none'?'block':'none'"><span>${label}</span><span style="font-size:0.7rem;color:var(--dim)">${countLabel}</span></div><div id="${uid}" style="display:none;font-size:0.65rem;color:var(--dim);padding-left:12px;line-height:1.6">${detail}</div></div>`;
+        };
+        html+=await renderGroup('📦 应用缓存',groups.app);
+        html+=await renderGroup('🎵 MIDI 曲库',groups.midi);
+        html+=await renderGroup('🎹 音色库',groups.tone);
         html+=`<div style="font-size:0.65rem;color:var(--dim);margin-top:4px">Cache API 合计: ${fmtSize(totalCache)}</div>`;
         list.innerHTML=html;
     }catch(e){list.innerHTML='<span style="color:#f87171">检测失败: '+eh(e.message)+'</span>'}
