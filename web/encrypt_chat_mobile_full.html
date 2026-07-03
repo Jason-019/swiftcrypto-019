@@ -2262,6 +2262,103 @@ function generateSoupValidator(hint){
         d:Math.min(5,Math.max(1,Math.ceil(bits/25))) // 难度 1-5
     };
 }
+// ─── 🐢 海龟汤静态问答引擎 ───
+let _soupValidator=null,_soupHistory=[];
+const SOUP_HUMOR=[
+    '🐢 嗯……让我想想',
+    '🤔 这个问题有点意思',
+    '🐢 作为一只海龟，我只能根据线索推测',
+    '🔍 从元数据来看',
+    '💭 根据我手头的档案'
+];
+function staticSoupReply(question,validator){
+    const q=question.toLowerCase().replace(/[?？]/g,'').trim();
+    const D=['非常不可能','不太可能','有可能','很有可能','几乎是肯定的'][Math.min(4,validator.d-1)];
+
+    // 词性相关
+    if(/名词|noun|名字|事物|东西/i.test(q)){
+        const map={N:'是的，这是一个名词/名字',V:'不是名词，可能是个动作或状态',J:'不是名词，更像是一个描述性的词',R:'不是名词，是个副词，用来修饰动作'};
+        return map[validator.p]||'关于词性，线索还不够明确…但可以帮你缩小范围';
+    }
+    if(/动词|verb|动作|行为|状态词/i.test(q)){
+        if(validator.p==='V')return '是的，有动词的特征。可能是某个动作或者心理状态';
+        if(validator.p==='N')return '不太像动词，更接近名词或名字';
+        return '不太像典型的动词';
+    }
+    if(/形容|adjective|描述|特征|性质|颜色/i.test(q)){
+        if(validator.p==='J')return '没错，有形容词的特征，在描述某种特质';
+        return '应该不完全是形容词';
+    }
+    if(/副词|adverb|程度|方式/i.test(q)){
+        if(validator.p==='R')return '是的，像是修饰动作的副词';
+        return '不像副词';
+    }
+
+    // 长度相关
+    if(/几个|多少|长度|length|字符|字母|位数|count|字/i.test(q)){
+        const lo=Math.max(1,validator.l-2),hi=Math.min(99,validator.l+3);
+        if(hi-lo<=2)return `长度在 ${lo}-${hi} 个字符之间`;
+        return `大概 ${lo} 到 ${hi} 个字符的样子`;
+    }
+    if(/长|短/i.test(q)){
+        if(validator.l>15)return '相对来说偏长';
+        if(validator.l>8)return '中等长度，不短也不太长';
+        return '不算长';
+    }
+
+    // 专辑/Era 相关
+    if(/专辑|album|era|来源|哪张|哪首/i.test(q)){
+        const eras={1989:'和 1989 时代的气息有点像','rep':'有一丝 reputation 时期的暗黑气质','Spea':'像是 Speak Now 时期的风格','Love':'有 Lover 时期的浪漫气息','folk':'带着 folklore/evermore 的森林气息','Red':'有点 Red 时期的炽热感','Fear':'带着 Fearless 时期的勇敢感','Midn':'像是 Midnights 时期的深夜思绪','Tort':'和 TTPD 的文艺气质吻合'};
+        for(const[k,v]of Object.entries(eras))if(validator.e.startsWith(k))return v;
+        return '专辑线索暂时保密…不过和 Taylor 的某个时代有关';
+    }
+    if(/taylor|swift|霉霉/i.test(q))return '这当然是 Taylor Swift 相关的密码！具体哪个 Era 还需要你慢慢猜 🐱';
+
+    // 情感相关
+    if(/爱情|love|浪漫|romantic/i.test(q)){
+        if(validator.e.startsWith('Love')||validator.e.startsWith('Spea'))return '从年代风格来看，'+(validator.d>3?'有可能':'不太确定');
+        if(validator.e.startsWith('rep')||validator.e.startsWith('folk'))return '也许有点微妙的情感色彩';
+        return '不太好说…问问和哪个专辑有关？';
+    }
+    if(/伤心|sad|悲伤|sorrow|breakup/i.test(q)){
+        if(validator.e.startsWith('Red')||validator.e.startsWith('folk')||validator.e.startsWith('Tort'))return '有可能带着一些伤感的色彩';
+        return '不像是特别伤感的词';
+    }
+    if(/快乐|happy|欢快|fun|cheer/i.test(q)){
+        if(validator.e.startsWith('1989')||validator.e.startsWith('Fear'))return '有可能是比较明亮的词';
+        return '可能不是典型的欢快词汇';
+    }
+
+    // 模糊兜底
+    const generic=['这个角度很有意思，但我不确定。试试问"是名词吗？"或者"和哪张专辑有关？"',
+        '换种问法？比如问词性、长度、或者感情色彩',
+        '我只有有限的线索…试试更具体的问题？',
+        '海龟汤主持人挠了挠头：这个问题可能需要换个角度'];
+    return `${SOUP_HUMOR[Math.floor(Math.random()*SOUP_HUMOR.length)]}……${generic[Math.floor(Math.random()*generic.length)]}`;
+}
+function askSoup(){
+    const inp=document.getElementById('soupInput'),q=inp.value.trim();
+    if(!q||!_soupValidator)return;
+    const area=document.getElementById('soupChatArea');
+    // 用户气泡
+    area.innerHTML+=`<div class="soup-msg me">${eh(q)}</div>`;
+    // 回答
+    const reply=staticSoupReply(q,_soupValidator);
+    const msgDiv=document.createElement('div');msgDiv.className='soup-msg them';
+    area.appendChild(msgDiv);
+    // typewriter 效果
+    let i=0;
+    const tw=setInterval(()=>{msgDiv.textContent=reply.slice(0,++i);area.scrollTop=area.scrollHeight;if(i>=reply.length)clearInterval(tw)},15);
+    _soupHistory.push({role:'user',text:q},{role:'host',text:reply});
+    if(_soupHistory.length>40)_soupHistory.splice(0,2); // 最多20轮
+    try{sessionStorage.setItem('swiftcrypto_soup',JSON.stringify(_soupHistory))}catch(e){}
+    inp.value='';area.scrollTop=area.scrollHeight;
+}
+function openSoup(v){_soupValidator=v;document.getElementById('soupModal').style.display='flex';document.getElementById('soupInput').focus();}
+function closeSoup(){document.getElementById('soupModal').style.display='none'}
+function clearSoupHistory(){_soupHistory=[];document.getElementById('soupChatArea').innerHTML='<div class="soup-msg them soup-typing">🐢 历史已清除。开始新的推理吧！</div>';try{sessionStorage.removeItem('swiftcrypto_soup')}catch(e){}}
+document.getElementById('soupModal').addEventListener('click',function(e){if(e.target===this)closeSoup()});
+
 function updateShareLink(){
     const url=buildShareUrl();if(url)document.getElementById('shareLink').textContent=url;
 }
@@ -2311,7 +2408,7 @@ function checkShareLink(){
     try{
         const hash=location.hash.slice(1);if(!hash)return;
         const params=new URLSearchParams(hash);
-        const c=params.get('c'),h=params.get('h');
+        const c=params.get('c'),h=params.get('h'),soup=params.get('soup');
         if(c){
             document.getElementById('cipherInput').value=c;
             switchTab('dec');
@@ -2319,8 +2416,20 @@ function checkShareLink(){
                 const el=document.getElementById('pwdHint');
                 document.getElementById('pwdHintText').textContent='密码提示：'+h;
                 el.style.display='';
-                t('📨 收到分享密文！（密码提示已显示）')
-            }else t('📨 收到分享密文！')
+            }
+            // 🐢 海龟汤模式
+            if(soup){
+                try{const v=JSON.parse(atob(decodeURIComponent(soup)));
+                    _soupValidator=v;
+                    const el=document.getElementById('pwdHint');
+                    const orig=document.getElementById('pwdHintText').textContent;
+                    document.getElementById('pwdHintText').innerHTML=orig+' &nbsp;<button onclick="openSoup(_soupValidator)" style="font-size:0.6rem;padding:2px 8px;border-radius:6px;border:1px solid #f97316;background:rgba(249,115,22,0.1);color:#f97316;cursor:pointer">🐢 海龟汤提示</button>';
+                    el.style.display='';
+                    t('📨 收到加密消息 — 密码提示 + 🐢 海龟汤已就绪')
+                }catch(e){console.warn('soup parse:',e)}
+            }
+            if(!soup&&h)t('📨 收到分享密文！（密码提示已显示）');
+            else if(!soup&&!h)t('📨 收到分享密文！');
         }
     }catch(e){console.warn('checkShareLink:',e)}
 }
