@@ -731,7 +731,7 @@ function stopRecvPlay(){
 }
 
 // ══════ 瀑布图钢琴卷帘 ══════
-let _wfNotes=[],_wfAnimId=null,_wfMinPitch=60,_wfMaxPitch=84,_wfLastTime=null,_wfAccum=0,_wfOffCv=null,_wfLatency=0.32; // 视觉延迟补偿(秒)，抵消音频输出延迟
+let _wfNotes=[],_wfAnimId=null,_wfMinPitch=60,_wfMaxPitch=84,_wfLastTime=null,_wfAccum=0,_wfOffCv=null,_wfLatency=0.45; // 视觉延迟补偿(秒)，抵消音频输出延迟
 const WF_LOOKAHEAD=3; // 超前显示秒数
 
 function toggleWaterfall(){
