@@ -973,19 +973,23 @@ function updatePwdStrength(){
     // 2. 基础熵: log2(字符集) × 长度
     let entropy=Math.log2(charset)*p.length;
 
-    // 3. Passphrase 检测 — 含分隔符 + 大部分字母 → 按词组估算
+    // 3. Passphrase 检测 — 含分隔符 + 大部分字母 + 至少3个词 → 按词组估算
     const alphaCount=(p.match(/[a-zA-Z]/g)||[]).length;
     const alphaRatio=alphaCount/p.length;
     const hasSep=/[-_. ]/.test(p);
-    if(hasSep && alphaRatio>0.65 && p.length>10){
+    if(hasSep && alphaRatio>0.55 && p.length>10){
         const segs=p.split(/[-_. ]+/).filter(s=>s.length>0);
-        let phraseEntropy=0;
-        for(const s of segs){
-            if(/^\d+$/.test(s)) phraseEntropy+=Math.log2(10)*s.length;
-            else phraseEntropy+=Math.log2(5000);
+        // Only apply if there are enough meaningfully-long words
+        const longWords=segs.filter(s=>s.length>=3);
+        if(longWords.length>=3){
+            let phraseEntropy=0;
+            for(const s of segs){
+                if(/^\d+$/.test(s)) phraseEntropy+=Math.log2(10)*s.length;
+                else phraseEntropy+=Math.log2(5000);
+            }
+            phraseEntropy+=Math.log2(4);
+            entropy=Math.min(entropy, phraseEntropy);
         }
-        phraseEntropy+=Math.log2(4);
-        entropy=Math.min(entropy, phraseEntropy);
     }
 
     // 4. 惩罚项
