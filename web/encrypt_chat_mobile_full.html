@@ -2023,6 +2023,8 @@ function randomLyricQuiz(){
         const candidates=words.filter(w=>{
             const clean=w.replace(/[^a-zA-Z0-9]/g,'');
             if(!clean)return false;
+            // 排除含特殊符号的词（字母数字+撇号放行，如 don't / I'm）
+            if(/[^a-zA-Z0-9']/.test(w))return false;
             if(LYRIC_STOP_WORDS.has(clean.toLowerCase()))return false;
             if(!isContentWord(w,clean))return false;
             // Numbers (word or digit) are exempt from length; others need ≥5
