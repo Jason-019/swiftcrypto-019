@@ -1061,7 +1061,7 @@ function updatePwdStrength(){
     const levels=[
         {w:'12%',c:'#ef4444',t:'🎤 趣味级 — 和闺蜜吐槽够用'},
         {w:'28%',c:'#f97316',t:'🐈 日常级 — 一般聊天还行'},
-        {w:'48%',c:'#eab308',t:'🎸 秘密级 — 粉丝群暗号'},
+        {w:'48%',c:'#eab308',t:'🎸 秘密级 — 似乎有点小心事'},
         {w:'66%',c:'#22c55e',t:'🛡️ 严肃级 — 一般人解不开'},
         {w:'84%',c:'#10b981',t:'🔮 殿堂级 — 世纪难破'},
         {w:'100%',c:'#a78bfa',t:'👑 格莱美级 ≥128bit — 当前技术不可破'}
@@ -1900,9 +1900,11 @@ async function genPwd(){
     const r3=new Uint32Array(3);crypto.getRandomValues(r3);
     const parts=[words[i],digs,words[j]].map((p,k)=>({p,k})).sort((a,b)=>r3[a.k]-r3[b.k]).map(x=>x.p);
     const p=parts.join('-');
+    // 实际熵：两词(log2(W)*2) + 10位数排列(log2(907200)) + 三部分排列(log2(6)) + 分隔符(log2(4))
+    const realEnt=Math.round(Math.log2(words.length)*2+Math.log2(907200)+Math.log2(6)+Math.log2(4));
     const pwEl2=document.getElementById('password');
     pwEl2.value=p;pwEl2.classList.remove('pwd-masked');
-    document.getElementById('togglePwd').textContent='🙈 隐藏';t('🎲 '+p);updatePwdStrength();
+    document.getElementById('togglePwd').textContent='🙈 隐藏';t('🎲 '+p+' (≈'+realEnt+' bit)');updatePwdStrength();
 }
 // Theme gradients (inspired by album color palettes)
 const THEMES=[
