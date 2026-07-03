@@ -422,17 +422,10 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
             <textarea id="chatInput" placeholder="输入消息…" rows="1"></textarea>
             <button class="btn btn-primary" onclick="chatSend()" style="flex:none">⚡ 快捷发送</button>
         </div>
-        <div id="chatCipherRow" style="display:none;margin-top:4px">
-            <code id="chatCipherText" style="display:block;font-size:0.6rem;color:var(--accent);word-break:break-all;background:rgba(0,0,0,0.25);padding:6px 8px;border-radius:6px;margin-bottom:4px;max-height:28px;overflow:hidden;line-height:1.3"></code>
-            <div style="display:flex;gap:6px">
-                <button class="btn btn-copy" onclick="copyChatCipher()" style="flex:1;padding:6px 0;font-size:0.7rem">📋 复制</button>
-                <button class="btn btn-outline" onclick="shareChatCipher()" style="flex:1;padding:6px 0;font-size:0.7rem">📤 分享</button>
-                <button class="btn btn-outline" id="chatEmojiToggle" onclick="toggleChatEmoji()" style="flex:1;padding:6px 0;font-size:0.7rem">🎭 Emoji</button>
-            </div>
-        </div>
+
         <div class="chat-input-row" style="margin-top:6px">
             <textarea id="chatRecvInput" placeholder="📥 粘贴密文…" rows="1" onfocus="autoPasteIfEnabled()" style="flex:1"></textarea>
-            <button class="btn btn-copy" onclick="chatReceive()" style="flex:none">🔓 解密</button>
+            <button class="btn btn-copy" onclick="chatReceive()" style="flex:none">🔓 快捷解密</button>
         </div>
         <div class="chat-actions" style="justify-content:space-between;align-items:center">
             <button class="btn btn-outline" onclick="clearChat()" style="flex:none">🗑 清除记录</button>
@@ -2497,11 +2490,8 @@ async function chatSend(){
         const sdExp=sdm?parseInt(sdm.match(/^🔥(\d+)\|/)?.[1]||'0'):0;
         chatMsgs.push({role:'me',text,cipher:b64,time:Date.now(),device:getDeviceId(),sd:!!sdm,sdExpiry:sdExp});
         saveChat();renderChat();input.value='';input.style.height='auto';
-        _lastChatB64=b64;chatEmojiMode=false;document.getElementById('chatEmojiToggle').textContent='🎭 Emoji';document.getElementById('chatEmojiToggle').style.color='';
-        document.getElementById('chatCipherText').textContent=b64;
-        document.getElementById('chatCipherRow').style.display='';
         document.getElementById('cipherOutput').value=b64;uc();updateEmojiDisplay();
-        t(sdm?'🔥 定时焚毁消息已加密 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 已加密！点击 📋 复制密文发给对方');
+        try{await navigator.clipboard.writeText(b64);t(sdm?'🔥 已加密并复制到剪贴板 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 已加密并复制到剪贴板！点击密文记录可再次复制')}catch(e){t(sdm?'🔥 已加密 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')  | 点击密文记录可复制':'✅ 已加密！点击密文记录可复制密文')}
         autoSavePwd();
     }catch(e){t('❌ '+e.message)}
 }
@@ -2532,27 +2522,9 @@ async function chatReceive(){
     }catch(e){const hint=localStorage.getItem('swiftcrypto_hs')?'（高安全模式已开启，请确认双方已交换身份码）':'';t(e.name==='OperationError'?'❌ 密码错误'+hint:'❌ '+e.message)}
 }
 function clearChat(skipConfirm){if(skipConfirm||confirm('确定清除所有聊天记录？')){chatMsgs=[];saveChat();renderChat();t('🗑 聊天记录已清除')}}
-let _lastChatB64='',chatEmojiMode=false;
-function toggleChatEmoji(){
-    chatEmojiMode=!chatEmojiMode;
-    const el=document.getElementById('chatCipherText'),btn=document.getElementById('chatEmojiToggle');
-    if(chatEmojiMode){el.textContent=cipherToEmoji(_lastChatB64);btn.textContent='🔤 原文';btn.style.color='#fbbf24'}
-    else{el.textContent=_lastChatB64;btn.textContent='🎭 Emoji';btn.style.color=''}
-}
-async function copyChatCipher(){
-    const v=document.getElementById('chatCipherText').textContent;
-    if(!v)return t('⚠️ 无内容');
-    try{await navigator.clipboard.writeText(v);t('✅ 密文已复制！发给对方吧')}catch{t('⚠️ 复制失败')}
-}
 async function copyChatMsgCipher(cipher){
     if(!cipher)return;
-    try{await navigator.clipboard.writeText(cipher);t('✅ 历史密文已复制')}catch{t('⚠️ 复制失败')}
-}
-async function shareChatCipher(){
-    const v=document.getElementById('chatCipherText').textContent;
-    if(!v)return t('⚠️ 无内容');
-    if(!navigator.share){copyChatCipher();return}
-    try{await navigator.share({title:'SwiftCrypto 密聊',text:v});t('✅ 已分享')}catch(e){if(e.name!=='AbortError')copyChatCipher(),t('📋 已复制（分享取消）')}
+    try{await navigator.clipboard.writeText(cipher);t('✅ 密文已复制')}catch{t('⚠️ 复制失败')}
 }
 // Auto-paste clipboard into chat receive
 let _autoPasteChat=false;
