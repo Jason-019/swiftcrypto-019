@@ -12,6 +12,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <title>🔐 SwiftCrypto</title>
 <script defer src="lyric_data.js"></script>
+<script defer src="lib/zxcvbn.js"></script>
 <style>
 :root{
     --bg:#040408;--card:rgba(20,20,40,0.8);--accent:#a78bfa;--accent2:#7c3aed;
@@ -954,124 +955,24 @@ function checkSelfDestruct(pt){
 function updatePwdStrength(){
     const p=gp(),bar=document.getElementById('pwdStrengthBar'),lbl=document.getElementById('pwdStrengthLabel');
     if(!p){bar.style.width='0';lbl.textContent='';return}
+    if(typeof zxcvbn==='undefined'){bar.style.width='50%';bar.style.background='#eab308';lbl.textContent='⏳ 评估中…';lbl.style.color='#eab308';return}
 
-    // 1. 字符集大小（用了哪些类别 → 完整字符集）
-    let charset=0;
-    const hasLow=/[a-z]/.test(p), hasUp=/[A-Z]/.test(p);
-    const hasDig=/[0-9]/.test(p);
-    const spChars=p.match(/[^A-Za-z0-9]/g)||[];
-    // CJK字符: 常用汉字约5000个，单独计算
-    const cjkChars=p.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g)||[];
-    const otherSp=spChars.filter(c=>!/[\u4e00-\u9fff\u3400-\u4dbf]/.test(c));
-    if(hasLow) charset+=26;
-    if(hasUp) charset+=26;
-    if(hasDig) charset+=10;
-    if(cjkChars.length) charset+=5000; // 常用汉字池
-    if(otherSp.length) charset+=new Set(otherSp).size;
-    charset=Math.max(charset,10);
-
-    // 2. 基础熵: log2(字符集) × 长度
-    let entropy=Math.log2(charset)*p.length;
-
-    // 3. Passphrase 检测 — 含分隔符 + 大部分字母 + 至少3个词 → 按词组估算
-    const alphaCount=(p.match(/[a-zA-Z]/g)||[]).length;
-    const alphaRatio=alphaCount/p.length;
-    const hasSep=/[-_. ]/.test(p);
-    if(hasSep && alphaRatio>0.55 && p.length>10){
-        const segs=p.split(/[-_. ]+/).filter(s=>s.length>0);
-        // Only apply if there are enough meaningfully-long words
-        const longWords=segs.filter(s=>s.length>=3);
-        if(longWords.length>=3){
-            let phraseEntropy=0;
-            for(const s of segs){
-                if(/^\d+$/.test(s)) phraseEntropy+=Math.log2(10)*s.length;
-                else phraseEntropy+=Math.log2(5000);
-            }
-            phraseEntropy+=Math.log2(4);
-            // Take weighted average: character-based is upper bound, phrase-based is lower bound
-            entropy=Math.max(entropy*0.3+phraseEntropy*0.7, phraseEntropy);
-        }
-    }
-
-    // 4. 惩罚项
-    let penalty=1.0;
-
-    // --- 连续重复 3+
-    const repeats=p.match(/(.)\1\1+/g)||[];
-    for(const r of repeats) penalty-=Math.min(r.length*0.06,0.20);
-    if(/(.)\1\1\1\1/.test(p)) penalty-=0.12;
-
-    // --- 顺序字符 abc/123/cba
-    let seqHits=0;
-    const pl=p.toLowerCase();
-    for(let i=0;i<pl.length-2;i++){
-        const a=pl.charCodeAt(i),b=pl.charCodeAt(i+1),c=pl.charCodeAt(i+2);
-        if(Math.abs(a-b)===1&&Math.abs(b-c)===1&&a-b===b-c) seqHits++;
-    }
-    penalty-=Math.min(seqHits*0.07,0.30);
-
-    // --- 键盘行走
-    const kBrd=['qwertyuiop','asdfghjkl','zxcvbnm','1234567890'];
-    for(const row of kBrd){
-        for(let i=0;i<row.length-2;i++){
-            const seg=row.substring(i,i+3), rev=seg.split('').reverse().join('');
-            if(pl.includes(seg)||pl.includes(rev)){penalty-=0.10;break;}
-        }
-    }
-
-    // --- 单类字符
-    const classes=[hasLow,hasUp,hasDig,spChars.length>0].filter(Boolean).length;
-    if(classes===1) penalty-=cjkChars.length?0.15:0.40; // CJK单类惩罚减半
-    else if(classes===2&&p.length<12) penalty-=0.15;
-
-    // --- 常见密码词典
-    const dict=['password','admin','user','login','qwerty','abc123','123456','letmein',
-        'monkey','dragon','master','welcome','sunshine','princess','football','iloveyou',
-        'trustno1','12345678','123456789','000000','111111','secret','changeme',
-        'passw0rd','p@ssword','p@ssw0rd','admin123','root','guest','test',
-        'password1','password123','1234567890','qwerty123','abc123456'];
-    for(const w of dict){
-        if(pl===w){penalty-=0.55;break;}
-        if(pl.startsWith(w)||pl.endsWith(w)){penalty-=0.32;break;}
-        if(pl.includes(w)){penalty-=0.22;break;}
-    }
-
-    // --- 短密码
-    if(p.length<8) penalty-=Math.pow(8-p.length,1.5)*0.07;
-    if(p.length<5) penalty-=0.25;
-
-    // --- 年份/常见后缀
-    if(/(19|20)\d{2}$/.test(p)) penalty-=0.18;
-    if(/(123|1234|12345|!+|@+|#+)$/.test(p)) penalty-=0.10;
-
-    // --- Leet-speak
-    if(/[pP][@4][s5\$][s5\$][wW][0o][rR][dD]/.test(p)) penalty-=0.40;
-
-    // --- 全数字且<12位
-    if(/^\d+$/.test(p)&&p.length<12) penalty-=0.30;
-
-    penalty=Math.max(penalty,0.03);
-    entropy*=penalty;
-
-    // 5. 阈值: 128-bit = 现代对称密钥安全基线
-    const thresholds=[35,55,80,100,128,160];
-    let lvl=thresholds.findIndex(t=>entropy<t);
-    if(lvl<0) lvl=5;
-
+    const r=zxcvbn(p);
+    const score=r.score; // 0-4
     const levels=[
-        {w:'12%',c:'#ef4444',t:'🎤 趣味级 — 和闺蜜吐槽够用'},
-        {w:'28%',c:'#f97316',t:'🐈 日常级 — 一般聊天还行'},
-        {w:'48%',c:'#eab308',t:'🎸 秘密级 — 似乎有点小心事'},
-        {w:'66%',c:'#22c55e',t:'🛡️ 严肃级 — 一般人解不开'},
-        {w:'84%',c:'#10b981',t:'🔮 殿堂级 — 世纪难破'},
-        {w:'100%',c:'#a78bfa',t:'👑 格莱美级 ≥128bit — 当前技术不可破'}
+        {w:'12%',c:'#ef4444',t:'🎤 趣味级 — 秒级可破'},
+        {w:'28%',c:'#f97316',t:'🐈 日常级 — 分钟可破'},
+        {w:'48%',c:'#eab308',t:'🎸 秘密级 — 数小时'},
+        {w:'72%',c:'#22c55e',t:'🛡️ 严肃级 — 数年安全'},
+        {w:'100%',c:'#a78bfa',t:'👑 格莱美级 — 世纪无虞'}
     ];
-    const lv=levels[lvl];
+    const lv=levels[Math.min(score,4)];
     bar.style.width=lv.w;bar.style.background=lv.c;
-    const bytes=new TextEncoder().encode(p).length;
-    const hasCJK=/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/.test(p);
-    const charInfo=p.length+'字符'+(hasCJK?' 含中文':'')+(bytes!==p.length?' | '+bytes+'B':'');
-    lbl.textContent=lv.t+' ('+Math.round(entropy)+' bits)  |  '+charInfo;
+
+    const crackTime=r.crack_times_display.offline_fast_hashing_1e10_per_second;
+    let fb=r.feedback.warning||'';
+    if(r.feedback.suggestions.length) fb+=' '+r.feedback.suggestions.join(' ');
+    lbl.textContent=lv.t+' | ⏱️ '+crackTime+(fb?' | 💡 '+fb:'');
     lbl.style.color=lv.c;
 }
 // ─── 💬 自定义确认弹窗（替代原生confirm，支持emoji） ───

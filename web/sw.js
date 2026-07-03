@@ -10,7 +10,8 @@ const ASSETS = [
   './lyric_data.js',
   './icon.svg',
   './lib/tone.min.js',
-  './lib/midi.bundle.js'
+  './lib/midi.bundle.js',
+  './lib/zxcvbn.js'
 ];
 
 // Install: cache all assets (不影响音色库缓存)
