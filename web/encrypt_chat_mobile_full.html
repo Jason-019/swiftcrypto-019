@@ -1971,8 +1971,6 @@ function isContentWord(word,clean){
     if(/(al|ic|id|ile|ant|ent|ary)$/.test(clean)&&clean.length>4)return true;
     // Adverb suffix: -ly
     if(/ly$/.test(clean)&&clean.length>4)return true;
-    // Compound/other common content patterns
-    if(/([aeiou][^aeiou]+[aeiou])/.test(clean)&&clean.length>=6)return true;
     return false;
 }
 function openQuizPicker(){
