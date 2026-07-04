@@ -548,7 +548,7 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
 </div>
 
 <!-- � 自定义确认弹窗 -->
-<div id="confirmModal" style="display:none;position:fixed;inset:0;z-index:210;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);justify-content:center;align-items:center">
+<div id="confirmModal" style="display:none;position:fixed;inset:0;z-index:210;background:var(--modal-bg);backdrop-filter:blur(6px);justify-content:center;align-items:center">
     <div class="sheet" style="max-width:340px;text-align:center;display:flex;flex-direction:column;gap:16px;padding:24px 20px">
         <h3 id="confirmTitle" style="font-size:1.05rem;margin:0;line-height:1.4"></h3>
         <p id="confirmBody" style="font-size:0.8rem;color:var(--dim);margin:0;line-height:1.6;white-space:pre-line"></p>
@@ -560,7 +560,7 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
 </div>
 
 <!-- �🔐 密码输入弹窗（导出/导入用） -->
-<div id="pwdPromptModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);justify-content:center;align-items:center">
+<div id="pwdPromptModal" style="display:none;position:fixed;inset:0;z-index:200;background:var(--modal-bg);backdrop-filter:blur(6px);justify-content:center;align-items:center">
     <div class="sheet" style="max-width:340px;text-align:center;display:flex;flex-direction:column;gap:14px;padding:20px 18px">
         <h3 id="pwdPromptTitle" style="font-size:1rem;margin:0">🔐 请输入密码</h3>
         <p id="pwdPromptHint" style="font-size:0.7rem;color:var(--dim);margin:0;line-height:1.4"></p>
@@ -1023,10 +1023,10 @@ document.getElementById('confirmModal').addEventListener('click',function(e){if(
 
 // ---- 👻 Incognito mode ----
 let incogMode=false;
-function toggleIncog(){
+async function toggleIncog(){
     const cb=document.getElementById('incogMode');
     if(cb.checked){
-        if(!confirm('🐱 Olivia Benson 盯着你：开启隐身模式后，我会把聊天记录和密码历史当成小鱼干吃干抹净。确定要投喂我吗？')){cb.checked=false;return}
+        if(!await customConfirm('🐱 Olivia Benson 盯着你','开启隐身模式后，我会把聊天记录和密码历史当成小鱼干吃干抹净。\n\n确定要投喂我吗？')){cb.checked=false;return}
         incogMode=true;clearChat(true);clearPwdHistory();
         localStorage.setItem('swiftcrypto_incog','1');
         // 隐身模式下草稿不生效，自动关闭
@@ -1261,11 +1261,11 @@ function updateHSPeerStatus(){
 })();
 
 // ---- �📝 Draft mode ----
-function toggleDraft(){
+async function toggleDraft(){
     const cb=document.getElementById('draftMode');
     if(cb.checked){
         if(isIncog()){cb.checked=false;t('⚠️ 隐身模式下无法开启草稿');return}
-        if(!confirm('🐱 Olivia Benson 管家提醒：开启草稿模式后，我会用猫爪把密码框、明文和密文输入框里的纸条保管好。\n\n刷新或关闭页面后，它们还会乖乖待在原处。\n\n这些纸条只会存放在你的浏览器本地，不会被送出这间房。\n\n确定要交给我保管吗？')){
+        if(!await customConfirm('🐱 Olivia Benson 管家提醒','开启草稿模式后，我会用猫爪把密码框、明文和密文输入框里的纸条保管好。\n\n刷新或关闭页面后，它们还会乖乖待在原处。\n\n这些纸条只会存放在你的浏览器本地，不会被送出这间房。\n\n确定要交给我保管吗？')){
             cb.checked=false;return;
         }
         localStorage.setItem('swiftcrypto_draft','1');
@@ -2488,7 +2488,7 @@ function openLyricFeedback(guess,isEra){
     const sim=wordSimilarity(guess,_lyricAnswerText);
     const exactMatch=guess.trim().toLowerCase()===_lyricAnswerText.trim().toLowerCase();
     const hasSong=(isEra?document.getElementById('eraLinkHint').textContent:document.getElementById('lyricDecHint').textContent).includes('歌曲');
-    let html='<h3>📊 解密失败 — 歌词匹配度</h3>';
+    let html='<h3>🐱 Olivia 不耐烦地摇了摇尾巴</h3>';
     if(sim>=90&&exactMatch){
         html+='<div style="text-align:center;font-size:1.1rem;padding:12px;margin:8px 0;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.2);border-radius:8px;line-height:1.5"><strong style="color:#fbbf24">⚠️ 歌词匹配但解密失败</strong></div>';
         html+='<div style="font-size:0.75rem;color:var(--dim);text-align:center;margin:8px 0;line-height:1.5">你输入的密码与预期歌词<strong>词面完全一致</strong>，但解密仍然失败。<br>这说明发送方加密时使用的密码可能与歌词数据有<strong>细微差异</strong>（如大小写、空格、标点）。<br><br>💡 建议：请发送方重新生成链接，或与你确认确切密码。</div>';
@@ -2497,9 +2497,9 @@ function openLyricFeedback(guess,isEra){
         html+='<div style="font-size:0.75rem;color:var(--dim);text-align:center;margin:8px 0">你的猜测与正确答案的词重叠率</div>';
         const hintWord=pickHintWord(_lyricAnswerText);
         if(hasSong){
-            html+='<div style="padding:10px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);border-radius:8px;font-size:0.72rem;text-align:center">🎵 <strong>💡 强提示</strong>：答案中包含词 <mark style="background:rgba(34,197,94,0.2);color:#22c55e;padding:2px 6px;border-radius:4px">'+hintWord+'</mark></div>';
+            html+='<div style="padding:10px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);border-radius:8px;font-size:0.72rem;text-align:center">🎵 <strong>💡 Olivia 提示</strong>：答案中包含词 <mark style="background:rgba(34,197,94,0.2);color:#22c55e;padding:2px 6px;border-radius:4px">'+hintWord+'</mark></div>';
         }else{
-            html+='<div style="padding:10px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);border-radius:8px;font-size:0.72rem;text-align:center"><strong>💡 强提示</strong>：答案中包含词 <mark style="background:rgba(34,197,94,0.2);color:#22c55e;padding:2px 6px;border-radius:4px">'+hintWord+'</mark></div>';
+            html+='<div style="padding:10px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);border-radius:8px;font-size:0.72rem;text-align:center"><strong>💡 Olivia 提示</strong>：答案中包含词 <mark style="background:rgba(34,197,94,0.2);color:#22c55e;padding:2px 6px;border-radius:4px">'+hintWord+'</mark></div>';
         }
     }
     html+='<div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-primary" onclick="closeLyricFeedback()" style="flex:1;justify-content:center">知道了</button></div>';
