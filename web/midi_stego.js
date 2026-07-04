@@ -197,13 +197,41 @@ function _updateMidiCapacityNow(){
 async function loadMidiOriginal(songId){
     if(!_midiMeta||!_midiMeta.songs[songId])throw new Error('未知歌曲');
     const s=_midiMeta.songs[songId];
-    // Try cache first
+    const album=s.album||'';
+    const fname=s.file.split('/').pop(); // just the filename
+    
+    // 生成包名（与 build_archives.py 一致）
+    const safeAlbum=album.replace(/'/g,'').replace(/ /g,'_').replace(/\(/g,'').replace(/\)/g,'').replace(/\./g,'').replace(/!/g,'');
+    const pkgUrl='./midi_pkg/'+safeAlbum+'.tar.gz';
     const cache=await caches.open('swiftcrypto-midi-v1');
-    let r=await cache.match(s.file);
-    if(!r){
-        r=await fetch(s.file);
-        if(r.ok) cache.put(s.file, r.clone());
+    
+    // 1. 如果专辑包已在内存缓存中
+    if(_midiPkgCache[safeAlbum]&&_midiPkgCache[safeAlbum][fname]){
+        return _midiPkgCache[safeAlbum][fname];
     }
+    
+    // 2. 加载专辑 tar.gz
+    let files;
+    let r=await cache.match(pkgUrl);
+    if(r){
+        files=await untarGz(r.url).catch(()=>null);
+    }
+    if(!files){
+        r=await fetch(pkgUrl);
+        if(r.ok){
+            try{await cache.put(pkgUrl,r.clone())}catch(e){}
+            files=await untarGz(URL.createObjectURL(await r.blob()));
+        }
+    }
+    
+    if(files){
+        _midiPkgCache[safeAlbum]=files;
+        if(files[fname])return files[fname];
+    }
+    
+    // 3. Fallback: 单独加载（兼容旧部署）
+    r=await cache.match(s.file);
+    if(!r){r=await fetch(s.file);if(r.ok) cache.put(s.file, r.clone());}
     if(!r.ok)throw new Error('MIDI加载失败: '+r.status);
     return await r.arrayBuffer();
 }
@@ -513,6 +541,32 @@ function compareArrayBuffers(a,b){
 // ═══════════════════════════════════════════════════════════════
 let _midiSynth=null,_midiPlaying=false,_midiPlayBuf=null,_midiSynthLoading=null;
 let _midiAutoStop=null;
+let _midiPkgCache={}; // {album: {files: {name: ArrayBuffer}}}
+
+// ─── 轻量 TAR 解析器 (浏览器端，不依赖外部库) ───
+async function untarGz(url){
+    const r=await fetch(url);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const ds=new DecompressionStream('gzip');
+    const stream=r.body.pipeThrough(ds);
+    const buf=await new Response(stream).arrayBuffer();
+    const files={};
+    let pos=0;
+    while(pos+512<=buf.byteLength){
+        const header=new Uint8Array(buf,pos,512);
+        // Check for end-of-archive (two zero blocks)
+        if(header[0]===0)break;
+        const name=new TextDecoder().decode(header.slice(0,100)).replace(/\0/g,'');
+        const size=parseInt(new TextDecoder().decode(header.slice(124,136)).replace(/\0/g,''),8)||0;
+        pos+=512;
+        if(name&&size>0){
+            files[name]=buf.slice(pos,pos+size);
+        }
+        pos+=Math.ceil(size/512)*512; // 512-byte alignment
+        if(pos>=buf.byteLength)break;
+    }
+    return files;
+}
 
 async function initMidiSynth(){
     if(_midiSynth)return _midiSynth;
@@ -526,38 +580,42 @@ async function initMidiSynth(){
         }
     }catch(e){t('⚠️ 音频初始化失败，请点击页面任意位置后重试');_midiSynthLoading=null;return null}
     
+    t('⏳ 加载钢琴音源…');
     const sampleNames=['A0','C1','D#1','F#1','A1','C2','D#2','F#2','A2','C3','D#3','F#3','A3','C4','D#4','F#4','A4','C5','D#5','F#5','A5','C6','D#6','F#6','A6','C7','D#7','F#7','A7','C8'];
     const sampleFiles=['A0','C1','Ds1','Fs1','A1','C2','Ds2','Fs2','A2','C3','Ds3','Fs3','A3','C4','Ds4','Fs4','A4','C5','Ds5','Fs5','A5','C6','Ds6','Fs6','A6','C7','Ds7','Fs7','A7','C8'];
-    const total=sampleNames.length;
-    let loaded=0,errors=0;
-    const updateProgress=()=>{
-        const pct=Math.round((loaded+errors)/total*100);
-        t(`⏳ 钢琴音源 ${pct}% (${loaded}/${total})`);
-    };
+    
+    const toneCache=await caches.open('swiftcrypto-tone-v1');
+    const tarUrl='./lib/salamander.tar.gz';
+    let files;
+    try{
+        // 尝试从缓存或网络加载 tar.gz
+        let r=await toneCache.match(tarUrl);
+        if(!r){
+            r=await fetch(tarUrl);
+            if(!r.ok)throw new Error('HTTP '+r.status);
+            try{await toneCache.put(tarUrl,r.clone())}catch(e){}
+        }
+        files=await untarGz(r.url); // 注意：r.url 可能指向缓存 URL
+        // 如果缓存的是 Response，无法拿到 .url 作为 fetch 目标。用原始 URL 重取
+    }catch(e){
+        // fallback to direct fetch
+        files=await untarGz(tarUrl);
+    }
     
     const buffers={};
-    const toneCache=await caches.open('swiftcrypto-tone-v1');
-    await Promise.all(sampleNames.map(async (note,i)=>{
-        const file=sampleFiles[i];
-        const url=`./lib/salamander/${file}.mp3`;
-        try{
-            let r=await toneCache.match(url);
-            if(!r){
-                r=await fetch(url);
-                if(!r.ok)throw new Error('HTTP '+r.status);
-                try{await toneCache.put(url,r.clone())}catch(e){}
-            }
-            buffers[note]=await r.arrayBuffer();
-            loaded++;updateProgress();
-        }catch(e){
-            errors++;updateProgress();
-            console.warn('Sample load failed:',file,e);
+    let loaded=0;
+    for(let i=0;i<sampleNames.length;i++){
+        const note=sampleNames[i];
+        const fname=sampleFiles[i]+'.mp3';
+        if(files[fname]){
+            buffers[note]=files[fname];
+            loaded++;
         }
-    }));
-    
+    }
     if(loaded===0){t('⚠️ 所有音源加载失败');_midiSynthLoading=null;return null}
+    
     const urlMap={};
-    for(const [name,buf] of Object.entries(buffers)){
+    for(const[name,buf]of Object.entries(buffers)){
         urlMap[name]=URL.createObjectURL(new Blob([buf],{type:'audio/mpeg'}));
     }
     _midiSynth=new Tone.Sampler({
@@ -566,7 +624,7 @@ async function initMidiSynth(){
         release:1.2,
         curve:'linear',
         onload:()=>{
-            t(`🎹 钢琴音源就绪 (${loaded}/${total})`);
+            t('🎹 钢琴音源就绪 ('+loaded+'/'+sampleNames.length+')');
             for(const url of Object.values(urlMap)){URL.revokeObjectURL(url)}
         },
         onerror:(e)=>{console.warn('Sampler error:',e)}

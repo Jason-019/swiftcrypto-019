@@ -1,0 +1,72 @@
+[
+  {
+    "album": "1989",
+    "file": "midi_pkg/1989.tar.gz",
+    "count": 22
+  },
+  {
+    "album": "Crazier",
+    "file": "midi_pkg/Crazier.tar.gz",
+    "count": 1
+  },
+  {
+    "album": "Evermore",
+    "file": "midi_pkg/Evermore.tar.gz",
+    "count": 17
+  },
+  {
+    "album": "Fearless",
+    "file": "midi_pkg/Fearless.tar.gz",
+    "count": 19
+  },
+  {
+    "album": "Folklore",
+    "file": "midi_pkg/Folklore.tar.gz",
+    "count": 17
+  },
+  {
+    "album": "I Knew It, I Knew You",
+    "file": "midi_pkg/I_Knew_It,_I_Knew_You.tar.gz",
+    "count": 1
+  },
+  {
+    "album": "Lover Piano",
+    "file": "midi_pkg/Lover_Piano.tar.gz",
+    "count": 19
+  },
+  {
+    "album": "Midnights",
+    "file": "midi_pkg/Midnights.tar.gz",
+    "count": 22
+  },
+  {
+    "album": "Red",
+    "file": "midi_pkg/Red.tar.gz",
+    "count": 32
+  },
+  {
+    "album": "Reputation",
+    "file": "midi_pkg/Reputation.tar.gz",
+    "count": 15
+  },
+  {
+    "album": "Speak Now",
+    "file": "midi_pkg/Speak_Now.tar.gz",
+    "count": 23
+  },
+  {
+    "album": "T.S. Debut",
+    "file": "midi_pkg/TS_Debut.tar.gz",
+    "count": 10
+  },
+  {
+    "album": "The Life of a Showgirl",
+    "file": "midi_pkg/The_Life_of_a_Showgirl.tar.gz",
+    "count": 12
+  },
+  {
+    "album": "The Tortured Poets Department (The Anthology)",
+    "file": "midi_pkg/The_Tortured_Poets_Department_The_Anthology.tar.gz",
+    "count": 31
+  }
+]

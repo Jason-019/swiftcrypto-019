@@ -1,0 +1,154 @@
+SwiftCrypto/web/
+├── lib
+│   ├── salamander
+│   │   └── ... (30 files)
+│   ├── midi.bundle.js
+│   ├── tone.min.js
+│   └── zxcvbn.js
+├── midi
+│   ├── 1989
+│   │   └── ... (22 files)
+│   ├── Crazier
+│   │   └── Crazier.mid
+│   ├── Evermore
+│   │   ├── 'Tis the Damn Season.mid
+│   │   ├── Champagne Problems.mid
+│   │   ├── Closure.mid
+│   │   ├── Coney Island.mid
+│   │   ├── Cowboy like Me.mid
+│   │   ├── Dorothea.mid
+│   │   ├── Evermore.mid
+│   │   ├── Gold Rush.mid
+│   │   ├── Happiness.mid
+│   │   ├── It's Time to Go.mid
+│   │   ├── Ivy.mid
+│   │   ├── Long Story Short.mid
+│   │   ├── Marjorie.mid
+│   │   ├── No Body, No Crime.mid
+│   │   ├── Right Where You Left Me.mid
+│   │   ├── Tolerate It.mid
+│   │   └── Willow.mid
+│   ├── Fearless
+│   │   ├── Breathe.mid
+│   │   ├── Change.mid
+│   │   ├── Come In With The Rain.mid
+│   │   ├── Fearless.mid
+│   │   ├── Fifteen.mid
+│   │   ├── Forever & Always.mid
+│   │   ├── Hey Stephen.mid
+│   │   ├── Jump Then Fall.mid
+│   │   ├── Love Story.mid
+│   │   ├── Superstar.mid
+│   │   ├── Tell Me Why.mid
+│   │   ├── The Best Day.mid
+│   │   ├── The Other Side Of The Door.mid
+│   │   ├── The Way I Loved You.mid
+│   │   ├── Today Was A Fairytale.mid
+│   │   ├── Untouchable.mid
+│   │   ├── White Horse.mid
+│   │   ├── You Belong With Me.mid
+│   │   └── You're Not Sorry.mid
+│   ├── Folklore
+│   │   ├── August.mid
+│   │   ├── Betty.mid
+│   │   ├── Cardigan.mid
+│   │   ├── Epiphany.mid
+│   │   ├── Exile.mid
+│   │   ├── Hoax.mid
+│   │   ├── Illicit Affairs.mid
+│   │   ├── Invisible String.mid
+│   │   ├── Mad Woman.mid
+│   │   ├── Mirrorball.mid
+│   │   ├── My Tears Ricochet.mid
+│   │   ├── Peace.mid
+│   │   ├── Seven.mid
+│   │   ├── The 1.mid
+│   │   ├── The Lakes.mid
+│   │   ├── The Last Great American Dynasty.mid
+│   │   └── This Is Me Trying.mid
+│   ├── I Knew It, I Knew You
+│   │   └── I Knew It, I Knew You.mid
+│   ├── Lover Piano
+│   │   ├── Afterglow.mid
+│   │   ├── All Of The Girls You Loved Before.mid
+│   │   ├── Cornelia Street.mid
+│   │   ├── Cruel Summer.mid
+│   │   ├── Daylight.mid
+│   │   ├── Death By A Thousand Cuts.mid
+│   │   ├── False God.mid
+│   │   ├── I Forgot That You Existed.mid
+│   │   ├── I Think He Knows.mid
+│   │   ├── It's Nice To Have A Friend.mid
+│   │   ├── London Boy.mid
+│   │   ├── Lover.mid
+│   │   ├── ME!.mid
+│   │   ├── Miss Americana & The Heartbreak Prince.mid
+│   │   ├── Paper Rings.mid
+│   │   ├── Soon You'll Get Better.mid
+│   │   ├── The Archer.mid
+│   │   ├── The Man.mid
+│   │   └── You Need To Calm Down.mid
+│   ├── Midnights
+│   │   └── ... (22 files)
+│   ├── Red
+│   │   └── ... (32 files)
+│   ├── Reputation
+│   │   ├── ...Ready For It.mid
+│   │   ├── Call It What You Want.mid
+│   │   ├── Dancing With Our Hands Tied.mid
+│   │   ├── Delicate.mid
+│   │   ├── Don't Blame Me.mid
+│   │   ├── Dress.mid
+│   │   ├── End Game.mid
+│   │   ├── Getaway Car.mid
+│   │   ├── Gorgeous.mid
+│   │   ├── I Did Something Bad.mid
+│   │   ├── King Of My Heart.mid
+│   │   ├── Look What You Made Me Do.mid
+│   │   ├── New Year's Day.mid
+│   │   ├── So It Goes.mid
+│   │   └── This Is Why We Can't Have Nice Things.mid
+│   ├── Speak Now
+│   │   └── ... (23 files)
+│   ├── T.S. Debut
+│   │   ├── A Perfectly Good Heart.mid
+│   │   ├── Cold as You.mid
+│   │   ├── I'm Only Me When I'm With You.mid
+│   │   ├── Mary's Song (Oh My My My).mid
+│   │   ├── Our Song.mid
+│   │   ├── Picture to Burn.mid
+│   │   ├── Should've Said No.mid
+│   │   ├── Stay Beautiful.mid
+│   │   ├── Tied Together with a Smile.mid
+│   │   └── Tim McGraw.mid
+│   ├── The Life of a Showgirl
+│   │   ├── Actually Romantic.mid
+│   │   ├── CANCELLED!.mid
+│   │   ├── Eldest Daughter.mid
+│   │   ├── Elizabeth Taylor.mid
+│   │   ├── Father Figure.mid
+│   │   ├── Honey.mid
+│   │   ├── Opalite.mid
+│   │   ├── Ruin The Friendship.mid
+│   │   ├── The Fate of Ophelia.mid
+│   │   ├── The Life of a Showgirl.mid
+│   │   ├── Wi$h Li$t.mid
+│   │   └── Wood.mid
+│   └── The Tortured Poets Department (The Anthology)
+│       └── ... (31 files)
+├── svgs
+│   └── Meredith.svg
+├── .gitignore
+├── encrypt_chat_mobile_full.html
+├── icon.svg
+├── index.html
+├── lyric_data.js
+├── lyric_data.js.bak
+├── lyric_data.js.bak2
+├── lyric_data_pos.js
+├── manifest.webmanifest
+├── midi_meta.json
+├── midi_stego.js
+├── package-lock.json
+├── package.json
+└── sw.js

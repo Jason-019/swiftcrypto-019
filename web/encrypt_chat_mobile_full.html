@@ -1367,32 +1367,36 @@ async function showMidiCacheStatus(){
     }catch(e){el.textContent=''}
 }
 async function cacheAllMidi(){
-    if(!_midiMeta||!_midiMeta.songs){t('⚠️ 请等待歌曲列表加载');return}
-    t('⏳ 正在预缓存 MIDI…');
-    const songs=Object.entries(_midiMeta.songs);
-    const total=songs.length;
+    t('⏳ 正在预缓存 MIDI（按专辑打包下载）…');
+    let manifestUrl='./midi_pkg/manifest.json';
+    let r=await fetch(manifestUrl);
+    if(!r.ok){t('⚠️ manifest 加载失败');return}
+    const manifest=await r.json();
     const cache=await caches.open(MIDI_CACHE);
-    let cached=0,skipped=0;
-    for(const [id,s] of songs){if(await cache.match(s.file))skipped++}
-    if(skipped===total){t('🎵 全部 '+total+' 首 MIDI 已缓存，无需重复下载');showMidiCacheStatus();return}
-    if(skipped>0)t('🎵 已有 '+skipped+'/'+total+' 首 MIDI 缓存，跳过…');
     const bar=document.getElementById('midiCapBar');
     const lbl=document.getElementById('midiCapLabel');
-
-    for(const [id,s] of songs){
-        if(await cache.match(s.file))continue;
-        try{const r=await fetch(s.file);if(r.ok){await cache.put(s.file,r.clone());cached++}}catch(e){console.warn('cache miss:',s.file,e)}
-        const done=skipped+cached;
-        if(cached%10===0||done===total){
-            const pct=Math.round(done/total*100);
-            t('🎵 缓存 MIDI '+done+'/'+total+' ('+pct+'%)');
-            if(bar){bar.style.width=pct+'%';bar.style.background='var(--accent)'}
-            if(lbl)lbl.textContent=done+'/'+total;
-        }
+    let cached=0,skipped=0;
+    for(const album of manifest){
+        if(await cache.match(album.file))skipped++;
     }
-    t('🎵 MIDI 缓存完成！+'+cached+' 首新增, '+skipped+' 首跳过, 共 '+total+' 首');
-    if(bar){bar.style.width='0'}
-    if(lbl)lbl.textContent='';
+    const total=manifest.length;
+    if(skipped===total){t('🎵 全部 '+total+' 张专辑已缓存，无需重复下载');showMidiCacheStatus();return}
+    
+    for(let i=0;i<manifest.length;i++){
+        const album=manifest[i];
+        if(await cache.match(album.file)){cached++;continue}
+        try{
+            const resp=await fetch(album.file);
+            if(resp.ok){await cache.put(album.file,resp.clone());cached++}
+        }catch(e){console.warn('cache miss:',album.file,e)}
+        const done=i+1;
+        const pct=Math.round(done/total*100);
+        t('🎵 缓存 '+done+'/'+total+' 张专辑 ('+pct+'%)');
+        if(bar){bar.style.width=pct+'%'}
+        if(lbl)lbl.textContent=done+'/'+total;
+    }
+    t('🎵 MIDI 缓存完成！+'+cached+' 张专辑, 共 '+total+' 张');
+    if(bar){bar.style.width='0'}if(lbl)lbl.textContent='';
     showMidiCacheStatus();
 }
 async function copyText(id){let v;if(id==='cipherOutput'&&emojiMode){v=document.getElementById('emojiCipher').textContent}else{v=document.getElementById(id).value}if(!v)return t('⚠️ 无内容');try{await navigator.clipboard.writeText(v);t('✅ 已复制')}catch{document.getElementById(id).select();document.execCommand('copy');t('✅ 已复制')}}

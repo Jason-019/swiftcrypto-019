@@ -1,5 +1,5 @@
 // SwiftCrypto Service Worker — PWA + Share Target
-const CACHE_NAME = 'swiftcrypto-v15';
+const CACHE_NAME = 'swiftcrypto-v16';
 // 部署后浏览器会自动检测 SW 变化 → install → skipWaiting → activate → 清除旧缓存
 // 以后改 HTML 只需改这里版本号即可
 const TONE_CACHE = 'swiftcrypto-tone-v1'; // 音色库独立缓存，不被更新清除
@@ -13,7 +13,9 @@ const ASSETS = [
   './icon.svg',
   './lib/tone.min.js',
   './lib/midi.bundle.js',
-  './lib/zxcvbn.js'
+  './lib/zxcvbn.js',
+  './lib/salamander.tar.gz',
+  './midi_pkg/manifest.json'
 ];
 
 // Install: cache all assets (不影响音色库缓存)
