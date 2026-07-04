@@ -152,7 +152,7 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
 #quizModal .modal-btns .btn{flex:1;justify-content:center}
 #lyricModal select{
     padding:10px;border-radius:var(--rs);border:1px solid var(--border);
-    background:var(--input-bg);color:var(--text);font-size:0.85rem;outline:none;color-scheme:dark;
+    background:var(--input-bg);color:var(--text);font-size:0.85rem;outline:none;
 }
 #lyricModal select:disabled{opacity:.35}
 /* 自定义下拉替换原生 select */
@@ -260,7 +260,7 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
 .sd-row .sd-opts{display:none;align-items:center;gap:4px;flex-wrap:wrap}
 .sd-row .sd-opts.show{display:flex}
 .sd-row .sd-time{display:flex;align-items:center;gap:2px}
-.sd-row .sd-time input{width:34px;padding:3px;border-radius:4px;border:1px solid var(--border);background:rgba(0,0,0,0.25);color:var(--text);font-size:0.7rem;text-align:center;outline:none;color-scheme:dark}
+.sd-row .sd-time input{width:34px;padding:3px;border-radius:4px;border:1px solid var(--border);background:rgba(0,0,0,0.25);color:var(--text);font-size:0.7rem;text-align:center;outline:none}
 .sd-row .sd-time input:focus{border-color:var(--accent)}
 .sd-badge{display:inline-block;font-size:0.55rem;background:#f97316;color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
 /* Share dropdown */
@@ -482,7 +482,7 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
         <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px">
             <div style="font-size:0.75rem;color:var(--dim);margin-bottom:4px">📥 接收方：打开收到的 .mid 文件</div>
             <div style="display:flex;gap:4px;align-items:center">
-                <input type="file" id="midiFileInput" accept=".mid,.midi" onchange="midiDecodeFromFile()" style="flex:1;padding:8px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.75rem;outline:none;color-scheme:dark">
+                <input type="file" id="midiFileInput" accept=".mid,.midi" onchange="midiDecodeFromFile()" style="flex:1;padding:8px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.75rem;outline:none">
                 <button class="icon-btn" onclick="clearFileInput('midiFileInput')" title="清除文件" style="font-size:0.6rem;flex-shrink:0">✕</button>
             </div>
             <button class="btn btn-outline" id="midiRecvPlayBtn" onclick="toggleRecvPlay()" disabled style="width:100%;font-size:0.75rem;margin-top:4px">▶ 试听收到的文件</button>
@@ -1943,6 +1943,7 @@ function setTheme(){
     const t=THEMES[themeIdx];document.getElementById('themeName').textContent=t.name;
     try{localStorage.setItem('swiftcrypto_theme',themeIdx)}catch(e){}
     document.body.style.background=t.grad||'var(--bg)';
+    document.body.style.colorScheme=t.light?'light':'dark';
     // 标题跟随主题色渐变
     const qr=t.qr||'#7c3aed';
     const h1=document.querySelector('.topbar h1');
