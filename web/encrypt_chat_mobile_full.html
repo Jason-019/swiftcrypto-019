@@ -229,6 +229,11 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
 .chat-actions{display:flex;gap:6px;padding:4px 0}
 .empty-chat{text-align:center;color:var(--dim);font-size:0.8rem;padding:30px 0}
 /* Password strength */
+/* Lyric autocomplete */
+.lyric-ac-item{padding:8px 12px;font-size:0.72rem;color:var(--text);cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.03);line-height:1.4;transition:background .15s}
+.lyric-ac-item:hover,.lyric-ac-item:focus{background:rgba(167,139,250,0.12);color:var(--accent)}
+.lyric-ac-item mark{background:rgba(251,191,36,0.3);color:#fff;border-radius:2px;padding:0 1px}
+
 .pwd-strength{height:3px;border-radius:2px;margin:0 12px;background:rgba(255,255,255,0.06);overflow:hidden;transition:all .3s}
 .pwd-strength div{height:100%;transition:width .4s,background .4s;width:0}
 .pwd-label{font-size:0.6rem;text-align:right;padding:2px 12px 0;min-height:14px}
@@ -276,15 +281,6 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
 #qrShareModal .qr-preview canvas{display:block;border-radius:4px}
 #qrShareHint{font-size:0.8rem;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);outline:none;width:100%;box-sizing:border-box}
 #qrShareHint:focus{border-color:var(--accent)}
-/* 🐢 海龟汤 */
-#soupChatArea{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;min-height:120px;max-height:40vh;padding:4px 0}
-.soup-msg{max-width:88%;padding:8px 12px;border-radius:12px;font-size:0.78rem;line-height:1.5;animation:msgIn .3s ease}
-.soup-msg.them{align-self:flex-start;background:rgba(255,255,255,0.08);border:1px solid var(--border);border-bottom-left-radius:4px}
-.soup-msg.me{align-self:flex-end;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.2);border-bottom-right-radius:4px;color:var(--accent)}
-.soup-typing{color:var(--dim);font-style:italic}
-#soupModal .sheet{max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:16px}
-#soupModal .sheet h3{font-size:0.95rem;text-align:center}
-#soupHintBar{font-size:0.6rem;color:var(--dim);text-align:center;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.1);border-radius:6px;padding:4px 8px;line-height:1.4}
 </style>
 </head>
 <body>
@@ -341,7 +337,7 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
 <div style="display:flex;align-items:center;gap:4px;padding:4px 10px;font-size:0.75rem;color:var(--text);">
     <span>🎨</span>
     <button class="icon-btn" onclick="prevTheme()" style="width:28px;height:28px;font-size:0.8rem;flex-shrink:0">◀</button>
-    <span id="themeName" style="flex:1;min-width:0;text-align:center;font-size:clamp(0.72rem,3.5vw,1.05rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;filter:url(#fluffy-edge)">1989</span>
+    <span id="themeName" style="flex:1;min-width:0;text-align:center;font-size:clamp(0.72rem,3.5vw,1.05rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;filter:url(#fluffy-edge)">Red</span>
     <button class="icon-btn" onclick="nextTheme()" style="width:28px;height:28px;font-size:0.8rem;flex-shrink:0">▶</button>
     <span style="flex-shrink:0">☀️</span>
     <input type="range" id="bgOpacity" min="0" max="100" value="75" oninput="updateBgOpacity(this.value)" style="width:60px;flex-shrink:0;accent-color:var(--accent);">
@@ -504,12 +500,9 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
         <h3>🔗 分享加密消息</h3>
         <label style="font-size:0.75rem;color:var(--dim)">密码提示（可选，不要直接填密码！）</label>
         <input type="text" id="shareHint" placeholder="例如：我们常用的那个密码…" oninput="updateShareLink()">
-        <label style="display:flex;align-items:center;gap:6px;font-size:0.7rem;color:var(--dim);cursor:pointer;margin-top:2px">
-            <input type="checkbox" id="soupMode" onchange="updateShareLink()"> 🐢 海龟汤模式 — 接收方可向 AI 提问推理密码
-        </label>
-        <label style="font-size:0.75rem;color:var(--dim)">🎨 Eras 色块名片 — 截图发微信</label>
-        <div style="overflow-y:auto;max-height:35vh;min-height:80px;border-radius:8px;background:rgba(0,0,0,0.15);padding:6px;text-align:center"><canvas id="eraCardCanvas" style="width:100%;max-width:340px;border-radius:8px"></canvas></div>
-        <div id="shareLink">生成中…</div>
+        <label style="font-size:0.75rem;color:var(--dim);margin-top:4px">🎨 Eras 色块名片 — 截图发微信</label>
+        <div style="overflow-y:auto;max-height:50vh;min-height:100px;border-radius:8px;background:rgba(0,0,0,0.15);padding:6px;text-align:center"><canvas id="eraCardCanvas" style="width:100%;max-width:340px;border-radius:8px"></canvas></div>
+        <div id="shareLink" style="font-size:0.65rem;color:var(--dim);word-break:break-all;min-height:18px">生成中…</div>
         <div class="modal-btns">
             <div class="btn-row">
                 <button class="btn btn-primary" onclick="copyEraLink()">🔗 分享名片链接</button>
@@ -598,6 +591,17 @@ textarea[readonly]{background:rgba(15,15,28,0.5);cursor:default;border-style:sol
             <div class="lcs-options" id="optsLyric"></div>
         </div>
         <div class="preview" id="lyricPreview">选择后预览…</div>
+        <div style="font-size:0.65rem;color:var(--dim);padding:6px 0 0 0;border-top:1px solid var(--border);margin-top:6px">📤 分享时提示对方：</div>
+        <label style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:var(--dim);cursor:pointer;margin-top:4px">
+            <input type="checkbox" id="lyHintAlbum" disabled> 📀 专辑：<span id="lyHintAlbumName" style="color:var(--accent)">—</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:var(--dim);cursor:pointer;margin-top:2px">
+            <input type="checkbox" id="lyHintSong" disabled> 🎵 歌曲：<span id="lyHintSongName" style="color:var(--accent)">—</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:var(--dim);cursor:pointer;margin-top:2px">
+            <input type="checkbox" id="lyLimitTries" onchange="toggleLyLimit()"> 🔒 限制尝试次数：
+            <input type="number" id="lyLimitNum" value="5" min="1" max="20" style="width:40px;padding:1px 4px;font-size:0.6rem;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);text-align:center" disabled> 次
+        </label>
         <div class="modal-btns">
             <button class="btn btn-outline" onclick="closeLyricPicker()">取消</button>
             <button class="btn btn-primary" id="useLyricBtn" onclick="useLyric()" disabled>🔑 用作密码</button>
@@ -1747,18 +1751,45 @@ function handleIncomingShare(){
         const hp=new URLSearchParams(hash);
         const cipher=hp.get('c'),hint=hp.get('h');
         if(cipher){
+            _isEraLink=true;
+            // 同步到 eraModal 隐藏元素（保持 eraLinkDecrypt 不修改）
             document.getElementById('eraLinkCipher').value=cipher;
+            // 同时填入统一弹窗
+            document.getElementById('cipherInput').value=cipher;
             document.getElementById('cipherOutput').value=cipher;
             renderEraCard();
             const srcCanvas=document.getElementById('eraCardCanvas');
-            const dstCanvas=document.getElementById('eraLinkCardCanvas');
+            const dstCanvas=document.getElementById('lyricDecEraCanvas');
             if(srcCanvas&&dstCanvas&&srcCanvas.width){
                 dstCanvas.width=srcCanvas.width;dstCanvas.height=srcCanvas.height;
                 dstCanvas.getContext('2d').drawImage(srcCanvas,0,0);
-                dstCanvas.style.display='';
             }
-            if(hint){document.getElementById('eraLinkHint').textContent='💡 密码提示: '+decodeURIComponent(hint);document.getElementById('eraLinkHint').style.display=''}
-            openEraModal();
+            document.getElementById('lyricDecEraCipher').value=cipher;
+            document.getElementById('lyricDecEraCard').style.display='';
+            document.getElementById('lyricDecTitle').textContent='🎨 Eras 名片解码';
+            let eraHint='';
+            if(hint)eraHint='💡 密码提示: '+decodeURIComponent(hint);
+            const eal=hp.get('al'),esg=hp.get('sg'),etr=hp.get('tr');
+            if(eal)eraHint+=(eraHint?'<br>':'')+'📀 专辑：'+decodeURIComponent(eal);
+            if(esg)eraHint+=(eraHint?'<br>':'')+'🎵 歌曲：'+decodeURIComponent(esg);
+            if(etr)eraHint+=(eraHint?'<br>':'')+'🕐 最多尝试 '+etr+' 次';
+            if(eraHint){document.getElementById('lyricDecHint').innerHTML=eraHint}
+            // Lyric scope setup
+            if(eal||esg){
+                _lyricScope=null;_lyricAttempts=0;_lyricMaxAttempts=etr?parseInt(etr):0;_lyricAnswerIndex=-1;_lyricAnswerText='';_hintUsedWords.clear();
+                try{const lip=hp.get('li');if(lip!==null)_lyricAnswerIndex=parseInt(lip)}catch(e){}
+                if(esg&&typeof am!=='undefined'&&Object.keys(am).length>0&&am[eal||'']&&am[eal||''][esg]){
+                    _lyricScope=am[eal||''][esg].map(item=>({text:item.text}));
+                    if(_lyricAnswerIndex>=0&&_lyricAnswerIndex<_lyricScope.length)_lyricAnswerText=_lyricScope[_lyricAnswerIndex].text;
+                }else if(eal&&typeof am!=='undefined'&&Object.keys(am).length>0&&am[eal]){
+                    _lyricScope=[];
+                    for(const song of Object.keys(am[eal]))for(const item of am[eal][song])_lyricScope.push({text:item.text});
+                    if(_lyricAnswerIndex>=0&&_lyricAnswerIndex<_lyricScope.length)_lyricAnswerText=_lyricScope[_lyricAnswerIndex].text;
+                }
+            }
+            if(_lyricMaxAttempts>0)document.getElementById('lyricDecAttempts').textContent='🕐 剩余 '+_lyricMaxAttempts+' 次';
+            document.getElementById('lyricDecModal').style.display='flex';
+            document.getElementById('lyricDecPwd').focus();
             t('🎨 收到 Eras 名片链接，输入密码解密');
         }
     }
@@ -1957,8 +1988,12 @@ function pickSong(el){
 function pickLyric(el){
     const i=el.dataset.v;document.getElementById('trigLyric').textContent=el.textContent;toggleCS('csLyric');
     const a=document.getElementById('trigAlbum').textContent;const s=document.getElementById('trigSong').textContent;
-    _selectedLyric=am[a][s][parseInt(i)].text;document.getElementById('lyricPreview').textContent=`"${_selectedLyric}"`;document.getElementById('useLyricBtn').disabled=false;
+    _selectedLyric=am[a][s][parseInt(i)].text;_selectedAlbum=a;_selectedSong=s;_selectedLyricIndex=parseInt(i);document.getElementById('lyricPreview').textContent=`"${_selectedLyric}"`;document.getElementById('useLyricBtn').disabled=false;
+    document.getElementById('lyHintAlbum').disabled=false;document.getElementById('lyHintAlbumName').textContent=a;
+    document.getElementById('lyHintSong').disabled=false;document.getElementById('lyHintSongName').textContent=s;
 }
+let _selectedAlbum="",_selectedSong="",_selectedLyricIndex=0;
+function toggleLyLimit(){document.getElementById('lyLimitNum').disabled=!document.getElementById('lyLimitTries').checked}
 function openLyricPicker(){document.getElementById('lyricModal').classList.add('show')}
 function closeLyricPicker(){document.getElementById('lyricModal').classList.remove('show')}
 function useLyric(){
@@ -2228,145 +2263,30 @@ function buildShareUrl(){
     const hint=document.getElementById('shareHint').value.trim()||'';
     const base=location.origin==='null'||location.protocol==='file:'?location.href.split('#')[0]:location.origin+location.pathname;
     let url=base+'#c='+encodeURIComponent(b64)+(hint?'&h='+encodeURIComponent(hint):'');
-    // 🐢 海龟汤模式
-    if(document.getElementById('soupMode').checked&&hint){
-        const v=generateSoupValidator(hint);
-        if(v)url+='&soup='+encodeURIComponent(btoa(JSON.stringify(v)));
+    // Lyric hint params (same as copyEraLink)
+    if(document.getElementById('lyHintAlbum')&&document.getElementById('lyHintAlbum').checked&&_selectedAlbum){
+        url+='&al='+encodeURIComponent(_selectedAlbum);
+    }
+    if(document.getElementById('lyHintSong')&&document.getElementById('lyHintSong').checked&&_selectedSong){
+        url+='&sg='+encodeURIComponent(_selectedSong);
+    }
+    if(document.getElementById('lyHintAlbum')&&(document.getElementById('lyHintAlbum').checked||(document.getElementById('lyHintSong')&&document.getElementById('lyHintSong').checked))){
+        // If song is also shared, li is song-relative; otherwise compute flat album index
+        const hasSong=document.getElementById('lyHintSong')&&document.getElementById('lyHintSong').checked&&_selectedSong;
+        if(hasSong){
+            url+='&li='+_selectedLyricIndex;
+        }else{
+            // Build flat album array in same order as receiver will
+            const flat=[];if(typeof am!=='undefined'&&am[_selectedAlbum])for(const s of Object.keys(am[_selectedAlbum]))for(const item of am[_selectedAlbum][s])flat.push(item.text);
+            const flatIdx=flat.indexOf(_selectedLyric);
+            if(flatIdx>=0)url+='&li='+flatIdx;
+        }
+    }
+    if(document.getElementById('lyLimitTries')&&document.getElementById('lyLimitTries').checked){
+        url+='&tr='+document.getElementById('lyLimitNum').value;
     }
     return url;
 }
-function generateSoupValidator(hint){
-    // 从密码提示提取不可逆元数据
-    const len=hint.length;
-    const r=(typeof zxcvbn!=='undefined')?zxcvbn(hint):null;
-    const bits=r?Math.round(r.guesses_log10*3.321928):0;
-    // 尝试从歌词数据匹配 POS
-    let pos='?', eraTag='unknown';
-    try{
-        const hintLower=hint.toLowerCase().replace(/[^a-z0-9]/g,'');
-        for(const album of Object.keys(am)){
-            for(const song of Object.keys(am[album])){
-                for(const item of am[album][song]){
-                    const words=item.text.split(/\s+/);
-                    const posWords=(item.pos||'').split(' ');
-                    for(let i=0;i<words.length;i++){
-                        const clean=words[i].replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
-                        if(clean&&hintLower.includes(clean)&&posWords[i]&&posWords[i]!=='X'){
-                            pos=posWords[i];break;
-                        }
-                    }
-                    if(pos!=='?')break;
-                }
-                if(pos!=='?')break;
-            }
-            if(pos!=='?')break;
-        }
-    }catch(e){}
-    eraTag=THEMES[themeIdx].name.slice(0,4);
-    return{
-        v:1,
-        l:Math.min(len,99),      // 长度（模糊化：实际值，在前端显示时模糊）
-        p:pos,                    // POS: N/V/J/R/D/?
-        e:eraTag,                 // 当前 era
-        d:Math.min(5,Math.max(1,Math.ceil(bits/25))) // 难度 1-5
-    };
-}
-// ─── 🐢 海龟汤静态问答引擎 ───
-let _soupValidator=null,_soupHistory=[];
-const SOUP_HUMOR=[
-    '🐢 嗯……让我想想',
-    '🤔 这个问题有点意思',
-    '🐢 作为一只海龟，我只能根据线索推测',
-    '🔍 从元数据来看',
-    '💭 根据我手头的档案'
-];
-function staticSoupReply(question,validator){
-    const q=question.toLowerCase().replace(/[?？]/g,'').trim();
-    const D=['非常不可能','不太可能','有可能','很有可能','几乎是肯定的'][Math.min(4,validator.d-1)];
-
-    // 词性相关
-    if(/名词|noun|名字|事物|东西/i.test(q)){
-        const map={N:'是的，这是一个名词/名字',V:'不是名词，可能是个动作或状态',J:'不是名词，更像是一个描述性的词',R:'不是名词，是个副词，用来修饰动作'};
-        return map[validator.p]||'关于词性，线索还不够明确…但可以帮你缩小范围';
-    }
-    if(/动词|verb|动作|行为|状态词/i.test(q)){
-        if(validator.p==='V')return '是的，有动词的特征。可能是某个动作或者心理状态';
-        if(validator.p==='N')return '不太像动词，更接近名词或名字';
-        return '不太像典型的动词';
-    }
-    if(/形容|adjective|描述|特征|性质|颜色/i.test(q)){
-        if(validator.p==='J')return '没错，有形容词的特征，在描述某种特质';
-        return '应该不完全是形容词';
-    }
-    if(/副词|adverb|程度|方式/i.test(q)){
-        if(validator.p==='R')return '是的，像是修饰动作的副词';
-        return '不像副词';
-    }
-
-    // 长度相关
-    if(/几个|多少|长度|length|字符|字母|位数|count|字/i.test(q)){
-        const lo=Math.max(1,validator.l-2),hi=Math.min(99,validator.l+3);
-        if(hi-lo<=2)return `长度在 ${lo}-${hi} 个字符之间`;
-        return `大概 ${lo} 到 ${hi} 个字符的样子`;
-    }
-    if(/长|短/i.test(q)){
-        if(validator.l>15)return '相对来说偏长';
-        if(validator.l>8)return '中等长度，不短也不太长';
-        return '不算长';
-    }
-
-    // 专辑/Era 相关
-    if(/专辑|album|era|来源|哪张|哪首/i.test(q)){
-        const eras={1989:'和 1989 时代的气息有点像','rep':'有一丝 reputation 时期的暗黑气质','Spea':'像是 Speak Now 时期的风格','Love':'有 Lover 时期的浪漫气息','folk':'带着 folklore/evermore 的森林气息','Red':'有点 Red 时期的炽热感','Fear':'带着 Fearless 时期的勇敢感','Midn':'像是 Midnights 时期的深夜思绪','Tort':'和 TTPD 的文艺气质吻合'};
-        for(const[k,v]of Object.entries(eras))if(validator.e.startsWith(k))return v;
-        return '专辑线索暂时保密…不过和 Taylor 的某个时代有关';
-    }
-    if(/taylor|swift|霉霉/i.test(q))return '这当然是 Taylor Swift 相关的密码！具体哪个 Era 还需要你慢慢猜 🐱';
-
-    // 情感相关
-    if(/爱情|love|浪漫|romantic/i.test(q)){
-        if(validator.e.startsWith('Love')||validator.e.startsWith('Spea'))return '从年代风格来看，'+(validator.d>3?'有可能':'不太确定');
-        if(validator.e.startsWith('rep')||validator.e.startsWith('folk'))return '也许有点微妙的情感色彩';
-        return '不太好说…问问和哪个专辑有关？';
-    }
-    if(/伤心|sad|悲伤|sorrow|breakup/i.test(q)){
-        if(validator.e.startsWith('Red')||validator.e.startsWith('folk')||validator.e.startsWith('Tort'))return '有可能带着一些伤感的色彩';
-        return '不像是特别伤感的词';
-    }
-    if(/快乐|happy|欢快|fun|cheer/i.test(q)){
-        if(validator.e.startsWith('1989')||validator.e.startsWith('Fear'))return '有可能是比较明亮的词';
-        return '可能不是典型的欢快词汇';
-    }
-
-    // 模糊兜底
-    const generic=['这个角度很有意思，但我不确定。试试问"是名词吗？"或者"和哪张专辑有关？"',
-        '换种问法？比如问词性、长度、或者感情色彩',
-        '我只有有限的线索…试试更具体的问题？',
-        '海龟汤主持人挠了挠头：这个问题可能需要换个角度'];
-    return `${SOUP_HUMOR[Math.floor(Math.random()*SOUP_HUMOR.length)]}……${generic[Math.floor(Math.random()*generic.length)]}`;
-}
-function askSoup(){
-    const inp=document.getElementById('soupInput'),q=inp.value.trim();
-    if(!q||!_soupValidator)return;
-    const area=document.getElementById('soupChatArea');
-    // 用户气泡
-    area.innerHTML+=`<div class="soup-msg me">${eh(q)}</div>`;
-    // 回答
-    const reply=staticSoupReply(q,_soupValidator);
-    const msgDiv=document.createElement('div');msgDiv.className='soup-msg them';
-    area.appendChild(msgDiv);
-    // typewriter 效果
-    let i=0;
-    const tw=setInterval(()=>{msgDiv.textContent=reply.slice(0,++i);area.scrollTop=area.scrollHeight;if(i>=reply.length)clearInterval(tw)},15);
-    _soupHistory.push({role:'user',text:q},{role:'host',text:reply});
-    if(_soupHistory.length>40)_soupHistory.splice(0,2); // 最多20轮
-    try{sessionStorage.setItem('swiftcrypto_soup',JSON.stringify(_soupHistory))}catch(e){}
-    inp.value='';area.scrollTop=area.scrollHeight;
-}
-function openSoup(v){_soupValidator=v;document.getElementById('soupModal').style.display='flex';document.getElementById('soupInput').focus();}
-function closeSoup(){document.getElementById('soupModal').style.display='none'}
-function clearSoupHistory(){_soupHistory=[];document.getElementById('soupChatArea').innerHTML='<div class="soup-msg them soup-typing">🐢 历史已清除。开始新的推理吧！</div>';try{sessionStorage.removeItem('swiftcrypto_soup')}catch(e){}}
-document.getElementById('soupModal').addEventListener('click',function(e){if(e.target===this)closeSoup()});
 
 function updateShareLink(){
     const url=buildShareUrl();if(url)document.getElementById('shareLink').textContent=url;
@@ -2417,32 +2337,157 @@ function checkShareLink(){
     try{
         const hash=location.hash.slice(1);if(!hash)return;
         const params=new URLSearchParams(hash);
-        const c=params.get('c'),h=params.get('h'),soup=params.get('soup');
+        const c=params.get('c'),h=params.get('h'),al=params.get('al'),sg=params.get('sg'),tr=params.get('tr');
         if(c){
-            document.getElementById('cipherInput').value=c;
-            switchTab('dec');
-            if(h){
-                const el=document.getElementById('pwdHint');
-                document.getElementById('pwdHintText').textContent='密码提示：'+h;
-                el.style.display='';
+            const hasLyric=!!(al||sg);
+            _isEraLink=false;
+            if(hasLyric){
+                document.getElementById('cipherInput').value=c;
+                _lyricScope=null;_lyricAttempts=0;_lyricMaxAttempts=tr?parseInt(tr):0;_lyricAnswerIndex=-1;_lyricAnswerText="";_hintUsedWords.clear();
+                try{const lip=params.get("li");if(lip!==null)_lyricAnswerIndex=parseInt(lip)}catch(e){}
+                function applyLyricHint(){
+                    if(sg&&typeof am!=='undefined'&&Object.keys(am).length>0&&am[al||'']&&am[al||''][sg]){
+                        _lyricScope=am[al||''][sg].map(item=>({text:item.text}));
+                        if(_lyricAnswerIndex>=0&&_lyricAnswerIndex<_lyricScope.length)_lyricAnswerText=_lyricScope[_lyricAnswerIndex].text;
+                    }else if(al&&typeof am!=='undefined'&&Object.keys(am).length>0&&am[al]){
+                        _lyricScope=[];
+                        for(const song of Object.keys(am[al]))for(const item of am[al][song])_lyricScope.push({text:item.text});
+                        // Album-only: li is now computed as flat album index on sender side
+                        if(_lyricAnswerIndex>=0&&_lyricAnswerIndex<_lyricScope.length)_lyricAnswerText=_lyricScope[_lyricAnswerIndex].text;
+                    }
+                }
+                if(typeof am!=='undefined'&&Object.keys(am).length>0){applyLyricHint()}
+                else{const _iv=setInterval(()=>{if(typeof am!=='undefined'&&Object.keys(am).length>0){clearInterval(_iv);applyLyricHint()}},200)}
+                const lh=document.getElementById('lyricDecHint');
+                let tip='📨 收到加密消息';
+                if(h)tip+='<br>💬 '+eh(h);
+                if(al)tip+='<br>📀 专辑：'+eh(al);
+                if(sg)tip+='<br>🎵 歌曲：'+eh(sg);
+                if(tr)tip+='<br>🕐 最多尝试 '+tr+' 次';
+                lh.innerHTML=tip;
+                if(_lyricMaxAttempts>0)document.getElementById('lyricDecAttempts').textContent='🕐 剩余 '+_lyricMaxAttempts+' 次';
+                document.getElementById('lyricDecTitle').textContent='🎵 歌词密码解密';
+                document.getElementById('lyricDecModal').style.display='flex';
+                document.getElementById('lyricDecPwd').focus();
+                t('📨 收到加密消息');
+            }else{
+                document.getElementById('cipherInput').value=c;
+                document.getElementById('lyricDecHint').innerHTML='📨 收到加密消息'+(h?'<br>💬 '+eh(h):'');
+                document.getElementById('lyricDecTitle').textContent='🔐 解密消息';
+                document.getElementById('lyricDecModal').style.display='flex';
+                document.getElementById('lyricDecPwd').focus();
+                t('📨 收到分享密文！');
             }
-            // 🐢 海龟汤模式
-            if(soup){
-                try{const v=JSON.parse(atob(decodeURIComponent(soup)));
-                    _soupValidator=v;
-                    const el=document.getElementById('pwdHint');
-                    const orig=document.getElementById('pwdHintText').textContent;
-                    document.getElementById('pwdHintText').innerHTML=orig+' &nbsp;<button onclick="openSoup(_soupValidator)" style="font-size:0.6rem;padding:2px 8px;border-radius:6px;border:1px solid #f97316;background:rgba(249,115,22,0.1);color:#f97316;cursor:pointer">🐢 海龟汤提示</button>';
-                    el.style.display='';
-                    t('📨 收到加密消息 — 密码提示 + 🐢 海龟汤已就绪')
-                }catch(e){console.warn('soup parse:',e)}
-            }
-            if(!soup&&h)t('📨 收到分享密文！（密码提示已显示）');
-            else if(!soup&&!h)t('📨 收到分享密文！');
         }
     }catch(e){console.warn('checkShareLink:',e)}
 }
+
 document.getElementById('shareModal').addEventListener('click',function(e){if(e.target===this)closeShareModal()});
+
+// ========== 📀 歌词匹配引擎 ==========
+let _lyricScope=null,_lyricAttempts=0,_lyricMaxAttempts=0,_lyricAnswerIndex=-1,_lyricAnswerText="",_isEraLink=false;
+const _hintStopwords=new Set(['a','an','the','is','am','are','was','were','be','been','being','have','has','had','do','does','did','will','would','could','should','may','might','can','shall','in','on','at','to','for','of','by','it','its','and','or','but','if','so','as','no','not','we','he','she','they','me','my','you','your','i','im','ive','ill','dont','cant','wont','that','this','then','than','just','all','with','from','up','out','down','off','over','into','onto','get','got','go','too','very','here','there','now','how','when','where','who','why','what','which','some','any','each','every','both','few','more','most','other','well','also','even','still','yet','way','thing','things','much','many','one','two','let','say','said','oh','yeah','yea','ooh','la','na','da','ba','doo','woah','like','cause','til','till','aint']);
+let _hintUsedWords=new Set();
+function wordSimilarity(a,b){const wa=new Set(a.toLowerCase().replace(/[^a-z0-9 ]/g,"").split(/\s+/).filter(w=>w.length>1));const wb=new Set(b.toLowerCase().replace(/[^a-z0-9 ]/g,"").split(/\s+/).filter(w=>w.length>1));let i=0;for(const w of wa)if(wb.has(w))i++;const u=wa.size+wb.size-i;return u===0?0:Math.round(i/u*100)}
+function pickHintWord(answerText){
+    // Extract candidate words (length>2, no stopwords)
+    const candidates=answerText.toLowerCase().replace(/[^a-z0-9 ]/g,"").split(/\s+/).filter(w=>w.length>2&&!_hintStopwords.has(w));
+    if(candidates.length===0)return '???';
+    // Prefer words not yet shown
+    const fresh=candidates.filter(w=>!_hintUsedWords.has(w));
+    if(fresh.length===0){_hintUsedWords.clear();return pickHintWord(answerText)}
+    const pick=fresh[Math.floor(Math.random()*fresh.length)];
+    _hintUsedWords.add(pick);
+    return pick;
+}
+function openLyricFeedback(guess,isEra){
+    if(!_lyricAnswerText||!_lyricScope)return;
+    const sim=wordSimilarity(guess,_lyricAnswerText);
+    const exactMatch=guess.trim().toLowerCase()===_lyricAnswerText.trim().toLowerCase();
+    const hasSong=(isEra?document.getElementById('eraLinkHint').textContent:document.getElementById('lyricDecHint').textContent).includes('歌曲');
+    let html='<h3>📊 解密失败 — 歌词匹配度</h3>';
+    if(sim>=90&&exactMatch){
+        html+='<div style="text-align:center;font-size:1.1rem;padding:12px;margin:8px 0;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.2);border-radius:8px;line-height:1.5"><strong style="color:#fbbf24">⚠️ 歌词匹配但解密失败</strong></div>';
+        html+='<div style="font-size:0.75rem;color:var(--dim);text-align:center;margin:8px 0;line-height:1.5">你输入的密码与预期歌词<strong>词面完全一致</strong>，但解密仍然失败。<br>这说明发送方加密时使用的密码可能与歌词数据有<strong>细微差异</strong>（如大小写、空格、标点）。<br><br>💡 建议：请发送方重新生成链接，或与你确认确切密码。</div>';
+    }else{
+        html+='<div style="text-align:center;font-size:1.5rem;padding:12px;margin:8px 0;background:rgba(167,139,250,0.1);border-radius:8px"><strong style="color:var(--accent)">相似度 '+sim+'%</strong></div>';
+        html+='<div style="font-size:0.75rem;color:var(--dim);text-align:center;margin:8px 0">你的猜测与正确答案的词重叠率</div>';
+        const hintWord=pickHintWord(_lyricAnswerText);
+        if(hasSong){
+            html+='<div style="padding:10px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);border-radius:8px;font-size:0.72rem;text-align:center">🎵 <strong>💡 强提示</strong>：答案中包含词 <mark style="background:rgba(34,197,94,0.2);color:#22c55e;padding:2px 6px;border-radius:4px">'+hintWord+'</mark></div>';
+        }else{
+            html+='<div style="padding:10px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);border-radius:8px;font-size:0.72rem;text-align:center"><strong>💡 强提示</strong>：答案中包含词 <mark style="background:rgba(34,197,94,0.2);color:#22c55e;padding:2px 6px;border-radius:4px">'+hintWord+'</mark></div>';
+        }
+    }
+    html+='<div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-primary" onclick="closeLyricFeedback()" style="flex:1;justify-content:center">知道了</button></div>';
+    document.getElementById('lyricFeedbackContent').innerHTML=html;
+    document.getElementById('lyricFeedbackModal').style.display='flex';
+}
+function closeLyricFeedback(){document.getElementById('lyricFeedbackModal').style.display='none'}
+function filterLyricScope(query){
+    if(!_lyricScope||!query)return _lyricScope||[];
+    const q=query.toLowerCase();
+    return _lyricScope.filter(item=>item.text.toLowerCase().includes(q)).slice(0,20);
+}
+function showLyricSuggestions(){
+    const inp=document.getElementById('lyricDecPwd');
+    const ac=document.getElementById('lyricDecAutocomplete');
+    if(!_lyricScope){ac.style.display='none';return}
+    if(_lyricMaxAttempts>0&&_lyricAttempts>=_lyricMaxAttempts){ac.style.display='none';return}
+    const q=inp.value.trim();
+    const results=filterLyricScope(q);
+    if(!results.length){ac.style.display='none';return}
+    ac.innerHTML=results.map(item=>{
+        const t=item.text,idx=t.toLowerCase().indexOf(q.toLowerCase());
+        let d=t;
+        if(idx>=0&&q.length>0)d=t.slice(0,idx)+'<mark>'+t.slice(idx,idx+q.length)+'</mark>'+t.slice(idx+q.length);
+        return '<div class="lyric-ac-item" onclick="selectLyricSuggestion(this.dataset.text)" data-text="'+eh(t)+'">'+d+'</div>';
+    }).join('');
+    ac.style.display='block';
+    if(_lyricMaxAttempts>0){
+        ac.innerHTML+='<div style="font-size:0.5rem;color:var(--dim);padding:2px 8px;text-align:right">🕐 剩余 '+(_lyricMaxAttempts-_lyricAttempts)+'/'+_lyricMaxAttempts+' 次</div>';
+    }
+}
+function selectLyricSuggestion(text){
+    document.getElementById('lyricDecPwd').value=text;
+    document.getElementById('lyricDecAutocomplete').innerHTML='';
+    document.getElementById('lyricDecAutocomplete').style.display='none';
+}
+function doLyricDecrypt(){
+    if(_isEraLink){
+        // 桥接：同步值到 eraModal 隐藏元素，调用原始 eraLinkDecrypt，结果回写
+        document.getElementById('eraLinkPwd').value=document.getElementById('lyricDecPwd').value;
+        document.getElementById('eraLinkCipher').value=document.getElementById('cipherInput').value;
+        eraLinkDecrypt().then(()=>{
+            document.getElementById('lyricDecOutput').value=document.getElementById('eraLinkPlain').value;
+        });
+        return;
+    }
+    const pw=document.getElementById('lyricDecPwd').value;
+    if(!pw)return t('请输入歌词密码');
+    if(_lyricMaxAttempts>0&&_lyricAttempts>=_lyricMaxAttempts)return t('❌ 尝试次数已用完');
+    document.getElementById('password').value=pw;
+    const b64=document.getElementById('cipherInput').value;
+    if(!b64)return t('⚠️ 缺少密文');
+    if(_lyricMaxAttempts>0){_lyricAttempts++;document.getElementById('lyricDecAttempts').textContent='🕐 已尝试 '+_lyricAttempts+'/'+_lyricMaxAttempts+' 次'}
+    dk(pw).then(k=>{
+        const r=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+        return crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,NS)},k,r.slice(NS));
+    }).then(p=>{
+        let pt=new TextDecoder().decode(p);
+        const sd=checkSelfDestruct(pt);
+        if(!sd.valid){document.getElementById('lyricDecOutput').value=sd.message;t('🔥 '+sd.message);return}
+        const m2=sd.message.match(/^\[(.+?)\]/);
+        const senderId=m2?m2[1]:'';
+        const text=m2?sd.message.slice(m2[0].length):sd.message;
+        document.getElementById('lyricDecOutput').value=senderId?senderId+': '+text:text;
+        t('✅ 解密成功');
+    }).catch(e=>{
+        if(e.name==='OperationError'&&_lyricAnswerText)openLyricFeedback(pw);
+        t('❌ 密码错误');
+    });
+}
+function closeLyricDecModal(){document.getElementById('lyricDecModal').style.display='none';document.getElementById('lyricDecEraCard').style.display='none';_isEraLink=false}
 
 // ========== 💬 密语聊天模式 ==========
 let chatMsgs=[],_deviceId='';
@@ -2931,6 +2976,25 @@ async function copyEraLink(){
     const hint=document.getElementById('shareHint').value.trim();
     let url=location.origin+location.pathname+'#era=1&c='+encodeURIComponent(b64);
     if(hint)url+='&h='+encodeURIComponent(hint);
+    if(document.getElementById('lyHintAlbum')&&document.getElementById('lyHintAlbum').checked&&_selectedAlbum){
+        url+='&al='+encodeURIComponent(_selectedAlbum);
+    }
+    if(document.getElementById('lyHintSong')&&document.getElementById('lyHintSong').checked&&_selectedSong){
+        url+='&sg='+encodeURIComponent(_selectedSong);
+    }
+    if(document.getElementById('lyHintAlbum')&&(document.getElementById('lyHintAlbum').checked||(document.getElementById('lyHintSong')&&document.getElementById('lyHintSong').checked))){
+        const hasSong=document.getElementById('lyHintSong')&&document.getElementById('lyHintSong').checked&&_selectedSong;
+        if(hasSong){
+            url+='&li='+_selectedLyricIndex;
+        }else{
+            const flat=[];if(typeof am!=='undefined'&&am[_selectedAlbum])for(const s of Object.keys(am[_selectedAlbum]))for(const item of am[_selectedAlbum][s])flat.push(item.text);
+            const flatIdx=flat.indexOf(_selectedLyric);
+            if(flatIdx>=0)url+='&li='+flatIdx;
+        }
+    }
+    if(document.getElementById('lyLimitTries')&&document.getElementById('lyLimitTries').checked){
+        url+='&tr='+document.getElementById('lyLimitNum').value;
+    }
     try{await navigator.clipboard.writeText(url);t('🔗 名片链接已复制！发给对方即可')}
     catch{t('⚠️ 复制失败')}
 }
@@ -3161,8 +3225,7 @@ document.getElementById('password').addEventListener('input',saveDrafts);
         document.getElementById('draftMode').checked=true;
     }
     loadDrafts();
-    loadChat();checkShareLink();document.getElementById('deviceIdLabel').textContent=getDeviceId();setTheme();updateBgOpacity(75);uc();renderPwdHistory();
-    setTimeout(()=>handleIncomingShare(),0);
+    loadChat();document.getElementById('deviceIdLabel').textContent=getDeviceId();setTheme();updateBgOpacity(75);uc();renderPwdHistory();
 })();
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
@@ -3240,24 +3303,41 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
 <script>document.getElementById('qrShareModal').addEventListener('click',function(e){if(e.target===this)closeQRShareModal()});</script>
 <script>(function(){try{if(!localStorage.getItem('guide_dismissed')){setTimeout(()=>openGuide(),600)}}catch(e){}})()</script>
 
-<!-- 🐢 海龟汤密码提示 -->
-<div id="soupModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
-    <div class="sheet">
-        <h3>🐢 海龟汤密码提示</h3>
-        <div id="soupHintBar">💡 AI 提示仅基于元数据，不含密码原文</div>
-        <div id="soupChatArea">
-            <div class="soup-msg them soup-typing">🐢 主持人：欢迎来到海龟汤！你可以问我 yes/no 问题来推理密码。比如"是名词吗？""和某张专辑有关吗？"</div>
+<!-- 🎵 歌词密码解密弹窗 -->
+<!-- 🎵 统一解密弹窗（文字链接 + Eras 名片） -->
+<div id="lyricDecModal" style="display:none;position:fixed;inset:0;z-index:110;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);justify-content:center;align-items:flex-end">
+    <div class="sheet" style="max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:20px 18px">
+        <h3 style="font-size:0.95rem;text-align:center;margin:0" id="lyricDecTitle">🔐 解密消息</h3>
+        <div id="lyricDecHint" style="font-size:0.7rem;color:var(--accent);background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.12);padding:8px 12px;border-radius:8px;text-align:center;line-height:1.4"></div>
+        <!-- Eras 名片区域（仅 era 链接显示） -->
+        <div id="lyricDecEraCard" style="display:none;overflow-y:auto;max-height:35vh;min-height:80px;border-radius:8px;background:rgba(0,0,0,0.15);padding:6px;text-align:center">
+            <canvas id="lyricDecEraCanvas" style="width:100%;max-width:340px;border-radius:6px;background:#000"></canvas>
+            <div style="font-size:0.6rem;color:var(--dim);text-align:center;margin-top:6px">📥 密文（也可粘贴）：</div>
+            <textarea id="lyricDecEraCipher" placeholder="密文…" readonly style="width:100%;box-sizing:border-box;min-height:36px;background:transparent;border:none;font-size:0.6rem;color:var(--dim);padding:4px 0"></textarea>
         </div>
-        <div style="display:flex;gap:4px">
-            <input id="soupInput" placeholder="输入问题…" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-size:0.78rem;outline:none" onkeydown="if(event.key==='Enter')askSoup()">
-            <button class="btn btn-primary" onclick="askSoup()" style="flex:none;padding:8px 14px;font-size:0.78rem">发送</button>
+        <div style="position:relative">
+            <input type="text" id="lyricDecPwd" placeholder="输入密码…" autocomplete="off" oninput="showLyricSuggestions()" style="width:100%;box-sizing:border-box;padding:10px;font-size:0.85rem;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);outline:none">
+            <div id="lyricDecAutocomplete" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;max-height:160px;overflow-y:auto;background:rgba(20,20,45,0.98);border:1px solid var(--border);border-radius:0 0 8px 8px;box-shadow:0 8px 24px rgba(0,0,0,0.5)"></div>
         </div>
-        <div class="modal-btns">
-            <button class="btn btn-outline" onclick="closeSoup()">关闭</button>
-            <button class="btn btn-outline" onclick="clearSoupHistory()">🗑 清除记录</button>
+        <div id="lyricDecAttempts" style="font-size:0.55rem;color:var(--dim);text-align:right;min-height:14px"></div>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="doLyricDecrypt()" style="flex:1">🐈 解密</button>
+        </div>
+        <textarea id="lyricDecOutput" placeholder="解密结果…" readonly style="width:100%;box-sizing:border-box;min-height:80px;background:transparent;border:1px solid var(--border);border-radius:8px;font-size:0.8rem;color:var(--text);padding:8px"></textarea>
+        <div class="btn-row">
+            <button class="btn btn-copy" onclick="copyText('lyricDecOutput')" style="flex:1;font-size:0.7rem">📋 复制明文</button>
+            <button class="btn btn-outline" onclick="closeLyricDecModal()" style="flex:1;font-size:0.7rem">✕ 关闭</button>
         </div>
     </div>
 </div>
+<script>document.getElementById('lyricDecModal').addEventListener('click',function(e){if(e.target===this)closeLyricDecModal()});</script>
+
+<!-- 📊 歌词匹配反馈弹窗 -->
+<div id="lyricFeedbackModal" style="display:none;position:fixed;inset:0;z-index:110;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);justify-content:center;align-items:center">
+    <div class="sheet" style="max-width:340px;padding:20px;display:flex;flex-direction:column;gap:4px" id="lyricFeedbackContent"></div>
+</div>
+<script>document.getElementById('lyricFeedbackModal').addEventListener('click',function(e){if(e.target===this)this.style.display='none'});</script>
+<script>checkShareLink();handleIncomingShare();</script>
 
 </body>
 </html>
