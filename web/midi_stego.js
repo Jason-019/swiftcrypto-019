@@ -214,14 +214,12 @@ async function loadMidiOriginal(songId){
     let files;
     let r=await cache.match(pkgUrl);
     if(r){
-        files=await untarGz(r.url).catch(()=>null);
+        const buf=await r.arrayBuffer();
+        files=parseTar(await gunzipToBuf(buf));
     }
     if(!files){
-        r=await fetch(pkgUrl);
-        if(r.ok){
-            try{await cache.put(pkgUrl,r.clone())}catch(e){}
-            files=await untarGz(URL.createObjectURL(await r.blob()));
-        }
+        files=await untarGz(pkgUrl);
+        try{await cache.put(pkgUrl,new Response(await fetch(pkgUrl).then(rr=>rr.blob())))}catch(e){}
     }
     
     if(files){
@@ -543,29 +541,46 @@ let _midiSynth=null,_midiPlaying=false,_midiPlayBuf=null,_midiSynthLoading=null;
 let _midiAutoStop=null;
 let _midiPkgCache={}; // {album: {files: {name: ArrayBuffer}}}
 
-// ─── 轻量 TAR 解析器 (浏览器端，不依赖外部库) ───
-async function untarGz(url){
-    const r=await fetch(url);
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const ds=new DecompressionStream('gzip');
-    const stream=r.body.pipeThrough(ds);
-    const buf=await new Response(stream).arrayBuffer();
-    const files={};
-    let pos=0;
+// ─── 轻量 TAR 解析器 ───
+function parseTar(buf){
+    const files={};let pos=0;
     while(pos+512<=buf.byteLength){
-        const header=new Uint8Array(buf,pos,512);
-        // Check for end-of-archive (two zero blocks)
-        if(header[0]===0)break;
-        const name=new TextDecoder().decode(header.slice(0,100)).replace(/\0/g,'');
-        const size=parseInt(new TextDecoder().decode(header.slice(124,136)).replace(/\0/g,''),8)||0;
+        const h=new Uint8Array(buf.slice?buf.slice(pos,pos+512):buf,pos,512);
+        if(h[0]===0)break;
+        const name=new TextDecoder().decode(h.slice(0,100)).replace(/\0/g,'');
+        const size=parseInt(new TextDecoder().decode(h.slice(124,136)).replace(/\0/g,''),8)||0;
         pos+=512;
-        if(name&&size>0){
-            files[name]=buf.slice(pos,pos+size);
-        }
-        pos+=Math.ceil(size/512)*512; // 512-byte alignment
-        if(pos>=buf.byteLength)break;
+        if(name&&size>0)files[name]=(buf.slice?buf.slice(pos,pos+size):buf.buffer.slice(pos,pos+size));
+        pos+=Math.ceil(size/512)*512;
     }
     return files;
+}
+async function gunzipToBuf(buf){
+    const ds=new DecompressionStream('gzip');
+    const stream=new ReadableStream({start(c){c.enqueue(buf);c.close()}}).pipeThrough(ds);
+    const chunks=[];const w=new WritableStream({write(c){chunks.push(new Uint8Array(c))}});
+    await stream.pipeTo(w);
+    let len=0;for(const c of chunks)len+=c.byteLength;
+    const out=new Uint8Array(len);let off=0;
+    for(const c of chunks){out.set(c,off);off+=c.byteLength;}
+    return out;
+}
+async function untarGz(url, onProgress){
+    const r=await fetch(url);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const contentLen=parseInt(r.headers.get('content-length'))||0;
+    const reader=r.body.getReader();
+    let received=0;const chunks=[];
+    while(true){
+        const {done,value}=await reader.read();
+        if(done)break;
+        chunks.push(value);received+=value.length;
+        if(onProgress&&contentLen)onProgress(Math.round(received/contentLen*100));
+    }
+    let totalLen=0;for(const c of chunks)totalLen+=c.byteLength;
+    const raw=new Uint8Array(totalLen);let off=0;
+    for(const c of chunks){raw.set(c,off);off+=c.byteLength;}
+    return parseTar(await gunzipToBuf(raw));
 }
 
 async function initMidiSynth(){
@@ -587,19 +602,18 @@ async function initMidiSynth(){
     const toneCache=await caches.open('swiftcrypto-tone-v1');
     const tarUrl='./lib/salamander.tar.gz';
     let files;
+    t('⏳ 下载钢琴音源 0%');
     try{
-        // 尝试从缓存或网络加载 tar.gz
         let r=await toneCache.match(tarUrl);
-        if(!r){
-            r=await fetch(tarUrl);
-            if(!r.ok)throw new Error('HTTP '+r.status);
-            try{await toneCache.put(tarUrl,r.clone())}catch(e){}
+        if(r){
+            const buf=await r.arrayBuffer();
+            files=parseTar(await gunzipToBuf(buf));
+        }else{
+            files=await untarGz(tarUrl, pct=>t('⏳ 下载钢琴音源 '+pct+'%'));
+            try{await toneCache.put(tarUrl,new Response(await fetch(tarUrl).then(rr=>rr.blob())))}catch(e){}
         }
-        files=await untarGz(r.url); // 注意：r.url 可能指向缓存 URL
-        // 如果缓存的是 Response，无法拿到 .url 作为 fetch 目标。用原始 URL 重取
     }catch(e){
-        // fallback to direct fetch
-        files=await untarGz(tarUrl);
+        files=await untarGz(tarUrl, pct=>t('⏳ 下载钢琴音源 '+pct+'%'));
     }
     
     const buffers={};
