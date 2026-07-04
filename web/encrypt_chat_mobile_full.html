@@ -1890,26 +1890,11 @@ const THEMES=[
     {name:'Midnights',grad:'linear-gradient(135deg,#0a0a2a,#1a1a5c,#4a3a8b)',qr:'#4a3a8b'},
     {name:'TTPD',grad:'linear-gradient(135deg,#3d3a2a,#8b8a6a,#d4c4a0)',qr:'#8b8a6a'},
     {name:'Showgirl',grad:'linear-gradient(135deg,#3d1a00,#e87830,#5a8a2a)',qr:'#f4b027'},
-    {name:'💒👰 Wedding',grad:'linear-gradient(135deg,#faf5f0,#f2e8dc,#f8efe4,#efe0d4)',qr:'#c87080',light:true},
+    {name:'💒👰 Wedding',grad:'linear-gradient(135deg,#faf5f0,#f2e8dc,#f8efe4,#efe0d4)',qr:'#c87080'},
 ];
 // 从主题色计算完整 CSS 变量集
-function computeThemeVars(qr,isLight){
+function computeThemeVars(qr){
     const a=qr||'#7c3aed';
-    if(isLight)return{
-        bg:'#faf5f0',text:'#7a2a3d',dim:'#b8607a',
-        border:'rgba(180,100,120,0.18)',card:'rgba(255,250,248,0.85)',
-        inputBg:'rgba(235,245,252,0.95)',sheetBg:'rgba(255,250,245,0.96)',
-        modalBg:'rgba(0,0,0,0.3)',topbarBg:'rgba(255,248,245,0.94)',
-        iconBtnBg:'rgba(180,100,120,0.12)',iconBtnBorder:'rgba(180,100,120,0.2)',
-        btnGlow:'0 4px 24px rgba(200,80,110,0.35),0 1px 0 rgba(0,0,0,0.04) inset',
-        btnGlowHover:'0 6px 32px rgba(200,80,110,0.5),0 0 60px rgba(210,130,150,0.15),0 1px 0 rgba(0,0,0,0.06) inset',
-        // UI 组件
-        tabColor:'#9a6070',tabActiveColor:'#c84060',tabBorderColor:'rgba(180,100,120,0.15)',
-        btnPrimaryBg:'linear-gradient(135deg,#c87080,#a05065)',btnPrimaryText:'#fff',
-        btnOutlineText:'#8b4050',btnOutlineBorder:'rgba(180,100,120,0.3)',
-        btnCopyBg:'rgba(200,112,128,0.12)',btnCopyText:'#9a4050',
-        h3Color:'#6b2535',placeholderColor:'#b8978a'
-    };
     // 每个 Era 从自己的主题色生成独特的深色调色板
     const bg=lightenHex(a,-0.9);
     const card=hexToRgba(lightenHex(a,-0.85),0.85);
@@ -1943,13 +1928,6 @@ function setTheme(){
     const t=THEMES[themeIdx];document.getElementById('themeName').textContent=t.name;
     try{localStorage.setItem('swiftcrypto_theme',themeIdx)}catch(e){}
     document.body.style.background=t.grad||'var(--bg)';
-    const cs=t.light?'light':'dark';
-    document.body.style.colorScheme=cs;
-    document.documentElement.style.colorScheme=cs;
-    // 动态更新 color-scheme meta 标签（移动端关键）
-    let mcs=document.querySelector('meta[name="color-scheme"]');
-    if(!mcs){mcs=document.createElement('meta');mcs.name='color-scheme';document.head.appendChild(mcs);}
-    mcs.content=cs;
     // 标题跟随主题色渐变
     const qr=t.qr||'#7c3aed';
     const h1=document.querySelector('.topbar h1');
@@ -1960,7 +1938,7 @@ function setTheme(){
     // 从主题色计算并注入全部 CSS 变量
     const root=document.documentElement;
     const darker=lightenHex(qr,-0.25);
-    const vars=computeThemeVars(qr,t.light);
+    const vars=computeThemeVars(qr);
     root.style.setProperty('--accent',qr);
     root.style.setProperty('--accent2',darker);
     root.style.setProperty('--bg',vars.bg);
@@ -1994,7 +1972,7 @@ function setTheme(){
         .btn-primary{background:${vars.btnPrimaryBg}!important;color:${vars.btnPrimaryText}!important}
         .btn-outline{border-color:${vars.btnOutlineBorder}!important;color:${vars.btnOutlineText}!important}
         .btn-copy{background:${vars.btnCopyBg}!important;color:${vars.btnCopyText}!important}
-        .toast{background:${t.light?'rgba(74,21,37,0.9)':'rgba(20,20,40,0.95)'}!important;color:${t.light?'#faf5f0':'#e2e0e7'}!important}
+        .toast{background:rgba(20,20,40,0.95)!important;color:#e2e0e7!important}
         #shareLink{background:${vars.btnCopyBg}!important;color:${vars.btnCopyText}!important;border-color:${vars.btnOutlineBorder}!important}
     `;
 }
