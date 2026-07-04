@@ -1943,7 +1943,13 @@ function setTheme(){
     const t=THEMES[themeIdx];document.getElementById('themeName').textContent=t.name;
     try{localStorage.setItem('swiftcrypto_theme',themeIdx)}catch(e){}
     document.body.style.background=t.grad||'var(--bg)';
-    document.body.style.colorScheme=t.light?'light':'dark';
+    const cs=t.light?'light':'dark';
+    document.body.style.colorScheme=cs;
+    document.documentElement.style.colorScheme=cs;
+    // 动态更新 color-scheme meta 标签（移动端关键）
+    let mcs=document.querySelector('meta[name="color-scheme"]');
+    if(!mcs){mcs=document.createElement('meta');mcs.name='color-scheme';document.head.appendChild(mcs);}
+    mcs.content=cs;
     // 标题跟随主题色渐变
     const qr=t.qr||'#7c3aed';
     const h1=document.querySelector('.topbar h1');
