@@ -1363,7 +1363,12 @@ async function showMidiCacheStatus(){
         const cache=await caches.open(MIDI_CACHE);
         const keys=await cache.keys();
         if(keys.length===0){el.textContent='';return}
-        el.textContent=`${keys.length} 首 MIDI 已缓存，可离线使用`;
+        // 优先从 manifest 统计歌曲数
+        try{
+            const r=await cache.match('./midi_pkg/manifest.json');
+            if(r){const m=await r.json();const total=m.reduce((s,a)=>s+a.count,0);el.textContent=`${total} 首 MIDI (${m.length} 张专辑) 已缓存`;return}
+        }catch(e){}
+        el.textContent=`${keys.length} 张专辑已缓存，可离线使用`;
     }catch(e){el.textContent=''}
 }
 async function cacheAllMidi(){
