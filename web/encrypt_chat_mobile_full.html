@@ -1974,7 +1974,7 @@ function computeThemeVars(qr,light){
         h3Color:bright,placeholderColor:dim
     };
 }
-let themeIdx=parseInt(localStorage.getItem('swiftcrypto_theme'))||3;
+let themeIdx=parseInt(localStorage.getItem('swiftcrypto_theme'))||12;
 function setTheme(){
     const t=THEMES[themeIdx];document.getElementById('themeName').textContent=t.name;
     try{localStorage.setItem('swiftcrypto_theme',themeIdx)}catch(e){}
