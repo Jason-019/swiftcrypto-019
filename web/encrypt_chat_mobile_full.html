@@ -12,7 +12,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <title>🔐 SwiftCrypto</title>
 <script defer src="lyric_data.js"></script>
-<script defer src="lib/zxcvbn.js"></script>
+<!-- zxcvbn 改为密码框聚焦时懒加载 -->
 <style>
 :root{
     --bg:#040408;--card:rgba(20,20,40,0.8);--accent:#a78bfa;--accent2:#7c3aed;
@@ -314,7 +314,7 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
 
 <div class="pwd-row" style="flex-direction:column;gap:6px">
     <div style="display:flex;gap:6px;width:100%">
-        <input type="text" id="password" placeholder="共享密码…" autocomplete="off" oninput="updatePwdStrength()" class="pwd-masked" style="flex:1">
+        <input type="text" id="password" placeholder="共享密码…" autocomplete="off" oninput="updatePwdStrength()" onfocus="ensureZxcvbn()" class="pwd-masked" style="flex:1">
     </div>
     <div style="display:flex;gap:6px;width:100%;align-items:center">
         <button class="icon-btn" id="togglePwd" onclick="togglePwd()" title="显示/隐藏密码" style="flex:1;font-size:0.8rem">👁 显示</button>
@@ -831,6 +831,7 @@ async function dk(p){
 function showPaw(btn,text){btn._oh=btn.innerHTML;btn.innerHTML='<span class="paw-loader"><span class="paw-pad sm"></span><span class="paw-pad lg"></span><span class="paw-pad sm"></span><span class="paw-pad sm"></span></span>'+text;btn.disabled=true}
 function hidePaw(btn){if(btn._oh){btn.innerHTML=btn._oh;delete btn._oh}btn.disabled=false}
 async function doEncrypt(){
+    ensureZxcvbn();
     let p=document.getElementById('plainInput').value;if(!p)return t('请输入明文');
     if(!gp())return t('请先输入共享密码');
     const sdm=getSDMeta();if(sdm)p=sdm+p;
@@ -848,6 +849,7 @@ async function doEncrypt(){
         hidePaw(document.querySelector('#panelEnc .btn-primary'))}catch(e){hidePaw(document.querySelector('#panelEnc .btn-primary'));t('❌ '+e.message)}
 }
 async function doDecrypt(){
+    ensureZxcvbn();
     let b=document.getElementById('cipherInput').value.trim();if(!b)return t('请输入密文');
     if(isEmojiCipher(b)){b=emojiToCipher(b);document.getElementById('cipherInput').value=b;t('🎭 已识别Emoji密文')}
     stopDecryptCountdown();
@@ -1005,9 +1007,48 @@ function formatCrackTime(s){
     if(s>=60)return fmt(s/60,'分钟');
     return s.toFixed(1)+' 秒';
 }
+// ═══ 📦 懒加载工具 ═══
+const _lazyCache={};
+function lazyScript(src){
+    if(_lazyCache[src])return _lazyCache[src];
+    return _lazyCache[src]=new Promise((resolve,reject)=>{
+        const s=document.createElement('script');
+        s.src=src;s.onload=()=>resolve();s.onerror=()=>reject(new Error('load failed: '+src));
+        document.head.appendChild(s);
+    });
+}
+// zxcvbn (388KB) — 密码框聚焦或加密/解密时加载
+let _zxcvbnLoading=!1;
+function ensureZxcvbn(){
+    if(typeof zxcvbn!=='undefined')return Promise.resolve();
+    if(_zxcvbnLoading)return _zxcvbnLoading;
+    return _zxcvbnLoading=lazyScript('lib/zxcvbn.js').then(()=>{_zxcvbnLoading=null}).catch(e=>{_zxcvbnLoading=null;console.warn(e)});
+}
+// MIDI 三件套 (tone + midi.bundle + midi_stego) — 切到MIDI标签时加载
+let _midiLibsLoading=!1;
+function ensureMidiLibs(){
+    if(typeof Midi!=='undefined'&&typeof Tone!=='undefined'&&typeof midiDecodeFromFile!=='undefined')return Promise.resolve();
+    if(_midiLibsLoading)return _midiLibsLoading;
+    return _midiLibsLoading=lazyScript('lib/tone.min.js').then(()=>lazyScript('lib/midi.bundle.js')).then(()=>lazyScript('midi_stego.js?v=70')).then(()=>{_midiLibsLoading=null;initMidiTab()}).catch(e=>{_midiLibsLoading=null;console.warn(e)});
+}
+// jsQR (52KB) — 扫码时加载
+let _jsqrLoading=!1;
+function ensureJSQR(){
+    if(typeof jsQR!=='undefined')return Promise.resolve();
+    if(_jsqrLoading)return _jsqrLoading;
+    return _jsqrLoading=lazyScript('lib/jsQR.js').then(()=>{_jsqrLoading=null}).catch(e=>{_jsqrLoading=null;console.warn(e)});
+}
+// html2canvas (45KB) — 二维码截图时加载
+let _h2cLoading=!1;
+function ensureHtml2canvas(){
+    if(typeof html2canvas!=='undefined')return Promise.resolve();
+    if(_h2cLoading)return _h2cLoading;
+    return _h2cLoading=lazyScript('lib/html2canvas.min.js').then(()=>{_h2cLoading=null}).catch(e=>{_h2cLoading=null;console.warn(e)});
+}
 function updatePwdStrength(){
     const p=gp(),bar=document.getElementById('pwdStrengthBar'),lbl=document.getElementById('pwdStrengthLabel');
     if(!p){bar.style.width='0';lbl.textContent='';return}
+    ensureZxcvbn();
     if(typeof zxcvbn==='undefined'){bar.style.width='50%';bar.style.background='#eab308';lbl.textContent='⏳ 评估中…';lbl.style.color='#eab308';return}
 
     const r=zxcvbn(p);
@@ -1185,7 +1226,7 @@ function savePubKeyQR(){
 
 let _scanStream=null,_scanTimer=null;
 async function startScan(){
-    document.getElementById('scanModal').style.display='flex';
+    await ensureJSQR();
     document.getElementById('scanStatus').textContent='📷 正在启动摄像头…';
     try{
         const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
@@ -1367,7 +1408,7 @@ function copyPassword(){
 }
 function autoSavePwd(){const p=gp();if(p)savePwdHistory(p);}
 function togglePwd(){const e=document.getElementById('password'),b=document.getElementById('togglePwd');if(e.classList.contains('pwd-masked')){e.classList.remove('pwd-masked');b.textContent='🙈 隐藏'}else{e.classList.add('pwd-masked');b.textContent='👁 显示'}}
-function switchTab(tab){document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));if(tab==='enc'){document.querySelector('.tab:nth-child(1)').classList.add('active');document.getElementById('panelEnc').classList.add('active')}else if(tab==='dec'){document.querySelector('.tab:nth-child(2)').classList.add('active');document.getElementById('panelDec').classList.add('active')}else if(tab==='midi'){document.querySelector('.tab:nth-child(3)').classList.add('active');document.getElementById('panelMidi').classList.add('active');initMidiTab()}else if(tab==='chat'){document.querySelector('.tab:nth-child(4)').classList.add('active');document.getElementById('panelChat').classList.add('active');renderChat()}}
+function switchTab(tab){document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));if(tab==='enc'){document.querySelector('.tab:nth-child(1)').classList.add('active');document.getElementById('panelEnc').classList.add('active')}else if(tab==='dec'){document.querySelector('.tab:nth-child(2)').classList.add('active');document.getElementById('panelDec').classList.add('active')}else if(tab==='midi'){document.querySelector('.tab:nth-child(3)').classList.add('active');document.getElementById('panelMidi').classList.add('active');ensureMidiLibs()}else if(tab==='chat'){document.querySelector('.tab:nth-child(4)').classList.add('active');document.getElementById('panelChat').classList.add('active');renderChat()}}
 function openEraModal(){document.getElementById('eraModal').style.display='flex'}
 function closeEraModal(){document.getElementById('eraModal').style.display='none'}
 document.getElementById('eraModal').addEventListener('click',function(e){if(e.target===this)closeEraModal()});
@@ -1569,6 +1610,7 @@ function renderQRCode(){
 }
 
 async function captureQRCanvas(){
+    await ensureHtml2canvas();
     const preview=document.querySelector('#qrShareModal .qr-preview');
     if(!preview||typeof html2canvas==='undefined')return null;
     return await html2canvas(preview,{backgroundColor:'#fff',scale:2,useCORS:true,allowTaint:true});
@@ -1706,6 +1748,7 @@ async function handleDecFileInput(){
 
 let _cipherScanStream=null,_cipherScanTimer=null;
 async function startCipherScan(){
+    await ensureJSQR();
     // 复用scanModal
     document.getElementById('scanModal').style.display='flex';
     document.getElementById('scanStatus').textContent='📷 正在启动摄像头…';
@@ -3397,15 +3440,11 @@ document.getElementById('password').addEventListener('input',saveDrafts);
     loadDrafts();
     loadChat();document.getElementById('deviceIdLabel').textContent=getDeviceId();setTheme();updateBgOpacity(75);uc();renderPwdHistory();
 })();
-// PWA service worker
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js?v=21')}
+// PWA service worker — 不再使用，依赖浏览器 HTTP 缓存
+// if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js?v=21')}
 </script>
-<script src="lib/tone.min.js" defer></script>
-<script src="lib/midi.bundle.js" defer></script>
+<!-- 以下库按需懒加载：tone/midi/jsQR/html2canvas 只在对应功能触发时下载 -->
 <script src="lib/qrcode.min.js" defer></script>
-<script src="lib/jsQR.js" defer></script>
-<script src="lib/html2canvas.min.js" defer></script>
-<script src="midi_stego.js?v=70" defer></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:var(--modal-bg);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:var(--sheet-bg);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
