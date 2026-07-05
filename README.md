@@ -67,7 +67,7 @@
 | 🗜 JPEG 压缩 | Q=10 ~ 100      | 🟢 极强 — 微信最差质量也能过   |
 | 🎨 饱和度    | 5% ~ 100%       | 🟢 极强 — 95% 褪色仍可解码     |
 | 🌓 暗角      | 0 ~ 90%         | 🟢 极强 — Instagram 滤镜随便加 |
-| 🌡 色温      | -80 ~ +80       | 🟢 极强 — 白炽灯/阴天全覆盖    |
+| 🌡 色温      | -80 ~ +80       | 🟢 极强 —色温滤镜几乎全覆盖    |
 | 📺 高斯噪声  | σ=0 ~ 60       | 🟢 极强 — 严重噪点不碍事       |
 | ☀️ 亮度    | 0.40× ~ 2.50× | 🟢 强 — 6.25 倍容差            |
 | 🔍 模糊      | 0 ~ 1.0px       | 🟡 中等 — 轻微失焦可过         |
@@ -174,4 +174,4 @@
 
 > *"There will be no explanation, there will just be encryption."* 🔒
 >
-> *Made with ❤️ for Swifties who code.*
+> *Made with ❤️ by a Swiftie who codes.*
