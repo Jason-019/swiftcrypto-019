@@ -42,7 +42,7 @@
 | 12 | 🧡 Showgirl   | *The Life of A Showgirl*               | 焦糖橙 → 橄榄绿                |
 | 13 | 💒👰 Wedding  | *Special*                              | 奶油白 + 玫瑰粉 — 唯一浅色主题 |
 
-**Wedding Special** 采用独立浅色调色板（`light:true`），CSS 变量全部白/奶油系，`body::before` 遮罩用暖光代替 accent 径向渐变，专为婚礼/浪漫场景设计。**设为默认主题。**
+**Wedding Special** 采用独立浅色调色板（`light:true`），CSS 变量全部白/奶油系，`body::before` 遮罩用暖光代替 accent 径向渐变，专为近日婚礼场景设计。**设为默认主题。**
 
 ---
 
