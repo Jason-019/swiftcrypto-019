@@ -3400,12 +3400,12 @@ document.getElementById('password').addEventListener('input',saveDrafts);
 // PWA service worker
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js?v=21')}
 </script>
-<script src="lib/tone.min.js"></script>
-<script src="lib/midi.bundle.js"></script>
+<script src="lib/tone.min.js" defer></script>
+<script src="lib/midi.bundle.js" defer></script>
 <script src="lib/qrcode.min.js" defer></script>
 <script src="lib/jsQR.js" defer></script>
 <script src="lib/html2canvas.min.js" defer></script>
-</script><script src="midi_stego.js?v=70"></script>
+<script src="midi_stego.js?v=70" defer></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:var(--modal-bg);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">
     <div class="sheet" style="background:var(--sheet-bg);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
