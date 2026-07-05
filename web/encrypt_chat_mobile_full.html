@@ -1890,7 +1890,7 @@ const THEMES=[
     {name:'Midnights',grad:'linear-gradient(135deg,#0a0a2a,#1a1a5c,#4a3a8b)',qr:'#4a3a8b'},
     {name:'TTPD',grad:'linear-gradient(135deg,#3d3a2a,#8b8a6a,#d4c4a0)',qr:'#8b8a6a'},
     {name:'Showgirl',grad:'linear-gradient(135deg,#3d1a00,#e87830,#5a8a2a)',qr:'#f4b027'},
-    {name:'💒👰 Wedding',grad:'linear-gradient(135deg,#faf5f0,#f8efe4,#efe0d4)',qr:'#c87080',inputBg:'rgba(230,245,255,0.95)'},
+    {name:'💒👰 Wedding',grad:'linear-gradient(135deg,#faf5f0,#f8efe4,#efe0d4)',qr:'#c87080',inputBg:'rgba(230,245,255,0.95)',topbarBg:'rgba(255,250,245,0.94)'},
 ];
 // 从主题色计算完整 CSS 变量集
 function computeThemeVars(qr){
@@ -1949,7 +1949,7 @@ function setTheme(){
     root.style.setProperty('--input-bg',t.inputBg||vars.inputBg);
     root.style.setProperty('--sheet-bg',vars.sheetBg);
     root.style.setProperty('--modal-bg',vars.modalBg);
-    root.style.setProperty('--topbar-bg',vars.topbarBg);
+    root.style.setProperty('--topbar-bg',t.topbarBg||vars.topbarBg);
     root.style.setProperty('--icon-btn-bg',vars.iconBtnBg);
     root.style.setProperty('--icon-btn-border',vars.iconBtnBorder);
     // Accent 透明度变量（替换硬编码 rgba(167,139,250,x)）
