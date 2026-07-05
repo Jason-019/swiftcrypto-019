@@ -1,4 +1,10 @@
-# 🐈 SwiftCrypto — Taylor Swift 主题加密通信 PWA
+# 📜 License
+
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+
+**⚠️ Important**: Any modified version deployed as a network service MUST release its complete source code under the same license. See [GNU Affero General Public License v3.0](LICENSE) for full terms.
+
+# 🐈 SwiftCrypto — Taylor Swift 主题加密通信网站
 
 > *"You knew the password, so I let you in the door."* — hoax, folklore
 
@@ -31,7 +37,7 @@
 | 1  | 💚 Debut      | *Taylor Swift* (2006)                  | 森林绿 → 海洋蓝                |
 | 2  | 💛 Fearless   | *Fearless* (2008)                      | 暗金 → 亮金                    |
 | 3  | 💜 Speak Now  | *Speak Now* (2010)                     | 深紫 → 粉紫                    |
-| 4  | ❤️ Red      | *Red* (2012)                           | 暗红 → 暖橙                    |
+| 4  | ❤️ Red        | *Red* (2012)                           | 暗红 → 暖橙                    |
 | 5  | 🩵 1989       | *1989* (2014)                          | 深蓝 → 天蓝                    |
 | 6  | 🖤 Reputation | *reputation* (2017)                    | 纯黑 → 灰银                    |
 | 7  | 🩷 Lover      | *Lover* (2019)                         | 粉 → 紫 → 蓝                  |
@@ -39,14 +45,14 @@
 | 9  | 🤎 Evermore   | *evermore* (2020)                      | 暖棕 → 金橙                    |
 | 10 | 💙 Midnights  | *Midnights* (2022)                     | 深紫蓝                          |
 | 11 | 🤍 TTPD       | *The Tortured Poets Department* (2024) | 米白 → 灰褐                    |
-| 12 | 🧡 Showgirl   | *The Life of A Showgirl*               | 焦糖橙 → 橄榄绿                |
-| 13 | 💒👰 Wedding  | *Special*                              | 奶油白 + 玫瑰粉 — 唯一浅色主题 |
+| 12 | 🧡 Showgirl   | *The Life of A Showgirl* (2025)        | 焦糖橙 → 橄榄绿                |
+| 13 | 💒👰 Wedding  | *Wedding Special* (07/04/2026)         | 奶油白 + 玫瑰粉 — 唯一浅色主题 |
 
 **Wedding Special** 采用独立浅色调色板（`light:true`），CSS 变量全部白/奶油系，`body::before` 遮罩用暖光代替 accent 径向渐变，专为近日 Taylor 婚礼场景设计。**设为默认主题。**
 
 ---
 
-### 📤 多种分享方式（7 种）
+### 📤 多种分享方式（4 种）
 
 #### 🎨 Eras 色块名片 — 抗干扰图像编码
 
@@ -66,7 +72,7 @@
 | ------------ | --------------- | ------------------------------- |
 | 🗜 JPEG 压缩 | Q=10 ~ 100      | 🟢 极强 — 微信最差质量也能过   |
 | 🎨 饱和度    | 5% ~ 100%       | 🟢 极强 — 95% 褪色仍可解码     |
-| 🌓 暗角      | 0 ~ 90%         | 🟢 极强 — Instagram 滤镜随便加 |
+| 🌓 暗角      | 0 ~ 90%         | 🟢 极强 |
 | 🌡 色温      | -80 ~ +80       | 🟢 极强 —色温滤镜几乎全覆盖    |
 | 📺 高斯噪声  | σ=0 ~ 60       | 🟢 极强 — 严重噪点不碍事       |
 | ☀️ 亮度    | 0.40× ~ 2.50× | 🟢 强 — 6.25 倍容差            |
@@ -95,7 +101,7 @@
 - 音符时值和音高保持原曲不变——**听起来完全一样**
 - 3 分钟钢琴曲约 500~2000 字符容量
 - Canvas 瀑布图可视化编码音符分布
-- 一键预缓存 100+ 首 Taylor Swift 钢琴 MIDI，缓存后完全离线可用
+- 一键预缓存 200+ 首 Taylor Swift 钢琴 MIDI，缓存后完全离线可用
 
 ---
 
@@ -114,10 +120,10 @@
 
 ---
 
-### 💬 密聊模式
+### 💬 密聊记录
 
-- 气泡式聊天界面（我方渐变 / 对方边框），自动保存、搜索、导出/导入
-- 设备 ID 标识发送者（WebGL + 平台指纹），可设备注名
+- 气泡式聊天界面（我方渐变 / 对方边框），保存、搜索、导出/导入
+- 设备 ID 标识发送者（平台指纹），可设备注名
 - 📋 自动粘贴解密：切换聊天标签自动检测剪贴板密文
 - 定时焚毁消息实时倒计时，到期标记"💨 已焚毁"
 - 导出支持加密（设密码）或明文 JSON/文本，导入自动去重合并
@@ -172,6 +178,4 @@
 - 💒 Wedding Special 奶油白主题——给最重要的人写最温柔的秘密
 - 🔐 像 reputation 时代的 Taylor 一样保护隐私：定时焚毁、双重加密、隐身模式
 
-> *"There will be no explanation, there will just be encryption."* 🔒
->
 > *Made with ❤️ by a Swiftie who codes.*
