@@ -17,11 +17,11 @@
 :root{
     --bg:#040408;--card:rgba(20,20,40,0.8);--accent:#a78bfa;--accent2:#7c3aed;
     --text:#e2e0e7;--dim:#b8977a;--border:rgba(255,255,255,0.06);--r:16px;--rs:14px;
-    --input-bg:rgba(45,30,60,0.75);--sheet-bg:var(--sheet-bg);--modal-bg:var(--modal-bg);
+    --input-bg:rgba(45,30,60,0.75);--sheet-bg:rgba(20,20,45,0.98);--modal-bg:rgba(0,0,0,0.85);
     --topbar-bg:rgba(6,6,14,0.92);--icon-btn-bg:rgba(255,255,255,0.06);--icon-btn-border:rgba(255,255,255,0.1);
-    --glow:0 0 0 2px var(--a12),0 0 20px var(--a08);
+    --glow:0 0 0 2px rgba(167,139,250,0.12),0 0 20px rgba(167,139,250,0.08);
     --btn-glow:0 4px 24px rgba(124,58,237,0.35),0 1px 0 rgba(255,255,255,0.08) inset;
-    --btn-glow-hover:0 6px 32px rgba(124,58,237,0.5),0 0 60px var(--a15),0 1px 0 rgba(255,255,255,0.12) inset;
+    --btn-glow-hover:0 6px 32px rgba(124,58,237,0.5),0 0 60px rgba(167,139,250,0.15),0 1px 0 rgba(255,255,255,0.12) inset;
     --font-serif:'Palatino Linotype','Book Antiqua',Palatino,Georgia,'Songti SC','Noto Serif CJK SC',serif;
     --font-sans:-apple-system,'PingFang SC',system-ui,sans-serif;
     --fuzz:0 0 0 1px rgba(139,115,85,0.06),0 0 0 3px rgba(139,115,85,0.03);
@@ -1890,7 +1890,7 @@ const THEMES=[
     {name:'Midnights',grad:'linear-gradient(135deg,#0a0a2a,#1a1a5c,#4a3a8b)',qr:'#4a3a8b'},
     {name:'TTPD',grad:'linear-gradient(135deg,#3d3a2a,#8b8a6a,#d4c4a0)',qr:'#8b8a6a'},
     {name:'Showgirl',grad:'linear-gradient(135deg,#3d1a00,#e87830,#5a8a2a)',qr:'#f4b027'},
-    {name:'💒👰 Wedding',grad:'linear-gradient(135deg,#faf5f0,#f2e8dc,#f8efe4,#efe0d4)',qr:'#c87080',inputBg:'rgba(235,245,252,0.95)'},
+    {name:'💒👰 Wedding',grad:'linear-gradient(135deg,#faf5f0,#f8efe4,#efe0d4)',qr:'#c87080',inputBg:'rgba(230,245,255,0.95)'},
 ];
 // 从主题色计算完整 CSS 变量集
 function computeThemeVars(qr){
