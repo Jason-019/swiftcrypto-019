@@ -146,7 +146,7 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
     background:var(--sheet-bg);border-radius:16px 16px 0 0;padding:16px;
     max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;
 }
-#confirmModal .sheet,#pwdPromptModal .sheet{background:var(--sheet-bg);border-radius:14px}
+#confirmModal .sheet,#pwdPromptModal .sheet,#lyricDecModal .sheet,#lyricFeedbackModal .sheet{background:var(--sheet-bg);border-radius:14px}
 #lyricModal .sheet h3,#quizModal .sheet h3,#guideModal .sheet h3,#settingsModal .sheet h3{font-size:1rem;text-align:center;color:var(--h3-color,var(--text))}
 #quizModal .preview{background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:10px}
 #quizModal .modal-btns{display:flex;gap:8px}
@@ -2037,6 +2037,7 @@ function setTheme(){
         #hsMyPubKey,#hsPeerPubKey{background:rgba(0,0,0,0.04)!important}
         #eraScrollArea,.lyric-dec-era,#decodeEraPreview{background:rgba(0,0,0,0.04)!important}
         #eraLinkCardCanvas,#lyricDecEraCanvas{background:var(--bg)!important}
+        #lyricDecPwd{background:var(--a08)!important}
         `:''}
     `;
 }
@@ -3461,7 +3462,7 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js?v=18'
         <h3 style="font-size:0.95rem;text-align:center;margin:0" id="lyricDecTitle">🔐 解密消息</h3>
         <div id="lyricDecHint" style="font-size:0.7rem;color:var(--accent);background:var(--a08);border:1px solid var(--a12);padding:8px 12px;border-radius:8px;text-align:center;line-height:1.4"></div>
         <!-- Eras 名片区域（仅 era 链接显示） -->
-        <div id="lyricDecEraCard" style="display:none;overflow-y:auto;max-height:35vh;min-height:80px;border-radius:8px;background:rgba(0,0,0,0.15);padding:6px;text-align:center">
+        <div id="lyricDecEraCard" style="display:none;overflow-y:auto;max-height:35vh;min-height:80px;border-radius:8px;background:var(--a08);padding:6px;text-align:center">
             <canvas id="lyricDecEraCanvas" style="width:100%;max-width:340px;border-radius:6px;background:#000"></canvas>
             <div style="font-size:0.6rem;color:var(--dim);text-align:center;margin-top:6px">📥 密文（也可粘贴）：</div>
             <textarea id="lyricDecEraCipher" placeholder="密文…" readonly style="width:100%;box-sizing:border-box;min-height:36px;background:transparent;border:none;font-size:0.6rem;color:var(--dim);padding:4px 0"></textarea>
@@ -3484,7 +3485,7 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js?v=18'
 <script>document.getElementById('lyricDecModal').addEventListener('click',function(e){if(e.target===this)closeLyricDecModal()});</script>
 
 <!-- 📊 歌词匹配反馈弹窗 -->
-<div id="lyricFeedbackModal" style="display:none;position:fixed;inset:0;z-index:110;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);justify-content:center;align-items:center">
+<div id="lyricFeedbackModal" style="display:none;position:fixed;inset:0;z-index:110;background:var(--modal-bg);backdrop-filter:blur(6px);justify-content:center;align-items:center">
     <div class="sheet" style="max-width:340px;padding:20px;display:flex;flex-direction:column;gap:4px" id="lyricFeedbackContent"></div>
 </div>
 <script>document.getElementById('lyricFeedbackModal').addEventListener('click',function(e){if(e.target===this)this.style.display='none'});</script>
