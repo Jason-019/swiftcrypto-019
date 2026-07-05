@@ -3033,7 +3033,7 @@ function renderEraCard(){
         h2=((h2<<3)+h2)^ts.charCodeAt(i);h2|=0;
     }
     const hashStr='#'+(Math.abs(h1).toString(16).toUpperCase().padStart(8,'0')+Math.abs(h2).toString(16).toUpperCase().padStart(8,'0')).slice(0,12);
-    ctx.fillStyle=isLight?'rgba(0,0,0,0.18)':'rgba(255,255,255,0.5)';ctx.font='11px "Palatino Linotype","Book Antiqua",Palatino,Georgia,serif';
+    ctx.fillStyle=isLight?'rgba(0,0,0,0.08)':'rgba(255,255,255,0.5)';ctx.font='11px "Palatino Linotype","Book Antiqua",Palatino,Georgia,serif';
     ctx.textAlign='center';
     ctx.fillText(hashStr,cw/2,footerY+12);
     // 主题名
