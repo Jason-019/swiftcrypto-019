@@ -2028,6 +2028,12 @@ function setTheme(){
         .btn-copy{background:${vars.btnCopyBg}!important;color:${vars.btnCopyText}!important}
         .toast{background:rgba(20,20,40,0.95)!important;color:#e2e0e7!important}
         #shareLink{background:${vars.btnCopyBg}!important;color:${vars.btnCopyText}!important;border-color:${vars.btnOutlineBorder}!important}
+        ${t.light?`
+        .chat-input-row textarea,.sd-row .sd-time input{background:rgba(0,0,0,0.06)!important}
+        #hsMyPubKey,#hsPeerPubKey{background:rgba(0,0,0,0.04)!important}
+        #eraScrollArea,.lyric-dec-era,#decodeEraPreview{background:rgba(0,0,0,0.04)!important}
+        #eraLinkCardCanvas,#lyricDecEraCanvas{background:var(--bg)!important}
+        `:''}
     `;
 }
 function prevTheme(){themeIdx=(themeIdx-1+THEMES.length)%THEMES.length;setTheme();updateBgOpacity(document.getElementById('bgOpacity').value);}
@@ -2966,17 +2972,26 @@ function renderEraCard(){
     const ctx=cv.getContext('2d');
     const cw=cardW,ch=cardH;
 
-    // 全黑铺底防白边
-    ctx.fillStyle='#000';ctx.fillRect(0,0,cw,ch);
-
     // ── 1. 精美背景 ──
     const t=THEMES[themeIdx];
+    const isLight=t.light;
+
+    // 底：浅色主题用奶油，深色主题用纯黑
+    ctx.fillStyle=isLight?'#f5f0eb':'#000';ctx.fillRect(0,0,cw,ch);
+
     const themeColors=(t.grad&&t.grad.match(/#[0-9a-fA-F]{6}/g))||['#1a1a2e','#16213e','#0f0f1a'];
     const accent=themeColors[1]||ERA_COLORS[4];
     const bgGrad=ctx.createLinearGradient(0,0,cw,ch);
-    bgGrad.addColorStop(0,darkenHex(themeColors[0]||'#1a1a2e',0.35));
-    bgGrad.addColorStop(0.4,darkenHex(themeColors[1]||'#16213e',0.30));
-    bgGrad.addColorStop(1,darkenHex(themeColors[2]||themeColors[0]||'#0f0f1a',0.25));
+    if(isLight){
+        // 浅色主题：跟随原色但微暗，保留层次感
+        bgGrad.addColorStop(0,darkenHex(themeColors[0]||'#faf5f0',0.06));
+        bgGrad.addColorStop(0.4,darkenHex(themeColors[1]||'#f8efe4',0.06));
+        bgGrad.addColorStop(1,darkenHex(themeColors[2]||'#efe0d4',0.06));
+    }else{
+        bgGrad.addColorStop(0,darkenHex(themeColors[0]||'#1a1a2e',0.35));
+        bgGrad.addColorStop(0.4,darkenHex(themeColors[1]||'#16213e',0.30));
+        bgGrad.addColorStop(1,darkenHex(themeColors[2]||themeColors[0]||'#0f0f1a',0.25));
+    }
     ctx.fillStyle=bgGrad;roundRect(ctx,0,0,cw,ch,16);ctx.fill();
     // 边框
     ctx.strokeStyle=hexToRgba(accent,0.2);ctx.lineWidth=1.5;
@@ -2984,13 +2999,13 @@ function renderEraCard(){
 
     // ── 3. 标题区 ──
     ctx.fillStyle=accent;ctx.font='bold 16px "Palatino Linotype","Book Antiqua",Palatino,Georgia,serif';ctx.textAlign='center';
-    ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=4;
+    if(!isLight){ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=4;}
     ctx.fillText('🔐  SwiftCrypto',cw/2,24);
     ctx.shadowColor='transparent';ctx.shadowBlur=0;
 
     // ── 4. 网格区（坐标与旧版解码器严格对齐）──
     const ox=Math.floor((cw-gridW)/2),oy=36;
-    ctx.fillStyle='#000';ctx.fillRect(ox,oy,gridW,gridH);
+    ctx.fillStyle=isLight?'rgba(0,0,0,0.06)':'#000';ctx.fillRect(ox,oy,gridW,gridH);
 
     const refW=EC_REF_W,refH=EC_REF_H,refGap=(gridW-GAP*2-refW*8)/7,refY=oy+GAP;
     for(let i=0;i<8;i++){ctx.fillStyle=ERA_COLORS[i];ctx.fillRect(ox+GAP+i*(refW+refGap),refY,refW,refH)}
@@ -3005,10 +3020,10 @@ function renderEraCard(){
     const footerY=cardH-36;
     // 底部渐变条
     const ftGrad=ctx.createLinearGradient(0,footerY-8,0,cardH);
-    ftGrad.addColorStop(0,'rgba(0,0,0,0)');ftGrad.addColorStop(1,hexToRgba(accent,0.12));
+    ftGrad.addColorStop(0,'rgba(0,0,0,0)');ftGrad.addColorStop(1,hexToRgba(accent,isLight?0.08:0.12));
     ctx.fillStyle=ftGrad;ctx.fillRect(0,footerY-8,cw,cardH-footerY+8);
     // 装饰线
-    ctx.strokeStyle=hexToRgba(accent,0.25);ctx.lineWidth=1;
+    ctx.strokeStyle=hexToRgba(accent,isLight?0.18:0.25);ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(cw*0.15,footerY-2);ctx.lineTo(cw*0.85,footerY-2);ctx.stroke();
     // 时间戳哈希 (48-bit → 12 hex)
     const ts=Date.now().toString();
@@ -3018,7 +3033,7 @@ function renderEraCard(){
         h2=((h2<<3)+h2)^ts.charCodeAt(i);h2|=0;
     }
     const hashStr='#'+(Math.abs(h1).toString(16).toUpperCase().padStart(8,'0')+Math.abs(h2).toString(16).toUpperCase().padStart(8,'0')).slice(0,12);
-    ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='11px "Palatino Linotype","Book Antiqua",Palatino,Georgia,serif';
+    ctx.fillStyle=isLight?'rgba(0,0,0,0.18)':'rgba(255,255,255,0.5)';ctx.font='11px "Palatino Linotype","Book Antiqua",Palatino,Georgia,serif';
     ctx.textAlign='center';
     ctx.fillText(hashStr,cw/2,footerY+12);
     // 主题名
