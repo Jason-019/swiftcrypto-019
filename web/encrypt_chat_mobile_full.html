@@ -2094,13 +2094,19 @@ document.addEventListener('click',e=>{if(!e.target.closest('.lyric-custom-select
     if(typeof LD!=='string'||!LD)return;
     const lines=LD.split('\n');
     const posLines=(typeof POS==='string'&&POS)?POS.split('\n'):[];
-    for(let i=0;i<lines.length;i++){
+    // 优化：手动解析，避免 split/slice/join 创建巨量临时数组
+    for(let i=0,len=lines.length;i<len;i++){
         const line=lines[i];
-        const parts=line.split('|');
-        if(parts.length>=3){
-            const ai=parseInt(parts[0]),si=parseInt(parts[1]),l=parts.slice(2).join('|');
-            const a=A[ai],s=S[si];
-            if(a&&s){if(!am[a])am[a]={};if(!am[a][s])am[a][s]=[];am[a][s].push({text:l,pos:posLines[i]||''})}
+        const p1=line.indexOf('|');
+        if(p1<0)continue;
+        const p2=line.indexOf('|',p1+1);
+        if(p2<0)continue;
+        const ai=+line.substring(0,p1),si=+line.substring(p1+1,p2);
+        const a=A[ai],s=S[si];
+        if(a&&s){
+            const bucket=am[a]||(am[a]={});
+            const list=bucket[s]||(bucket[s]=[]);
+            list.push({text:line.substring(p2+1),pos:posLines[i]||''});
         }
     }
     const o=document.getElementById('optsAlbum');
