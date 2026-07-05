@@ -1880,7 +1880,7 @@ async function genPwd(){
 const THEMES=[
     {name:'Debut',grad:'linear-gradient(135deg,#0a4a3a,#1a6b5a,#0d5c8a)',qr:'#75b695'},
     {name:'Fearless',grad:'linear-gradient(135deg,#dabe4c,#b8860b,#4a2a00)',qr:'#e0d0b9'},
-    {name:'Speak Now',grad:'linear-gradient(135deg,#4a0a2a,#c44a7a,#7a3ac4)',qr:'#8e4585'},
+    {name:'Speak Now',grad:'linear-gradient(135deg,#4a0a2a,#c44a7a,#7a3ac4)',qr:'#d8bfd8'},
     {name:'Red',grad:'linear-gradient(135deg,#3a1010,#6b2020,#c4524a)',qr:'#c4524a'},
     {name:'1989',grad:'linear-gradient(135deg,#1a3a5c,#4a8ab5,#c4ddf0)',qr:'#3a7ab5'},
     {name:'Reputation',grad:'linear-gradient(135deg,#0a0a0a,#2a2a2a,#5a5a5a)',qr:'#ccc'},
@@ -1890,11 +1890,39 @@ const THEMES=[
     {name:'Midnights',grad:'linear-gradient(135deg,#0a0a2a,#1a1a5c,#4a3a8b)',qr:'#4a3a8b'},
     {name:'TTPD',grad:'linear-gradient(135deg,#3d3a2a,#8b8a6a,#d4c4a0)',qr:'#8b8a6a'},
     {name:'Showgirl',grad:'linear-gradient(135deg,#3d1a00,#e87830,#5a8a2a)',qr:'#f4b027'},
-    {name:'💒👰 Wedding',grad:'linear-gradient(135deg,#faf5f0,#f8efe4,#efe0d4)',qr:'#c87080',inputBg:'rgba(230,245,255,0.95)',topbarBg:'rgba(255,250,245,0.94)'},
+    {name:'💒👰 Wedding',grad:'linear-gradient(135deg,#faf5f0,#f8efe4,#efe0d4)',qr:'#c87080',light:true,inputBg:'rgba(230,245,255,0.95)',topbarBg:'rgba(255,250,245,0.94)'},
 ];
 // 从主题色计算完整 CSS 变量集
-function computeThemeVars(qr){
+function computeThemeVars(qr,light){
     const a=qr||'#7c3aed';
+    if(light){
+        // 浅色主题调色板（Wedding 等奶油底主题）
+        const bg='#f5f0eb';
+        const card='rgba(255,255,255,0.80)';
+        const sheet='rgba(255,252,248,0.96)';
+        const input='rgba(255,255,255,0.88)';
+        const topbar='rgba(255,250,245,0.94)';
+        const d='rgba(200,112,128,0.10)';
+        const dim='#9a8088';
+        const iconBg='rgba(200,112,128,0.06)';
+        const iconBorder='rgba(200,112,128,0.12)';
+        const bright=a;
+        const mid=lightenHex(a,-0.10);
+        const muted='rgba(200,112,128,0.18)';
+        return {
+            bg,text:'#3d2028',dim,
+            border:d,card,inputBg:input,sheetBg:sheet,
+            modalBg:'rgba(0,0,0,0.55)',topbarBg:topbar,
+            iconBtnBg:iconBg,iconBtnBorder:iconBorder,
+            btnGlow:'0 4px 24px '+hexToRgba(a,0.28)+',0 1px 0 rgba(255,255,255,0.6) inset',
+            btnGlowHover:'0 6px 32px '+hexToRgba(a,0.4)+',0 0 60px '+hexToRgba(a,0.12)+',0 1px 0 rgba(255,255,255,0.7) inset',
+            tabColor:dim,tabActiveColor:bright,tabBorderColor:'rgba(200,112,128,0.12)',
+            btnPrimaryBg:'linear-gradient(135deg,'+a+','+mid+')',btnPrimaryText:'#fff',
+            btnOutlineText:'#5a3038',btnOutlineBorder:'rgba(200,112,128,0.2)',
+            btnCopyBg:'rgba(200,112,128,0.10)',btnCopyText:a,
+            h3Color:bright,placeholderColor:'#b0a0a5'
+        };
+    }
     // 每个 Era 从自己的主题色生成独特的深色调色板
     const bg=lightenHex(a,-0.9);
     const card=hexToRgba(lightenHex(a,-0.85),0.85);
@@ -1929,10 +1957,8 @@ function setTheme(){
     try{localStorage.setItem('swiftcrypto_theme',themeIdx)}catch(e){}
     document.body.style.background=t.grad||'var(--bg)';
     document.body.style.setProperty('background',t.grad||'var(--bg)','important');
-    // 纯色兜底：移动端渐变可能不渲染
-    const fallbackBg=t.name==='💒👰 Wedding'?'#faf5f0':lightenHex(t.qr||'#7c3aed',-0.9);
-    document.body.style.backgroundColor=fallbackBg;
-    document.documentElement.style.backgroundColor=fallbackBg;
+    document.body.style.backgroundColor=t.light?'#f5f0eb':lightenHex(t.qr||'#7c3aed',-0.9);
+    document.documentElement.style.backgroundColor=t.light?'#f5f0eb':lightenHex(t.qr||'#7c3aed',-0.9);
     // 标题跟随主题色渐变
     const qr=t.qr||'#7c3aed';
     const h1=document.querySelector('.topbar h1');
@@ -1943,7 +1969,7 @@ function setTheme(){
     // 从主题色计算并注入全部 CSS 变量
     const root=document.documentElement;
     const darker=lightenHex(qr,-0.25);
-    const vars=computeThemeVars(qr);
+    const vars=computeThemeVars(qr,t.light);
     root.style.setProperty('--accent',qr);
     root.style.setProperty('--accent2',darker);
     root.style.setProperty('--bg',vars.bg);
@@ -1993,10 +2019,10 @@ function updateBgOpacity(v){
         style.id = 'bgOverlayStyle';
         document.head.appendChild(style);
     }
-    const isWedding=THEMES[themeIdx]&&THEMES[themeIdx].name==='💒👰 Wedding';
-    if(isWedding){
-        // Wedding 奶油背景不需要 accent 径向渐变覆盖
-        style.textContent = 'body::before{opacity:0;background:transparent} body::after{opacity:0}';
+    const isLight=THEMES[themeIdx]&&THEMES[themeIdx].light;
+    if(isLight){
+        // 浅色主题：用奶油暖光，不用 accent 深色遮罩
+        style.textContent = 'body::before{opacity:'+glowOp+';background:radial-gradient(ellipse at 50% 0%,rgba(255,245,240,'+(glowOp*0.7)+') 0%,transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(220,180,180,'+(glowOp*0.35)+') 0%,transparent 40%)} body::after{opacity:'+(noiseOp*0.3)+'}';
     }else{
         style.textContent = 'body::before{opacity:'+glowOp+'} body::after{opacity:'+noiseOp+'}';
     }
