@@ -2983,16 +2983,18 @@ function renderEraCard(){
     const accent=themeColors[1]||ERA_COLORS[4];
     const bgGrad=ctx.createLinearGradient(0,0,cw,ch);
     if(isLight){
-        // 浅色主题：跟随原色但微暗，保留层次感
-        bgGrad.addColorStop(0,darkenHex(themeColors[0]||'#faf5f0',0.06));
-        bgGrad.addColorStop(0.4,darkenHex(themeColors[1]||'#f8efe4',0.06));
-        bgGrad.addColorStop(1,darkenHex(themeColors[2]||'#efe0d4',0.06));
+        // 浅色主题：直接用主题渐变原色
+        bgGrad.addColorStop(0,themeColors[0]||'#faf5f0');
+        bgGrad.addColorStop(0.4,themeColors[1]||'#f8efe4');
+        bgGrad.addColorStop(1,themeColors[2]||'#efe0d4');
     }else{
         bgGrad.addColorStop(0,darkenHex(themeColors[0]||'#1a1a2e',0.35));
         bgGrad.addColorStop(0.4,darkenHex(themeColors[1]||'#16213e',0.30));
         bgGrad.addColorStop(1,darkenHex(themeColors[2]||themeColors[0]||'#0f0f1a',0.25));
     }
     ctx.fillStyle=bgGrad;roundRect(ctx,0,0,cw,ch,16);ctx.fill();
+    // 微黑覆层，增加一丝深度
+    if(isLight){ctx.fillStyle='rgba(0,0,0,0.13)';roundRect(ctx,0,0,cw,ch,16);ctx.fill();}
     // 边框
     ctx.strokeStyle=hexToRgba(accent,0.2);ctx.lineWidth=1.5;
     roundRect(ctx,1,1,cw-2,ch-2,16);ctx.stroke();
@@ -3005,7 +3007,7 @@ function renderEraCard(){
 
     // ── 4. 网格区（坐标与旧版解码器严格对齐）──
     const ox=Math.floor((cw-gridW)/2),oy=36;
-    ctx.fillStyle=isLight?'rgba(0,0,0,0.06)':'#000';ctx.fillRect(ox,oy,gridW,gridH);
+    ctx.fillStyle='#000';ctx.fillRect(ox,oy,gridW,gridH);
 
     const refW=EC_REF_W,refH=EC_REF_H,refGap=(gridW-GAP*2-refW*8)/7,refY=oy+GAP;
     for(let i=0;i<8;i++){ctx.fillStyle=ERA_COLORS[i];ctx.fillRect(ox+GAP+i*(refW+refGap),refY,refW,refH)}
