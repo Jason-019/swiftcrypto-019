@@ -31,7 +31,7 @@
 | 1  | 💚 Debut      | *Taylor Swift* (2006)                  | 森林绿 → 海洋蓝                |
 | 2  | 💛 Fearless   | *Fearless* (2008)                      | 暗金 → 亮金                    |
 | 3  | 💜 Speak Now  | *Speak Now* (2010)                     | 深紫 → 粉紫                    |
-| 4  | ❤️ Red      | *Red* (2012)                           | 暗红 → 暖橙                    |
+| 4  | ❤️ Red        | *Red* (2012)                           | 暗红 → 暖橙                    |
 | 5  | 🩵 1989       | *1989* (2014)                          | 深蓝 → 天蓝                    |
 | 6  | 🖤 Reputation | *reputation* (2017)                    | 纯黑 → 灰银                    |
 | 7  | 🩷 Lover      | *Lover* (2019)                         | 粉 → 紫 → 蓝                  |
@@ -39,8 +39,8 @@
 | 9  | 🤎 Evermore   | *evermore* (2020)                      | 暖棕 → 金橙                    |
 | 10 | 💙 Midnights  | *Midnights* (2022)                     | 深紫蓝                          |
 | 11 | 🤍 TTPD       | *The Tortured Poets Department* (2024) | 米白 → 灰褐                    |
-| 12 | 🧡 Showgirl   | *The Life of A Showgirl*               | 焦糖橙 → 橄榄绿                |
-| 13 | 💒👰 Wedding  | *Special*                              | 奶油白 + 玫瑰粉 — 唯一浅色主题 |
+| 12 | 🧡 Showgirl   | *The Life of A Showgirl* (2025)        | 焦糖橙 → 橄榄绿                |
+| 13 | 💒👰 Wedding  | *Wedding Special* (07/04/2026)         | 奶油白 + 玫瑰粉 — 唯一浅色主题 |
 
 **Wedding Special** 采用独立浅色调色板（`light:true`），CSS 变量全部白/奶油系，`body::before` 遮罩用暖光代替 accent 径向渐变，专为近日 Taylor 婚礼场景设计。**设为默认主题。**
 
