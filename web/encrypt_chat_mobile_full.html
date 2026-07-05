@@ -1884,6 +1884,7 @@ async function handlePastedMidi(){
 function uc(){document.getElementById('cipherCount').textContent='密文: '+document.getElementById('cipherOutput').value.length+' 字';document.getElementById('plainCount').textContent='明文: '+document.getElementById('plainOutput').value.length+' 字'}
 async function genPwd(){
     // 从 Taylor Swift 歌词中提取 4-15 字母的单词
+    await ensureLyricLoaded();
     const lyricData=await loadLyricData();
     if(!lyricData){t('⚠️ 歌词库未加载');return}
     const text=lyricData.replace(/\|/g,' ').replace(/\n/g,' ').replace(/[^a-zA-Z ]/g,'');
@@ -2139,25 +2140,29 @@ function pickLyric(el){
 let _selectedAlbum="",_selectedSong="",_selectedLyricIndex=0;
 function toggleLyLimit(){document.getElementById('lyLimitNum').disabled=!document.getElementById('lyLimitTries').checked}
 let _lyricScriptLoaded=!1,_lyricLoading=!1;
-function openLyricPicker(){
-    if(!_lyricScriptLoaded){
-        if(_lyricLoading)return;
-        _lyricLoading=!0;
-        const s=document.createElement('script');
-        s.src='lyric_data.js';
-        s.onload=()=>{
-            _lyricScriptLoaded=!0;
-            const waitReady=()=>{
-                if(window._lyricReady){document.getElementById('lyricModal').classList.add('show');return}
-                setTimeout(waitReady,100);
-            };
-            waitReady();
+function ensureLyricLoaded(){
+    if(_lyricScriptLoaded&&window._lyricReady)return Promise.resolve();
+    return new Promise(resolve=>{
+        if(_lyricScriptLoaded&&window._lyricReady){resolve();return}
+        if(!_lyricScriptLoaded&&!_lyricLoading){
+            _lyricLoading=!0;
+            const s=document.createElement('script');
+            s.src='lyric_data.js';
+            s.onload=()=>{_lyricScriptLoaded=!0};
+            document.head.appendChild(s);
+            t('⏳ 正在加载歌词库…');
+        }
+        const waitReady=()=>{
+            if(window._lyricReady){resolve();return}
+            setTimeout(waitReady,100);
         };
-        document.head.appendChild(s);
-        t('⏳ 正在加载歌词库…');
-        return;
-    }
-    document.getElementById('lyricModal').classList.add('show');
+        waitReady();
+    });
+}
+function openLyricPicker(){
+    ensureLyricLoaded().then(()=>{
+        document.getElementById('lyricModal').classList.add('show');
+    });
 }
 function closeLyricPicker(){document.getElementById('lyricModal').classList.remove('show')}
 function showLyHintInfo(){document.getElementById('lyHintInfoModal').style.display='flex'}
@@ -2184,7 +2189,7 @@ function switchQuizMode(mode){
     document.getElementById('quizModeTrivia').style.color=mode==='trivia'?'#fff':'';
     document.getElementById('quizModeLyric').style.background=mode==='lyric'?'var(--accent2)':'';
     document.getElementById('quizModeLyric').style.color=mode==='lyric'?'#fff':'';
-    randomQuiz();
+    if(mode==='lyric'){ensureLyricLoaded().then(()=>randomQuiz())}else randomQuiz();
 }
 function randomQuiz(){
     if(_quizMode==='lyric'){randomLyricQuiz();return}
@@ -2220,18 +2225,19 @@ function randomLyricQuiz(){
         const item=lines[r1[2]%lines.length];
         text=item.text;posStr=item.pos||'';
         words=text.split(/\s+/);
-        posTags=posStr.split(' ');
+        posTags=(posStr&&posStr.length)?posStr.split(' '):[];
         if(words.length<7)continue;
         // POS-based filtering: N/V/J/R/D/P are content words, X is excluded
+        // Fallback: if no POS data available, use length-based filter only
+        const hasPOS=posTags.length===words.length;
         const candidates=words.filter((w,i)=>{
             const clean=w.replace(/[^a-zA-Z0-9]/g,'');
             if(!clean)return false;
-            // 排除含特殊符号的词（字母数字+撇号放行，如 don't / I'm）
             if(/[^a-zA-Z0-9']/.test(w))return false;
             const tag=posTags[i]||'X';
-            if(tag==='X')return false; // pronouns, prepositions, etc.
             // Numbers (digit or word) always OK regardless of length
             if(tag==='D'||/^\d+$/.test(clean))return true;
+            if(hasPOS&&tag==='X')return false;
             return clean.length>=5;
         });
         if(!candidates.length)continue;
