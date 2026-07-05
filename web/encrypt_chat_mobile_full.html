@@ -1928,6 +1928,11 @@ function setTheme(){
     const t=THEMES[themeIdx];document.getElementById('themeName').textContent=t.name;
     try{localStorage.setItem('swiftcrypto_theme',themeIdx)}catch(e){}
     document.body.style.background=t.grad||'var(--bg)';
+    document.body.style.setProperty('background',t.grad||'var(--bg)','important');
+    // 纯色兜底：移动端渐变可能不渲染
+    const fallbackBg=t.name==='💒👰 Wedding'?'#faf5f0':lightenHex(t.qr||'#7c3aed',-0.9);
+    document.body.style.backgroundColor=fallbackBg;
+    document.documentElement.style.backgroundColor=fallbackBg;
     // 标题跟随主题色渐变
     const qr=t.qr||'#7c3aed';
     const h1=document.querySelector('.topbar h1');
@@ -1976,11 +1981,10 @@ function setTheme(){
         #shareLink{background:${vars.btnCopyBg}!important;color:${vars.btnCopyText}!important;border-color:${vars.btnOutlineBorder}!important}
     `;
 }
-function prevTheme(){themeIdx=(themeIdx-1+THEMES.length)%THEMES.length;setTheme();}
-function nextTheme(){themeIdx=(themeIdx+1)%THEMES.length;setTheme();}
+function prevTheme(){themeIdx=(themeIdx-1+THEMES.length)%THEMES.length;setTheme();updateBgOpacity(document.getElementById('bgOpacity').value);}
+function nextTheme(){themeIdx=(themeIdx+1)%THEMES.length;setTheme();updateBgOpacity(document.getElementById('bgOpacity').value);}
 function updateBgOpacity(v){
     // Atmosphere slider: controls accent glow + film grain intensity
-    // 0% = clean/dark, 100% = full glow + heavy grain
     var glowOp = 0.2 + (v/100) * 0.8;
     var noiseOp = 0.01 + (v/100) * 0.1;
     let style = document.getElementById('bgOverlayStyle');
@@ -1989,8 +1993,13 @@ function updateBgOpacity(v){
         style.id = 'bgOverlayStyle';
         document.head.appendChild(style);
     }
-    style.textContent = 'body::before{opacity:'+glowOp+'} body::after{opacity:'+noiseOp+'}';
-    document.getElementById('bgOpacityVal').textContent=v+'%';
+    const isWedding=THEMES[themeIdx]&&THEMES[themeIdx].name==='💒👰 Wedding';
+    if(isWedding){
+        // Wedding 奶油背景不需要 accent 径向渐变覆盖
+        style.textContent = 'body::before{opacity:0;background:transparent} body::after{opacity:0}';
+    }else{
+        style.textContent = 'body::before{opacity:'+glowOp+'} body::after{opacity:'+noiseOp+'}';
+    }
 }
 
 // Lyrics Picker (full embedded data, custom selects)
