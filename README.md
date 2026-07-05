@@ -3,6 +3,7 @@
 This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
 
 **⚠️ Important**: Any modified version deployed as a network service MUST release its complete source code under the same license. See [GNU Affero General Public License v3.0](LICENSE) for full terms.
+**MIDI Transcriptions**: ⚠️ **NOT covered by AGPL-3.0**. Provided for personal, non-commercial use only. See [web declaration](./web/encrypt_chat_mobile_full.html#settingsStorageEst) for full terms.
 
 # 🐈 SwiftCrypto — Taylor Swift 主题加密通信网站
 
