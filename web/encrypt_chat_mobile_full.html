@@ -1776,7 +1776,7 @@ function handleIncomingShare(){
     // ── Eras 名片链接 ──
     const hash=location.hash.slice(1);
     if(hash.startsWith('era=1')){
-        if(localStorage.getItem('swiftcrypto_nopop_eras')){t('🔕 已跳过自动弹出（Eras）');return}
+        if(localStorage.getItem('swiftcrypto_no_popup_lyric')){t('🔕 已跳过自动弹出（Eras）');return}
         const hp=new URLSearchParams(hash);
         const cipher=hp.get('c'),hint=hp.get('h');
         if(cipher){
@@ -2480,6 +2480,12 @@ function checkShareLink(){
         const params=new URLSearchParams(hash);
         const c=params.get('c'),h=params.get('h'),al=params.get('al'),sg=params.get('sg'),tr=params.get('tr');
         if(c){
+            // 检查"不再提示"标记
+            if(localStorage.getItem('swiftcrypto_no_popup_lyric')){
+                document.getElementById('cipherInput').value=c;
+                t('🔕 收到分享链接（已跳过自动弹窗），密文已填入解密框');
+                return;
+            }
             const hasLyric=!!(al||sg);
             _isEraLink=false;
             if(hasLyric){
@@ -2628,7 +2634,15 @@ function doLyricDecrypt(){
         t('❌ 密码错误');
     });
 }
-function closeLyricDecModal(){document.getElementById('lyricDecModal').style.display='none';document.getElementById('lyricDecEraCard').style.display='none';_isEraLink=false}
+function closeLyricDecModal(){
+    document.getElementById('lyricDecModal').style.display='none';
+    document.getElementById('lyricDecEraCard').style.display='none';
+    _isEraLink=false;
+    if(document.getElementById('lyricDecNoPopup').checked){
+        localStorage.setItem('swiftcrypto_no_popup_lyric','1');
+        t('🔕 已设置：收到分享链接不再自动弹窗');
+    }
+}
 
 // ========== 💬 密语聊天模式 ==========
 let chatMsgs=[],_deviceId='';
@@ -3476,6 +3490,9 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js?v=18'
             <button class="btn btn-primary" onclick="doLyricDecrypt()" style="flex:1">🐈 解密</button>
         </div>
         <textarea id="lyricDecOutput" placeholder="解密结果…" readonly style="width:100%;box-sizing:border-box;min-height:80px;background:transparent;border:1px solid var(--border);border-radius:8px;font-size:0.8rem;color:var(--text);padding:8px"></textarea>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.65rem;color:var(--dim);cursor:pointer;margin:2px 0 4px 0">
+            <input type="checkbox" id="lyricDecNoPopup"> 🔕 不再自动弹出此窗口
+        </label>
         <div class="btn-row">
             <button class="btn btn-copy" onclick="copyText('lyricDecOutput')" style="flex:1;font-size:0.7rem">📋 复制明文</button>
             <button class="btn btn-outline" onclick="closeLyricDecModal()" style="flex:1;font-size:0.7rem">✕ 关闭</button>
