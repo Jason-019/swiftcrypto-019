@@ -1,4 +1,4 @@
-# 🐈 SwiftCrypto — Taylor Swift 主题加密通信 PWA
+# 🐈 SwiftCrypto — Taylor Swift 主题加密通信网站
 
 > *"You knew the password, so I let you in the door."* — hoax, folklore
 
@@ -95,7 +95,7 @@
 - 音符时值和音高保持原曲不变——**听起来完全一样**
 - 3 分钟钢琴曲约 500~2000 字符容量
 - Canvas 瀑布图可视化编码音符分布
-- 一键预缓存 100+ 首 Taylor Swift 钢琴 MIDI，缓存后完全离线可用
+- 一键预缓存 200+ 首 Taylor Swift 钢琴 MIDI，缓存后完全离线可用
 
 ---
 
@@ -172,6 +172,4 @@
 - 💒 Wedding Special 奶油白主题——给最重要的人写最温柔的秘密
 - 🔐 像 reputation 时代的 Taylor 一样保护隐私：定时焚毁、双重加密、隐身模式
 
-> *"There will be no explanation, there will just be encryption."* 🔒
->
 > *Made with ❤️ by a Swiftie who codes.*
