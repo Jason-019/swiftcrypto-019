@@ -593,20 +593,42 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
             <div class="lcs-options" id="optsLyric"></div>
         </div>
         <div class="preview" id="lyricPreview">选择后预览…</div>
-        <div style="font-size:0.65rem;color:var(--dim);padding:6px 0 0 0;border-top:1px solid var(--border);margin-top:6px">📤 分享时提示对方：</div>
-        <label style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:var(--dim);cursor:pointer;margin-top:4px">
-            <input type="checkbox" id="lyHintAlbum" disabled> 📀 专辑：<span id="lyHintAlbumName" style="color:var(--accent)">—</span>
+        <div style="font-size:0.72rem;font-weight:600;color:var(--accent);padding:8px 0 4px 0;border-top:1px solid var(--border);margin-top:8px;display:flex;align-items:center;gap:4px">📤 分享时提示对方：<button onclick="showLyHintInfo()" style="width:22px;height:22px;border-radius:50%;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-size:0.72rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;line-height:1;opacity:0.8" title="这是什么？">ℹ️</button></div>
+        <div style="background:var(--a08);border-radius:8px;padding:6px 8px;margin-top:2px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.7rem;color:var(--text);cursor:pointer;padding:3px 0">
+            <input type="checkbox" id="lyHintAlbum" disabled> 📀 专辑：<span id="lyHintAlbumName" style="color:var(--accent);font-weight:600">—</span>
         </label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:var(--dim);cursor:pointer;margin-top:2px">
-            <input type="checkbox" id="lyHintSong" disabled> 🎵 歌曲：<span id="lyHintSongName" style="color:var(--accent)">—</span>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.7rem;color:var(--text);cursor:pointer;padding:3px 0">
+            <input type="checkbox" id="lyHintSong" disabled> 🎵 歌曲：<span id="lyHintSongName" style="color:var(--accent);font-weight:600">—</span>
         </label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:var(--dim);cursor:pointer;margin-top:2px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.7rem;color:var(--text);cursor:pointer;padding:3px 0">
             <input type="checkbox" id="lyLimitTries" onchange="toggleLyLimit()"> 🔒 限制尝试次数：
-            <input type="number" id="lyLimitNum" value="5" min="1" max="20" style="width:40px;padding:1px 4px;font-size:0.6rem;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);text-align:center" disabled> 次
+            <input type="number" id="lyLimitNum" value="5" min="1" max="20" style="width:40px;padding:2px 4px;font-size:0.65rem;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,0.08);color:var(--text);text-align:center" disabled> 次
         </label>
+        </div>
         <div class="modal-btns">
             <button class="btn btn-outline" onclick="closeLyricPicker()">取消</button>
             <button class="btn btn-primary" id="useLyricBtn" onclick="useLyric()" disabled>🔑 用作密码</button>
+        </div>
+    </div>
+</div>
+
+<div id="lyHintInfoModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);justify-content:center;align-items:center">
+    <div style="background:var(--sheet-bg);border-radius:14px;padding:20px 18px;max-width:340px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,0.5);border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <span style="font-size:1.5rem">🐱</span>
+            <h3 style="margin:0;font-size:0.9rem;color:var(--accent)">Olivia 的小贴士</h3>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text);line-height:1.7">
+            <p style="margin:0 0 8px 0"><em>喵。我知道你懒得跟对方解释这些勾勾是干嘛的，所以我来。</em> 🐾</p>
+            <p style="margin:0 0 6px 0"><b>📀 专辑</b> — 勾上之后，Eras码和文字分享链接里都会自动夹带一句「来自专辑 <b style="color:var(--accent)">《xxx》</b>」。对方打开页面时，顶上会飘一行小字提醒他/她去哪个 Era 找答案。不会直接告诉他密码是什么——我没那么蠢。</p>
+            <p style="margin:0 0 6px 0"><b>🎵 歌曲</b> — 同上自动夹带，但更具体：「这首歌是 <b style="color:var(--accent)">《xxx》</b>」。对方如果连你最喜欢的歌都猜不到，那 TA 也配不上这条消息。</p>
+            <p style="margin:0 0 6px 0"><b>🔒 限制尝试次数</b> — 给对方设一个上限。比如你设 5 次，他猜错 5 次后密文就锁死了，再也解不开。适合那些你不想让对方暴力破解的场合。<em>（当然，如果你就是想看 TA 试错的样子，别勾。）</em></p>
+            <p style="margin:0 0 4px 0;padding-top:4px;border-top:1px dashed var(--border)"><b>🧠 模糊匹配</b> — 这才是最好玩的部分。对方不用把密码打得一字不差——打错一两个字、大小写不对、甚至记混了半句歌词，SwiftCrypto 都会算一个<b style="color:var(--accent)">相似度</b>出来，甚至还会每次猜错就会随机放出密码中的一个词。咪做成这样，已经给对方放海了，如果对方这都猜不出来，那咪也只能无能为力了…</p>
+            <p style="margin:0;padding-top:4px;border-top:1px solid var(--border);color:var(--dim);font-size:0.65rem">🐈 要不要加提示，你自己决定。咪困了，呼噜呼噜 ~ </p>
+        </div>
+        <div style="margin-top:10px;text-align:right">
+            <button onclick="closeLyHintInfo()" style="padding:6px 18px;border-radius:6px;border:1px solid var(--accent);background:var(--a12);color:var(--accent);cursor:pointer;font-size:0.7rem">知道了</button>
         </div>
     </div>
 </div>
@@ -1890,7 +1912,7 @@ const THEMES=[
     {name:'Midnights',grad:'linear-gradient(135deg,#0a0a2a,#1a1a5c,#4a3a8b)',qr:'#4a3a8b'},
     {name:'TTPD',grad:'linear-gradient(135deg,#3d3a2a,#8b8a6a,#d4c4a0)',qr:'#8b8a6a'},
     {name:'Showgirl',grad:'linear-gradient(135deg,#3d1a00,#e87830,#5a8a2a)',qr:'#f4b027'},
-    {name:'💒👰 Wedding',grad:'linear-gradient(135deg,#faf5f0,#f8efe4,#efe0d4)',qr:'#c87080',light:true,inputBg:'rgba(230,245,255,0.95)',topbarBg:'rgba(255,250,245,0.94)'},
+    {name:'💒👰 Wedding Special',grad:'linear-gradient(135deg,#faf5f0,#f8efe4,#efe0d4)',qr:'#c87080',light:true,inputBg:'rgba(230,245,255,0.95)',topbarBg:'rgba(255,250,245,0.94)'},
 ];
 // 从主题色计算完整 CSS 变量集
 function computeThemeVars(qr,light){
@@ -2099,6 +2121,10 @@ let _selectedAlbum="",_selectedSong="",_selectedLyricIndex=0;
 function toggleLyLimit(){document.getElementById('lyLimitNum').disabled=!document.getElementById('lyLimitTries').checked}
 function openLyricPicker(){document.getElementById('lyricModal').classList.add('show')}
 function closeLyricPicker(){document.getElementById('lyricModal').classList.remove('show')}
+function showLyHintInfo(){document.getElementById('lyHintInfoModal').style.display='flex'}
+function closeLyHintInfo(){document.getElementById('lyHintInfoModal').style.display='none'}
+// 点击遮罩关闭
+document.getElementById('lyHintInfoModal').addEventListener('click',function(e){if(e.target===this)closeLyHintInfo()});
 function useLyric(){
     const pw=document.getElementById('password');pw.value=_selectedLyric;pw.classList.remove('pwd-masked');
     document.getElementById('togglePwd').textContent='🙈 隐藏';closeLyricPicker();t('✅ 歌词已填入');updatePwdStrength();
