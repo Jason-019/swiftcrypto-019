@@ -163,11 +163,14 @@ function _updateMidiCapacityNow(){
     }
     const totalBits=_midiMeta.songs[songId].bits;
     const totalB64=_midiMeta.songs[songId].base64_chars;
+    // 保守阈值：只给用户 90% 的实际容量，留 10% 安全余量
+    const safeBits=Math.floor(totalBits*0.9);
+    const safeB64=Math.floor(totalB64*0.9);
     // Empty text → show 0 usage, full remaining
     if(!plain.trim()){
         bar.style.width='0';bar.style.background='var(--accent)';
-        const cnMax=Math.max(0,Math.floor((totalB64*3/4-28)/3));
-        lbl.textContent=`0/${totalB64} B64字符 | 剩余 ≈${totalB64} 字符 ≈${cnMax} 汉字`;
+        const cnMax=Math.max(0,Math.floor((safeB64*3/4-28)/3));
+        lbl.textContent=`0/${safeB64} B64字符 | 剩余 ≈${safeB64} 字符 ≈${cnMax} 汉字`;
         return;
     }
     // Estimate: plaintext → AES-GCM → Base64 → bits
@@ -178,21 +181,18 @@ function _updateMidiCapacityNow(){
     const b64Used=Math.ceil(cipherBytes*4/3);
     // Each Base64 char = 6 bits, plus 16-bit length header
     const bitsNeeded=b64Used*6+16;
-    // totalBits = encodable notes = max bits the song can hold
-    // totalB64  = (totalBits - 16) // 6 = max Base64 chars the song can hold
 
-    const pct=Math.min(bitsNeeded/totalBits*100,100);
+    const pct=Math.min(bitsNeeded/safeBits*100,100);
     bar.style.width=pct+'%';
     if(pct>90)bar.style.background='#ef4444';
     else if(pct>60)bar.style.background='#eab308';
     else bar.style.background='var(--accent)';
 
-    const cappedUsed=Math.min(b64Used,totalB64);
-    const remainingB64=totalB64-cappedUsed;
+    const remainingB64=safeB64-b64Used;
     // 预估剩余中文字数：Base64→bytes 逆推, 减去28字节AES开销, UTF8每汉字≈3字节
     const cnRemain=Math.max(0,Math.floor((remainingB64*3/4-28)/3));
-    lbl.textContent=`${cappedUsed}/${totalB64} B64字符 | 剩余 ≈${Math.max(0,remainingB64)} 字符 ≈${cnRemain} 汉字`;
-    if(b64Used>totalB64)lbl.textContent+=` ⚠️`;
+    lbl.textContent=`${b64Used}/${safeB64} B64字符 | 剩余 ≈${Math.max(0,remainingB64)} 字符 ≈${cnRemain} 汉字`;
+    if(b64Used>safeB64)lbl.textContent+=` ⚠️`;
 }
 async function loadMidiOriginal(songId){
     if(!_midiMeta||!_midiMeta.songs[songId])throw new Error('未知歌曲');
@@ -359,8 +359,10 @@ async function midiEncodeAndShare(){
         for(let j=15; j>=0; j--) headerBits.push((headerLen >> j) & 1);
         const fullBits = headerBits.concat(bits);
 
-        if(fullBits.length>song.bits){
-            status.textContent=`⚠️ 密文+头需要 ${fullBits.length} bits，歌曲只有 ${song.bits} bits`;
+        // 保守阈值：90% 实际容量
+        if(fullBits.length>Math.floor(song.bits*0.9)){
+            status.textContent='';
+            t('🐱 你的故事有点长，请选择其他歌曲哦');
             return;
         }
         status.textContent='🎹 正在加载原始 MIDI…';

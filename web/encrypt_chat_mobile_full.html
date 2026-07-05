@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon.svg">
 <link rel="manifest" href="./manifest.webmanifest">
 <title>🔐 SwiftCrypto</title>
-<script defer src="lyric_data.js"></script>
+<!-- lyric_data.js 懒加载：点击🪶歌词时动态加载 -->
 <script defer src="lib/zxcvbn.js"></script>
 <style>
 :root{
@@ -1776,7 +1776,7 @@ function handleIncomingShare(){
     // ── Eras 名片链接 ──
     const hash=location.hash.slice(1);
     if(hash.startsWith('era=1')){
-        if(localStorage.getItem('swiftcrypto_no_popup_lyric')){t('🔕 已跳过自动弹出（Eras）');return}
+        if(localStorage.getItem('swiftcrypto_no_popup_lyric'))return;
         const hp=new URLSearchParams(hash);
         const cipher=hp.get('c'),hint=hp.get('h');
         if(cipher){
@@ -2106,6 +2106,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.lyric-custom-select
     const o=document.getElementById('optsAlbum');
     o.innerHTML=Object.keys(am).sort().map(a=>`<div class="lcs-opt" data-v="${eh(a)}" onclick="pickAlbum(this)">${eh(a)}</div>`).join('');
     document.getElementById('trigAlbum').disabled=false;
+    window._lyricReady=!0;
 })();
 function pickAlbum(el){
     const v=el.dataset.v;document.getElementById('trigAlbum').textContent=v;toggleCS('csAlbum');
@@ -2131,7 +2132,27 @@ function pickLyric(el){
 }
 let _selectedAlbum="",_selectedSong="",_selectedLyricIndex=0;
 function toggleLyLimit(){document.getElementById('lyLimitNum').disabled=!document.getElementById('lyLimitTries').checked}
-function openLyricPicker(){document.getElementById('lyricModal').classList.add('show')}
+let _lyricScriptLoaded=!1,_lyricLoading=!1;
+function openLyricPicker(){
+    if(!_lyricScriptLoaded){
+        if(_lyricLoading)return;
+        _lyricLoading=!0;
+        const s=document.createElement('script');
+        s.src='lyric_data.js';
+        s.onload=()=>{
+            _lyricScriptLoaded=!0;
+            const waitReady=()=>{
+                if(window._lyricReady){document.getElementById('lyricModal').classList.add('show');return}
+                setTimeout(waitReady,100);
+            };
+            waitReady();
+        };
+        document.head.appendChild(s);
+        t('⏳ 正在加载歌词库…');
+        return;
+    }
+    document.getElementById('lyricModal').classList.add('show');
+}
 function closeLyricPicker(){document.getElementById('lyricModal').classList.remove('show')}
 function showLyHintInfo(){document.getElementById('lyHintInfoModal').style.display='flex'}
 function closeLyHintInfo(){document.getElementById('lyHintInfoModal').style.display='none'}
@@ -2480,12 +2501,8 @@ function checkShareLink(){
         const params=new URLSearchParams(hash);
         const c=params.get('c'),h=params.get('h'),al=params.get('al'),sg=params.get('sg'),tr=params.get('tr');
         if(c){
-            // 检查"不再提示"标记
-            if(localStorage.getItem('swiftcrypto_no_popup_lyric')){
-                document.getElementById('cipherInput').value=c;
-                t('🔕 收到分享链接（已跳过自动弹窗），密文已填入解密框');
-                return;
-            }
+            // 检查"不再提示"标记：彻底静默，不做任何事
+            if(localStorage.getItem('swiftcrypto_no_popup_lyric'))return;
             const hasLyric=!!(al||sg);
             _isEraLink=false;
             if(hasLyric){
