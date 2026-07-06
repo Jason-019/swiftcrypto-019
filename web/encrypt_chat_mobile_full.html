@@ -2092,9 +2092,10 @@ function setTheme(){
 function prevTheme(){themeIdx=(themeIdx-1+THEMES.length)%THEMES.length;setTheme();updateBgOpacity(document.getElementById('bgOpacity').value);}
 function nextTheme(){themeIdx=(themeIdx+1)%THEMES.length;setTheme();updateBgOpacity(document.getElementById('bgOpacity').value);}
 function updateBgOpacity(v){
-    // Atmosphere slider: controls accent glow + film grain intensity
-    var glowOp = 0.2 + (v/100) * 0.8;
-    var noiseOp = 0.01 + (v/100) * 0.1;
+    // Atmosphere: 0=暗夜模式 100=最亮
+    var glowOp = v/100;              // 发光层 0→1
+    var noiseOp = v/500;            // 噪点 0→0.02
+    var dimOp = (100-v)/100 * 0.55; // 暗纱 0.55→0（低亮度时加暗色遮罩）
     let style = document.getElementById('bgOverlayStyle');
     if(!style){
         style = document.createElement('style');
@@ -2103,7 +2104,9 @@ function updateBgOpacity(v){
     }
     const isLight=THEMES[themeIdx]&&THEMES[themeIdx].light;
     if(isLight){
-        style.textContent = 'body::before{opacity:'+glowOp+';background:radial-gradient(ellipse at 50% 0%,rgba(255,245,240,'+(glowOp*0.7)+') 0%,transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(220,180,180,'+(glowOp*0.35)+') 0%,transparent 40%)} body::after{opacity:'+(noiseOp*0.3)+'}';
+        // 浅色主题：暗纱 + 暖光叠加
+        style.textContent = 'body::after{opacity:'+noiseOp+'}';
+        document.body.style.boxShadow = 'inset 0 0 300px '+(v>=50?'200px':'100px')+' rgba(0,0,0,'+dimOp+')';
     }else{
         style.textContent = 'body::before{opacity:'+glowOp+'} body::after{opacity:'+noiseOp+'}';
     }
