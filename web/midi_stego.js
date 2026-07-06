@@ -603,18 +603,28 @@ async function initMidiSynth(){
     const toneCache=await caches.open('swiftcrypto-tone-v1');
     const tarUrl='./lib/salamander.tar.gz';
     let files;
-    t('⏳ 下载钢琴音源 0%');
+    let _lastPct=-5; // 节流：每5%更新一次
+    const throttledProgress = pct => {
+        if(pct - _lastPct >= 5 || pct >= 100){
+            _lastPct = pct;
+            t('⏳ 钢琴音源 '+pct+'%');
+        }
+    };
     try{
         let r=await toneCache.match(tarUrl);
         if(r){
+            t('⏳ 钢琴音源（缓存）…');
             const buf=await r.arrayBuffer();
             files=parseTar(await gunzipToBuf(buf));
         }else{
-            files=await untarGz(tarUrl, pct=>t('⏳ 下载钢琴音源 '+pct+'%'));
+            t('⏳ 钢琴音源 0%');
+            files=await untarGz(tarUrl, throttledProgress);
             try{await toneCache.put(tarUrl,new Response(await fetch(tarUrl).then(rr=>rr.blob())))}catch(e){}
         }
     }catch(e){
-        files=await untarGz(tarUrl, pct=>t('⏳ 下载钢琴音源 '+pct+'%'));
+        t('⏳ 钢琴音源 0%');
+        _lastPct=-5;
+        files=await untarGz(tarUrl, throttledProgress);
     }
     
     const buffers={};
@@ -684,7 +694,6 @@ async function toggleMidiPlay(){
         const songId=document.getElementById('midiSongSelect').value;
         if(!songId){t('⚠️ 请先挑选歌曲或接收MIDI文件');return}
     }
-    t('⏳ 正在加载音色库…');
     const synth=await initMidiSynth();
     if(!synth)return;
     try{
@@ -768,7 +777,6 @@ async function toggleRecvPlay(){
     const btn=document.getElementById('midiRecvPlayBtn');
     if(_midiRecvPlaying){stopRecvPlay();return}
     if(!_midiRecvBuf){t('⚠️ 请先接收MIDI文件');return}
-    t('⏳ 正在加载音色库…');
     const synth=await initMidiSynth();
     if(!synth)return;
     try{
