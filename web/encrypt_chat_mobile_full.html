@@ -280,8 +280,11 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
 .chat-auto-toggle input:checked+.switch{background:var(--accent)}
 .chat-auto-toggle input:checked+.switch::after{left:18px}
 /* QR分享弹窗 */
-#qrShareModal .qr-preview{background:#fff;border-radius:12px;padding:12px;display:inline-block;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+#qrShareModal .qr-preview{background:var(--card);border-radius:12px;padding:12px;display:inline-block;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
 #qrShareModal .qr-preview canvas{display:block;border-radius:4px}
+#qrShareModal .sheet{background:var(--sheet-bg)}
+#qrShareRaw{max-width:100%;overflow:hidden}
+#qrShareRaw img{max-width:100%;height:auto}
 #qrShareHint{font-size:0.8rem;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);outline:none;width:100%;box-sizing:border-box}
 #qrShareHint:focus{border-color:var(--accent)}
 </style>
@@ -550,7 +553,7 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
 
 <!-- � 自定义确认弹窗 -->
 <div id="confirmModal" style="display:none;position:fixed;inset:0;z-index:210;background:var(--modal-bg);backdrop-filter:blur(6px);justify-content:center;align-items:center">
-    <div class="sheet" style="max-width:340px;text-align:center;display:flex;flex-direction:column;gap:16px;padding:24px 20px">
+    <div class="sheet" style="max-width:340px;width:calc(100vw - 32px);text-align:center;display:flex;flex-direction:column;gap:16px;padding:24px 20px">
         <h3 id="confirmTitle" style="font-size:1.05rem;margin:0;line-height:1.4"></h3>
         <p id="confirmBody" style="font-size:0.8rem;color:var(--dim);margin:0;line-height:1.6;white-space:pre-line"></p>
         <div class="btn-row" style="flex-wrap:nowrap">
@@ -562,7 +565,7 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
 
 <!-- �🔐 密码输入弹窗（导出/导入用） -->
 <div id="pwdPromptModal" style="display:none;position:fixed;inset:0;z-index:200;background:var(--modal-bg);backdrop-filter:blur(6px);justify-content:center;align-items:center">
-    <div class="sheet" style="max-width:340px;text-align:center;display:flex;flex-direction:column;gap:14px;padding:20px 18px">
+    <div class="sheet" style="max-width:340px;width:calc(100vw - 32px);text-align:center;display:flex;flex-direction:column;gap:14px;padding:20px 18px">
         <h3 id="pwdPromptTitle" style="font-size:1rem;margin:0">🔐 请输入密码</h3>
         <p id="pwdPromptHint" style="font-size:0.7rem;color:var(--dim);margin:0;line-height:1.4"></p>
         <div style="display:flex;gap:6px">
@@ -1584,11 +1587,13 @@ function renderQRCode(){
     if(_qrRenderTimer){clearTimeout(_qrRenderTimer);_qrRenderTimer=null}
     if(typeof QRCode!=='undefined'){
         const qrColor=THEMES[themeIdx].qr||'#7c3aed';
+        // 动态尺寸适配屏幕
+        const qrSize=Math.min(280,rawDiv.clientWidth||280);
         let hintDropped=false;
-        const genQR=(pl)=>{rawDiv.innerHTML='';new QRCode(rawDiv,{text:pl,width:280,height:280,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M})};
+        const genQR=(pl)=>{rawDiv.innerHTML='';new QRCode(rawDiv,{text:pl,width:qrSize,height:qrSize,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M})};
         try{genQR(payload)}catch(e){
             console.warn('QR M-level overflow, trying L:',e);
-            try{rawDiv.innerHTML='';new QRCode(rawDiv,{text:payload,width:280,height:280,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L})}catch(e2){
+            try{rawDiv.innerHTML='';new QRCode(rawDiv,{text:payload,width:qrSize,height:qrSize,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L})}catch(e2){
                 console.warn('QR L-level overflow, removing hint');hintDropped=true;
                 genQR(baseUrl+'#c='+encodeURIComponent(b64));
             }
@@ -1665,7 +1670,7 @@ function parseQRPayload(data){
                     if(!hintEl){
                         hintEl=document.createElement('div');
                         hintEl.id='qrHintDisplay';
-                        hintEl.style.cssText='font-size:0.7rem;color:#fbbf24;background:rgba(251,191,36,0.1);padding:8px 12px;border-radius:8px;text-align:center;line-height:1.4;margin-top:4px';
+                        hintEl.style.cssText='font-size:0.7rem;color:#fbbf24;background:rgba(251,191,36,0.1);padding:8px 12px;border-radius:8px;text-align:center;line-height:1.4;margin-top:4px;max-width:100%;word-break:break-word;box-sizing:border-box';
                         const cipherInput=document.getElementById('cipherInput');
                         cipherInput.parentNode.insertBefore(hintEl,cipherInput.nextSibling);
                     }
@@ -1692,7 +1697,7 @@ function parseQRPayload(data){
                 if(!hintEl){
                     hintEl=document.createElement('div');
                     hintEl.id='qrHintDisplay';
-                    hintEl.style.cssText='font-size:0.7rem;color:#fbbf24;background:rgba(251,191,36,0.1);padding:8px 12px;border-radius:8px;text-align:center;line-height:1.4;margin-top:4px';
+                    hintEl.style.cssText='font-size:0.7rem;color:#fbbf24;background:rgba(251,191,36,0.1);padding:8px 12px;border-radius:8px;text-align:center;line-height:1.4;margin-top:4px;max-width:100%;word-break:break-word;box-sizing:border-box';
                     const cipherInput=document.getElementById('cipherInput');
                     cipherInput.parentNode.insertBefore(hintEl,cipherInput.nextSibling);
                 }
@@ -3489,7 +3494,7 @@ document.getElementById('password').addEventListener('input',saveDrafts);
 
 <!-- 📱 二维码图片分享弹窗 -->
 <div id="qrShareModal" style="display:none;position:fixed;inset:0;z-index:110;background:var(--modal-bg);backdrop-filter:blur(6px);justify-content:center;align-items:center">
-    <div class="sheet" style="text-align:center;max-width:380px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:14px">
+    <div class="sheet" style="text-align:center;max-width:380px;width:calc(100vw - 32px);padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:14px;overflow-y:auto;max-height:90vh">
         <h3 style="margin:0;font-size:1rem">📱 二维码分享</h3>
         <label style="font-size:0.7rem;color:var(--dim);width:100%;text-align:left">💡 密码提示（可选，不要直接填密码！）</label>
         <div style="width:100%;position:relative">
@@ -3498,7 +3503,7 @@ document.getElementById('password').addEventListener('input',saveDrafts);
         </div>
         <div id="qrHintWarning" style="display:none;font-size:0.6rem;color:#f97316;text-align:left;margin-top:-8px">⚠️ 提示过长，已从二维码中省略（图片中仍保留）</div>
         <div class="qr-preview" style="position:relative;display:inline-block">
-            <div id="qrShareRaw" style="width:280px;height:280px;background:#fff;border-radius:4px;overflow:hidden"></div>
+            <div id="qrShareRaw" style="width:min(280px,100%);aspect-ratio:1;background:#fff;border-radius:4px;overflow:hidden"></div>
             <div id="qrIconOverlay" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:9px;pointer-events:none;text-align:center;line-height:40px;font-size:20px;color:#fff;z-index:3">🔐</div>
         </div>
         <p style="font-size:0.65rem;color:var(--dim);margin:0">让对方用 SwiftCrypto 扫码或导入此图片</p>
@@ -3546,7 +3551,7 @@ document.getElementById('password').addEventListener('input',saveDrafts);
 
 <!-- 📊 歌词匹配反馈弹窗 -->
 <div id="lyricFeedbackModal" style="display:none;position:fixed;inset:0;z-index:110;background:var(--modal-bg);backdrop-filter:blur(6px);justify-content:center;align-items:center">
-    <div class="sheet" style="max-width:340px;padding:20px;display:flex;flex-direction:column;gap:4px" id="lyricFeedbackContent"></div>
+    <div class="sheet" style="max-width:340px;width:calc(100vw - 32px);padding:20px;display:flex;flex-direction:column;gap:4px" id="lyricFeedbackContent"></div>
 </div>
 <script>document.getElementById('lyricFeedbackModal').addEventListener('click',function(e){if(e.target===this)this.style.display='none'});</script>
 <script>checkShareLink();handleIncomingShare();</script>
