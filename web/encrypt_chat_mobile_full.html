@@ -2103,11 +2103,12 @@ function updateBgOpacity(v){
     }
     const isLight=THEMES[themeIdx]&&THEMES[themeIdx].light;
     if(isLight){
-        // 浅色主题：用奶油暖光，不用 accent 深色遮罩
         style.textContent = 'body::before{opacity:'+glowOp+';background:radial-gradient(ellipse at 50% 0%,rgba(255,245,240,'+(glowOp*0.7)+') 0%,transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(220,180,180,'+(glowOp*0.35)+') 0%,transparent 40%)} body::after{opacity:'+(noiseOp*0.3)+'}';
     }else{
         style.textContent = 'body::before{opacity:'+glowOp+'} body::after{opacity:'+noiseOp+'}';
     }
+    var lbl=document.getElementById('bgOpacityVal');
+    if(lbl)lbl.textContent=v+'%';
 }
 
 // Lyrics Picker (full embedded data, custom selects)

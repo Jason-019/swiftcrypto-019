@@ -22,8 +22,7 @@ async function initMidiTab(){
         _midiLoading=null;
     })();
     await _midiLoading;
-    // Pre-warm piano synth in background (no await, fire-and-forget)
-    if(!_midiSynth&&typeof Tone!=='undefined') initMidiSynth().catch(()=>{});
+    // 不自动预加载音色库——等用户点「试听」时按需加载，避免与 MIDI 下载争抢带宽
 }
 
 // ─── 🎹 MIDI 挑选 Modal ───
