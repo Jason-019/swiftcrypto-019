@@ -30,3 +30,4 @@ _archived/
 .DS_Store
 Thumbs.db
 svgs/*.png
+web_separated/
