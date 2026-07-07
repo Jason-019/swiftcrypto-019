@@ -146,7 +146,7 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
     background:var(--sheet-bg);border-radius:16px 16px 0 0;padding:16px;
     max-height:75vh;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:10px;
 }
-#confirmModal .sheet,#pwdPromptModal .sheet,#lyricDecModal .sheet,#lyricFeedbackModal .sheet{background:var(--sheet-bg);border-radius:14px}
+#confirmModal .sheet,#pwdPromptModal .sheet,#lyricDecModal .sheet,#lyricFeedbackModal .sheet{background:var(--sheet-bg);border-radius:14px;width:calc(100vw - 32px);max-width:420px;margin:0 auto}
 #lyricModal .sheet h3,#quizModal .sheet h3,#guideModal .sheet h3,#settingsModal .sheet h3{font-size:1rem;text-align:center;color:var(--h3-color,var(--text))}
 #quizModal .preview{background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:10px}
 #quizModal .modal-btns{display:flex;gap:8px}
@@ -367,7 +367,7 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
             </label>
             <span class="sd-opts" id="sdOpts">
                 <span class="sd-time">
-                    <input type="number" id="sdH" min="0" max="71" value="0" onchange="clampSD()"> <span style="font-size:0.65rem;color:var(--dim)">时</span>
+                    <input type="number" id="sdH" min="0" max="168" value="0" onchange="clampSD()"> <span style="font-size:0.65rem;color:var(--dim)">时</span>
                     <input type="number" id="sdM" min="0" max="59" value="0" onchange="clampSD()"> <span style="font-size:0.65rem;color:var(--dim)">分</span>
                     <input type="number" id="sdS" min="0" max="59" value="10" onchange="clampSD()"> <span style="font-size:0.65rem;color:var(--dim)">秒后销毁</span>
                 </span>
@@ -472,7 +472,7 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
             </label>
             <span class="sd-opts" id="midiSdOpts">
                 <span class="sd-time">
-                    <input type="number" id="midiSdH" min="0" max="71" value="0"> <span style="font-size:0.6rem;color:var(--dim)">时</span>
+                    <input type="number" id="midiSdH" min="0" max="168" value="0"> <span style="font-size:0.6rem;color:var(--dim)">时</span>
                     <input type="number" id="midiSdM" min="0" max="59" value="0"> <span style="font-size:0.6rem;color:var(--dim)">分</span>
                     <input type="number" id="midiSdS" min="0" max="59" value="10"> <span style="font-size:0.6rem;color:var(--dim)">秒后销毁</span>
                 </span>
@@ -837,16 +837,16 @@ async function doEncrypt(){
     ensureZxcvbn();
     let p=document.getElementById('plainInput').value;if(!p)return t('请输入明文');
     if(!gp())return t('请先输入共享密码');
-    const sdm=getSDMeta();if(sdm)p=sdm+p;
-    // 附加设备标识
-    const payload='['+getDeviceId()+']'+p;
+    const sdm=getSDMeta();
+    // SD前缀必须在deviceId前面，这样checkSelfDestruct才能匹配
+    const payload=(sdm?sdm:'')+'['+getDeviceId()+']'+p;
     const encBtn=document.querySelector('#panelEnc .btn-primary');showPaw(encBtn,'加密中…');
     try{const k=await dk(gp()),n=crypto.getRandomValues(new Uint8Array(NS)),c=await crypto.subtle.encrypt({name:'AES-GCM',iv:n},k,new TextEncoder().encode(payload)),m=new Uint8Array(n.length+c.byteLength);m.set(n);m.set(new Uint8Array(c),n.length);
         const b64=btoa(String.fromCharCode(...m));
         document.getElementById('cipherOutput').value=b64;uc();updateEmojiDisplay();autoSavePwd();
         // 同步到密聊
         const sdExp=sdm?parseInt(sdm.match(/^🔥(\d+)\|/)?.[1]||'0'):0;
-        chatMsgs.push({role:'me',text:p.replace(/^🔥\d+\|/,''),cipher:b64,time:Date.now(),device:getDeviceId(),sd:!!sdm,sdExpiry:sdExp});
+        chatMsgs.push({role:'me',text:p,cipher:b64,time:Date.now(),device:getDeviceId(),sd:!!sdm,sdExpiry:sdExp});
         saveChat();if(document.getElementById('panelChat').classList.contains('active'))renderChat();
         t(sdm?'🔥 开启焚毁程序 ('+fmtRemaining(getSDRemainFromMeta(sdm))+')':'✅ 加密完成');
         hidePaw(document.querySelector('#panelEnc .btn-primary'))}catch(e){hidePaw(document.querySelector('#panelEnc .btn-primary'));t('❌ '+e.message)}
@@ -864,7 +864,7 @@ async function doDecrypt(){
         const m2=sd.message.match(/^\[(.+?)\]/);
         const senderId=m2?m2[1]:'未知';
         const text=m2?sd.message.slice(m2[0].length):sd.message;
-        const displayText=senderId!=='未知'?senderId+': '+text:text;
+        const displayText=senderId!=='未知'?senderId+':\n'+text:text;
         typewriterOutput('plainOutput',displayText,()=>{
             if(sd.wasSD)startDecryptCountdown(sd.expiry,displayText);
         });
@@ -913,11 +913,10 @@ function clampSD(){
     const origH=h,origM=m,origS=s;
     if(m<0)m=0;if(m>59)m=59;
     if(s<0)s=0;if(s>59)s=59;
-    if(h<0)h=0;if(h>71)h=71;
+    if(h<0)h=0;if(h>168)h=168;
     const total=h*3600+m*60+s;
     if(total<10){h=0;m=0;s=10;} // minimum 10s
-    if(total>259199){h=71;m=59;s=59;} // max 71h59m59s
-    if(h===71&&m===59&&s>59)s=59;
+    if(total>604800){h=168;m=0;s=0;} // max 168h0m0s (7天)
     document.getElementById('sdH').value=h;
     document.getElementById('sdM').value=m;
     document.getElementById('sdS').value=s;
@@ -925,7 +924,7 @@ function clampSD(){
     if(origH!==h||origM!==m||origS!==s){
         const origFmt=(origH?origH+'时':'')+(origM?origM+'分':'')+origS+'秒';
         const clampFmt=(h?h+'时':'')+(m?m+'分':'')+s+'秒';
-        t('⏱ 焚毁时间已从 '+origFmt+' 调整为 '+clampFmt+'（范围10秒~71时59分59秒）');
+        t('⏱ 焚毁时间已从 '+origFmt+' 调整为 '+clampFmt+'（范围10秒~168时）');
     }
 }
 function getSDMeta(){
@@ -943,7 +942,7 @@ function clampMidiSD(){
     let h=parseInt(document.getElementById('midiSdH').value)||0,m=parseInt(document.getElementById('midiSdM').value)||0,s=parseInt(document.getElementById('midiSdS').value)||0;
     const total=h*3600+m*60+s;
     if(total<10){h=0;m=0;s=10}
-    if(total>259199){h=71;m=59;s=59}
+    if(total>604800){h=168;m=0;s=0}
     document.getElementById('midiSdH').value=h;document.getElementById('midiSdM').value=m;document.getElementById('midiSdS').value=s;
 }
 function getMidiSDMeta(){
@@ -958,7 +957,7 @@ function fmtRemaining(ms){
     const t=Math.floor(ms/1000);
     if(t<60)return t+'秒';
     if(t<3600)return Math.floor(t/60)+'分'+ (t%60?t%60+'秒':'');
-    return Math.floor(t/3600)+'小时'+ (t%3600>=60?Math.floor((t%3600)/60)+'分':'');
+    return Math.floor(t/3600)+'时'+Math.floor((t%3600)/60)+'分'+(t%60?t%60+'秒':'');
 }
 function getSDRemainFromMeta(sdm){const m=sdm.match(/^🔥(\d+)\|/);return m?parseInt(m[1])-Date.now():0;}
 // ---- Chat SD live countdown watchdog ----
@@ -1615,10 +1614,42 @@ function renderQRCode(){
 }
 
 async function captureQRCanvas(){
-    await ensureHtml2canvas();
-    const preview=document.querySelector('#qrShareModal .qr-preview');
-    if(!preview||typeof html2canvas==='undefined')return null;
-    return await html2canvas(preview,{backgroundColor:'#fff',scale:2,useCORS:true,allowTaint:true});
+    // 直接用 QR 库的原生 canvas，避免 html2canvas 二次渲染导致 jsQR 无法识别
+    const rawDiv=document.getElementById('qrShareRaw');
+    const qrCanvas=rawDiv?rawDiv.querySelector('canvas'):null;
+    if(!qrCanvas)return null;
+    // 合成猫 icon 到画布（渐变圆角方块 + 🔐 emoji）
+    const icon=document.getElementById('qrIconOverlay');
+    if(icon&&icon.style.display!=='none'){
+        const cv=document.createElement('canvas');
+        cv.width=qrCanvas.width;cv.height=qrCanvas.height;
+        const ctx=cv.getContext('2d');
+        ctx.drawImage(qrCanvas,0,0);
+        // 从 background 提取两个渐变颜色
+        const bg=icon.style.background||'';
+        const colors=bg.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/g);
+        const c1=colors?colors[0]:'rgb(180,140,200)';
+        const c2=colors?colors[1]||c1:c1;
+        // 按 QR 画布比例缩放 icon
+        const s=cv.width/280; // 280=QR库默认尺寸
+        const iw=40*s,ih=40*s,ix=(cv.width-iw)/2,iy=(cv.height-ih)/2,r=9*s;
+        // 圆角方块
+        ctx.beginPath();ctx.moveTo(ix+r,iy);ctx.lineTo(ix+iw-r,iy);
+        ctx.quadraticCurveTo(ix+iw,iy,ix+iw,iy+r);ctx.lineTo(ix+iw,iy+ih-r);
+        ctx.quadraticCurveTo(ix+iw,iy+ih,ix+iw-r,iy+ih);ctx.lineTo(ix+r,iy+ih);
+        ctx.quadraticCurveTo(ix,iy+ih,ix,iy+ih-r);ctx.lineTo(ix,iy+r);
+        ctx.quadraticCurveTo(ix,iy,ix+r,iy);ctx.closePath();
+        const g=ctx.createLinearGradient(ix,iy,ix+iw,iy+ih);
+        g.addColorStop(0,c1);g.addColorStop(1,c2);
+        ctx.fillStyle=g;ctx.fill();
+        // 🔐 emoji
+        ctx.fillStyle='#fff';
+        ctx.font=(20*s)+'px sans-serif';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText('🔐',cv.width/2,cv.height/2);
+        return cv;
+    }
+    return qrCanvas;
 }
 async function shareQRImage(){
     const cv=await captureQRCanvas();
@@ -1722,31 +1753,45 @@ function parseQRPayload(data){
     return false;
 }
 
+function promptManualPaste(){
+    const cipher=prompt('⚠️ 无法自动识别图片中的密文\n\n请手动粘贴密文（Base64字符串）：');
+    if(cipher&&cipher.trim()){
+        document.getElementById('cipherInput').value=cipher.trim();
+        t('📋 已填入密文，请点击"解密"');
+    }else{
+        t('👋 已取消');
+    }
+    document.getElementById('eraFileInput').value='';
+}
+
 async function handleDecFileInput(){
     const file=document.getElementById('eraFileInput').files[0];
     if(!file)return;
     try{
-        // 先尝试 jsQR 解析二维码
+        await ensureJSQR();
         const img=new Image();
         const url=URL.createObjectURL(file);
         await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
         URL.revokeObjectURL(url);
-        const cv=document.createElement('canvas');
-        cv.width=img.width;cv.height=img.height;
-        const ctx=cv.getContext('2d');
-        ctx.drawImage(img,0,0);
-        const imgData=ctx.getImageData(0,0,cv.width,cv.height);
-        if(typeof jsQR!=='undefined'){
-            const code=jsQR(imgData.data,cv.width,cv.height);
-            if(code&&code.data){
-                if(parseQRPayload(code.data))return;
+        // 多尺寸扫QR（原始数据，不二值化——和相机扫描一致）
+        const tryQR=(w,h)=>{
+            const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+            const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,w,h);
+            const id=ctx.getImageData(0,0,w,h);
+            if(typeof jsQR!=='undefined'){
+                const code=jsQR(id.data,w,h);
+                if(code&&code.data)return code.data;
             }
+            return null;
+        };
+        for(const sz of [img.width,800,640,480,320]){
+            const qr=tryQR(sz,Math.round(sz*img.height/img.width));
+            if(qr&&parseQRPayload(qr))return;
         }
-        // 回退到Eras解码
+        // QR全失败 → Eras解码
         decodeEraGrid();
     }catch(e){
         console.warn('File input decode failed:',e);
-        // 回退到Eras解码
         try{decodeEraGrid()}catch{}
     }
 }
@@ -1904,7 +1949,7 @@ async function eraLinkDecrypt(){
         const m2=sd.message.match(/^\[(.+?)\|(.+?)\]/);
         const senderId=m2?m2[2]:'';
         const text=m2?sd.message.slice(m2[0].length):sd.message;
-        const display=senderId?senderId+': '+text:text;
+        const display=senderId?senderId+':\n'+text:text;
         document.getElementById('eraLinkPlain').value=display;
         t(sd.wasSD?'🔥 解密成功，剩余 '+fmtRemaining(sd.remaining)+' 后焚毁':'✅ 解密成功！');
     }catch(e){const hint=localStorage.getItem('swiftcrypto_hs')?'（高安全模式已开启，请确认双方已交换身份码）':'';t(e.name==='OperationError'?'❌ 密码错误'+hint:'❌ '+e.message)}
@@ -2683,7 +2728,7 @@ function doLyricDecrypt(){
         const m2=sd.message.match(/^\[(.+?)\]/);
         const senderId=m2?m2[1]:'';
         const text=m2?sd.message.slice(m2[0].length):sd.message;
-        document.getElementById('lyricDecOutput').value=senderId?senderId+': '+text:text;
+        document.getElementById('lyricDecOutput').value=senderId?senderId+':\n'+text:text;
         t('✅ 解密成功');
     }).catch(e=>{
         if(e.name==='OperationError'&&_lyricAnswerText)openLyricFeedback(pw);
@@ -3270,7 +3315,25 @@ function decodeEraGrid(){
                 }
             }
         }
-        if(refY<0){t('⚠️ 未找到参考色块');document.getElementById('eraFileInput').value='';return}
+        if(refY<0){
+            // Eras失败 → 最后尝试QR回退
+            const tryQR=(w,h)=>{
+                const qcv=document.createElement('canvas');qcv.width=w;qcv.height=h;
+                const qctx=qcv.getContext('2d');qctx.drawImage(img,0,0,w,h);
+                const qid=qctx.getImageData(0,0,w,h);
+                if(typeof jsQR!=='undefined'){
+                    const code=jsQR(qid.data,w,h);
+                    if(code&&code.data)return code.data;
+                }
+                return null;
+            };
+            let qr=null;
+            for(const sz of [800,640,480,320]){
+                qr=tryQR(sz,Math.round(sz*img.height/img.width));
+                if(qr&&typeof parseQRPayload==='function'&&parseQRPayload(qr)){t('✅ 已识别二维码');return}
+            }
+            promptManualPaste();return
+        }
         // ── 抗旋转：从8个参考块中心线性回归，按角度变换readCell采样坐标 ──
         let rotCos=1,rotSin=0,rotCx=0,rotCy=0;
         if(refRuns&&refRuns.length===8){
@@ -3339,7 +3402,30 @@ function decodeEraGrid(){
             const d2=da*da+db*db;
             if(d2<minD2)minD2=d2;if(d2>maxD2)maxD2=d2;
         }
-        if(minD2<200){t('⚠️ 参考色块辨识失败，请使用更高清图片');document.getElementById('eraFileInput').value='';return}
+        if(minD2<200){
+            // Eras色块辨识失败 → QR回退
+            const tryQRFallback=()=>{
+                const tryQR=(w,h)=>{
+                    const qcv=document.createElement('canvas');qcv.width=w;qcv.height=h;
+                    const qctx=qcv.getContext('2d');qctx.drawImage(img,0,0,w,h);
+                    const qid=qctx.getImageData(0,0,w,h);
+                    if(typeof jsQR!=='undefined'){
+                        const code=jsQR(qid.data,w,h);
+                        if(code&&code.data)return code.data;
+                    }
+                    return null;
+                };
+                for(const sz of [800,640,480,320]){
+                    const qr=tryQR(sz,Math.round(sz*img.height/img.width));
+                    if(qr&&typeof parseQRPayload==='function'&&parseQRPayload(qr)){t('✅ 已识别二维码');return true}
+                }
+                return false;
+            };
+            if(!tryQRFallback()){
+                promptManualPaste();
+            }
+            return
+        }
         const confThresh=0.15;
         const maxD2Vote=maxD2*1.5;
         const dataY0=refBot+1+EC_GAP;
