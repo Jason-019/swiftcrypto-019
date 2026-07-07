@@ -901,7 +901,7 @@ function startDecryptCountdown(expiry,msg){
 function stopDecryptCountdown(){
     if(_sdCD.timer){clearInterval(_sdCD.timer);_sdCD={expiry:0,timer:null,msg:''};}
 }
-// ---- 🔥 Self-destruct (timer-based, 30s ~ 71h59m59s) ----
+// ---- 🔥 Self-destruct (timer-based, 10s ~ 168h / 7天) ----
 function toggleSD(){
     const on=document.getElementById('sdEnabled').checked;
     document.getElementById('sdOpts').classList.toggle('show',on);
@@ -1040,7 +1040,7 @@ function ensureJSQR(){
     if(_jsqrLoading)return _jsqrLoading;
     return _jsqrLoading=lazyScript('lib/jsQR.js').then(()=>{_jsqrLoading=null}).catch(e=>{_jsqrLoading=null;console.warn(e)});
 }
-// html2canvas (45KB) — 二维码截图时加载
+// html2canvas (45KB) — Era名片截图时加载
 let _h2cLoading=!1;
 function ensureHtml2canvas(){
     if(typeof html2canvas!=='undefined')return Promise.resolve();
@@ -1844,7 +1844,7 @@ let _scanMode='pubkey';
 
 function handleIncomingShare(){
     const params=new URLSearchParams(location.search);
-    // ── PWA Share Target: 微信分享 .mid 文件 ──
+    // ── 微信分享 .mid 文件 ──
     if(params.get('shared')==='1'){
         switchTab('midi');
         setTimeout(async ()=>{
@@ -2372,7 +2372,7 @@ async function refreshCacheCounts(){
     const fmtSize=b=>b>=1048576?(b/1048576).toFixed(1)+'MB':b>=1024?(b/1024).toFixed(0)+'KB':b+'B';
     try{
         const names=await caches.keys();
-        if(names.length===0){list.innerHTML='<span style="color:var(--dim)">暂无 Cache API 缓存<br><small>（file:// 协议或 ServiceWorker 未激活时不可用）</small></span>';return}
+        if(names.length===0){list.innerHTML='<span style="color:var(--dim)">暂无 Cache API 缓存<br><small>（需通过 http/https 访问，file:// 协议不可用）</small></span>';return}
         // 合并 swiftcrypto-v* 为一个"应用缓存"，MIDI 和 Tone 独立
         const groups={app:[],midi:[],tone:[]};
         for(const name of names){
@@ -2433,7 +2433,7 @@ async function clearAllCache(){
     }catch(e){t('⚠️ 清除失败')}
 }
 async function clearAllSiteData(){
-    if(!await customConfirm('⚠️ 清除所有站点数据？','将清空：\n• Cache API 缓存\n• 密码历史\n• 聊天记录\n• 草稿\n• HS 密钥\n• Service Worker\n\n此操作不可撤销，确定继续？'))return;
+    if(!await customConfirm('⚠️ 清除所有站点数据？','将清空：\n• Cache API 缓存\n• 密码历史\n• 聊天记录\n• 草稿\n• HS 密钥\n\n此操作不可撤销，确定继续？'))return;
     try{const names=await caches.keys();for(const n of names)await caches.delete(n)}catch(e){}
     // 2. Service Worker 注销
     try{
@@ -3531,10 +3531,10 @@ document.getElementById('password').addEventListener('input',saveDrafts);
     loadDrafts();
     loadChat();document.getElementById('deviceIdLabel').textContent=getDeviceId();setTheme();updateBgOpacity(100);uc();renderPwdHistory();
 })();
-// PWA service worker — 不再使用，依赖浏览器 HTTP 缓存
+// 不再使用 Service Worker，依赖浏览器 HTTP 缓存 + Cache API
 // if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js?v=21')}
 </script>
-<!-- 以下库按需懒加载：tone/midi/jsQR/html2canvas 只在对应功能触发时下载 -->
+<!-- 以下库按需懒加载：tone/midi/jsQR/html2canvas(Era名片) 只在对应功能触发时下载 -->
 <script src="lib/qrcode.min.js" defer></script>
 <!-- 🎹 MIDI 挑选 Modal -->
 <div id="midiPickerModal" style="display:none;position:fixed;inset:0;z-index:100;background:var(--modal-bg);backdrop-filter:blur(4px);justify-content:flex-end;align-items:stretch">

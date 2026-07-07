@@ -10,7 +10,7 @@ This project is licensed under the [GNU Affero General Public License v3.0](LICE
 
 > *"You knew the password, so I let you in the door."* — hoax, folklore
 
-**SwiftCrypto** 是一款以 Taylor Swift 为主题的端到端加密通信渐进式 Web 应用。将密码学变成一场 Eras 巡演——用 13 套专辑色卡加密消息、把密文藏进 MIDI 钢琴曲、用 167 道 Swiftie 冷知识生成密码、用歌词作共享密钥。**全部运算在浏览器本地完成，零服务器，零追踪。**
+**SwiftCrypto** 是一款以 Taylor Swift 为主题的端到端加密通信 Web 应用。将密码学变成一场 Eras 巡演——用 13 套专辑色卡加密消息、把密文藏进 MIDI 钢琴曲、用 167 道 Swiftie 冷知识生成密码、用歌词作共享密钥。**全部运算在浏览器本地完成，零服务器，零追踪。**
 
 ---
 
@@ -24,7 +24,7 @@ This project is licensed under the [GNU Affero General Public License v3.0](LICE
 | **PBKDF2 密钥派生**    | 60 万次 SHA-256 迭代 + 固定盐，任意密码 → 256 位密钥                 |
 | **ECDH 双重加密** 🛡️ | 可选高安全模式：P-256 ECDH + 密码原文混合密钥。即使密码泄露也无法解密 |
 | **中文/Emoji 密码**    | 完整支持中文、日文、Emoji 密码，IME 友好                              |
-| **定时焚毁** 🔥        | 消息附带自毁时间（10 秒 ~ 71 时 59 分），到期自动"已焚毁"，倒计时可见 |
+| **定时焚毁** 🔥        | 消息附带自毁时间（10 秒 ~ 7 天 / 168 时），到期自动"已焚毁"，倒计时可见 |
 | **Emoji 密文** 🎭      | Base64 ↔ 64 种 Emoji 双向映射，外观像普通聊天                        |
 | **密码强度评估**       | zxcvbn 熵值分析，6 级评级 + 破解时间估算（8×RTX 5090 GPU）           |
 
@@ -140,7 +140,7 @@ This project is licensed under the [GNU Affero General Public License v3.0](LICE
 | 📝**草稿模式**     | 自动保存/恢复密码、明文、密文输入框内容，刷新不丢                      |
 | 🛡️**高安全模式** | ECDH P-256 密钥对 + 密码原文混合，需交换身份码。即使密码泄露也无法解密 |
 
-**隐私保证：** 密码永不离开浏览器（Web Crypto API）、纯静态 PWA 无后端、完全开源可审计。
+**隐私保证：** 密码永不离开浏览器（Web Crypto API）、纯静态 Web App 无后端、完全开源可审计。
 
 ---
 
@@ -153,9 +153,9 @@ This project is licensed under the [GNU Affero General Public License v3.0](LICE
 | QR 扫描     | jsQR (摄像头实时 + 图片文件)                     |
 | MIDI 播放   | Tone.js                                          |
 | MIDI 解析   | midi.bundle.js + salamander 音色库               |
-| Canvas 导出 | html2canvas (2x 分辨率)                          |
+| Canvas 导出 | QR 库原生 canvas + icon 合成（无 html2canvas）      |
 | 密码强度    | zxcvbn                                           |
-| 架构        | 单文件 PWA (~3500 行)，Service Worker 离线缓存   |
+| 架构        | 单文件 Web App (~3500 行)，无 Service Worker，浏览器 HTTP Cache 离线 |
 
 ---
 
@@ -165,7 +165,7 @@ This project is licensed under the [GNU Affero General Public License v3.0](LICE
 | -------------- | --------------------------------------------------------------------------------------------- |
 | **在线** | 直接访问部署页面                                                                              |
 | **本地** | `python -m http.server 8080` → `http://localhost:8080/web/encrypt_chat_mobile_full.html` |
-| **PWA**  | iOS Safari → 分享 → 添加到主屏幕 / Android Chrome → 安装                                   |
+| **Web App** | iOS Safari → 分享 → 添加到主屏幕 / Android Chrome → 安装                                   |
 | **桌面** | Chrome/Edge 地址栏 ⊕ 安装按钮                                                                |
 
 ---

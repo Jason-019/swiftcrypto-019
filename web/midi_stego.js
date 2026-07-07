@@ -645,16 +645,17 @@ async function initMidiSynth(){
     }
     _midiSynth=new Tone.Sampler({
         urls:urlMap,
-        attack:0.01,
-        release:1.2,
+        attack:0.02,
+        release:0.8,
         curve:'linear',
+        baseUrl:'',
         onload:()=>{
             t('🎹 钢琴音源就绪 ('+loaded+'/'+sampleNames.length+')');
             for(const url of Object.values(urlMap)){URL.revokeObjectURL(url)}
         },
         onerror:(e)=>{console.warn('Sampler error:',e)}
     }).toDestination();
-    _midiSynth.volume.value=-4;
+    _midiSynth.volume.value=-6;
     await Tone.loaded();
     _midiSynthLoading=null;
     return _midiSynth;
@@ -706,7 +707,7 @@ async function toggleMidiPlay(){
         if(!events.length){t('⚠️ 无音符事件');return}
         let tempo=500000;
         for(const e of events){if(e.type==='tempo'){tempo=e.tempo;break}}
-        synth.volume.value=0;
+        synth.volume.value=-6;
         const totalSec=scheduleMidiPlayback(synth,events,division,tempo);
         if(!totalSec){t('⚠️ 无可播放音符');return}
         prepWaterfall(buf);
@@ -742,7 +743,7 @@ function scheduleMidiPlayback(synth,events,division,tempo){
                 time:on.tick*secPerTick,
                 note:Tone.Frequency(on.pitch,'midi').toNote(),
                 duration:dur,
-                velocity:Math.min(on.velocity/127,0.85),
+                velocity:Math.min(on.velocity/127,0.75),
             });
             delete pending[e.pitch];
         }
@@ -784,7 +785,7 @@ async function toggleRecvPlay(){
         if(!events.length){t('⚠️ 无音符事件');return}
         let tempo=500000;
         for(const e of events){if(e.type==='tempo'){tempo=e.tempo;break}}
-        synth.volume.value=0;
+        synth.volume.value=-6;
         const totalSec=scheduleMidiPlayback(synth,events,division,tempo);
         if(!totalSec){t('⚠️ 无可播放音符');return}
         prepWaterfall(_midiRecvBuf);
