@@ -1618,22 +1618,21 @@ async function captureQRCanvas(){
     const rawDiv=document.getElementById('qrShareRaw');
     const qrCanvas=rawDiv?rawDiv.querySelector('canvas'):null;
     if(!qrCanvas)return null;
-    // 合成猫 icon 到画布（渐变圆角方块 + 🔐 emoji）
+    const qw=qrCanvas.width,qh=qrCanvas.height;
+    const pad=Math.round(qw*0.06); // 6% 白边 = ~4模块 quiet zone
+    const pw=qw+pad*2,ph=qh+pad*2;
+    const cv=document.createElement('canvas');
+    cv.width=pw;cv.height=ph;
+    const ctx=cv.getContext('2d');
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,pw,ph);
+    ctx.drawImage(qrCanvas,pad,pad);
+    // 合成猫 icon 到画布
     const icon=document.getElementById('qrIconOverlay');
     if(icon&&icon.style.display!=='none'){
-        const cv=document.createElement('canvas');
-        cv.width=qrCanvas.width;cv.height=qrCanvas.height;
-        const ctx=cv.getContext('2d');
-        ctx.drawImage(qrCanvas,0,0);
-        // 从 background 提取两个渐变颜色
-        const bg=icon.style.background||'';
-        const colors=bg.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/g);
-        const c1=colors?colors[0]:'rgb(180,140,200)';
-        const c2=colors?colors[1]||c1:c1;
-        // 按 QR 画布比例缩放 icon
-        const s=cv.width/280; // 280=QR库默认尺寸
-        const iw=40*s,ih=40*s,ix=(cv.width-iw)/2,iy=(cv.height-ih)/2,r=9*s;
-        // 圆角方块
+        const s=pw/280;
+        const colors=(icon.style.background||'').match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/g);
+        const c1=colors?colors[0]:'rgb(180,140,200)',c2=colors?colors[1]||c1:c1;
+        const iw=40*s,ih=40*s,ix=(pw-iw)/2,iy=(ph-ih)/2,r=9*s;
         ctx.beginPath();ctx.moveTo(ix+r,iy);ctx.lineTo(ix+iw-r,iy);
         ctx.quadraticCurveTo(ix+iw,iy,ix+iw,iy+r);ctx.lineTo(ix+iw,iy+ih-r);
         ctx.quadraticCurveTo(ix+iw,iy+ih,ix+iw-r,iy+ih);ctx.lineTo(ix+r,iy+ih);
@@ -1642,14 +1641,11 @@ async function captureQRCanvas(){
         const g=ctx.createLinearGradient(ix,iy,ix+iw,iy+ih);
         g.addColorStop(0,c1);g.addColorStop(1,c2);
         ctx.fillStyle=g;ctx.fill();
-        // 🔐 emoji
-        ctx.fillStyle='#fff';
-        ctx.font=(20*s)+'px sans-serif';
+        ctx.fillStyle='#fff';ctx.font=(20*s)+'px sans-serif';
         ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillText('🔐',cv.width/2,cv.height/2);
-        return cv;
+        ctx.fillText('🔐',pw/2,ph/2);
     }
-    return qrCanvas;
+    return cv;
 }
 async function shareQRImage(){
     const cv=await captureQRCanvas();
@@ -3584,7 +3580,7 @@ document.getElementById('password').addEventListener('input',saveDrafts);
 
 <!-- 📱 二维码图片分享弹窗 -->
 <div id="qrShareModal" style="display:none;position:fixed;inset:0;z-index:110;background:var(--modal-bg);backdrop-filter:blur(6px);justify-content:center;align-items:center">
-    <div class="sheet" style="text-align:center;max-width:380px;width:calc(100vw - 32px);padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:14px;overflow-y:auto;max-height:90vh">
+    <div class="sheet" style="text-align:center;width:calc(100vw - 32px);max-width:500px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:14px;overflow-y:auto;max-height:90vh">
         <h3 style="margin:0;font-size:1rem">📱 二维码分享</h3>
         <label style="font-size:0.7rem;color:var(--dim);width:100%;text-align:left">💡 密码提示（可选，不要直接填密码！）</label>
         <div style="width:100%;position:relative">
