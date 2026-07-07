@@ -30,7 +30,7 @@
 body{
     font-family:var(--font-serif);
     background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;
-    display:flex;flex-direction:column;color-scheme:dark;transition:background 0.5s;
+    display:flex;flex-direction:column;color-scheme:dark;
     position:relative;
 }
 body::before{
@@ -38,7 +38,7 @@ body::before{
     background:radial-gradient(ellipse at 50% 0%,var(--accent) 0%,transparent 50%),
                radial-gradient(ellipse at 80% 20%,rgba(167,139,250,0.04) 0%,transparent 40%),
                radial-gradient(ellipse at 20% 80%,rgba(167,139,250,0.03) 0%,transparent 40%);
-    opacity:1;pointer-events:none;z-index:-1;transition:opacity 0.8s;
+    opacity:1;pointer-events:none;z-index:-1;
 }
 body::after{
     content:'';position:fixed;inset:0;pointer-events:none;z-index:999;
@@ -748,7 +748,6 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
         <li><b>📱 二维码</b>：对方扫码或导入图片就能读出密文与密码提示。</li>
         <li><b>📝 纯文字</b>：最直接，复制仅密文发过去。</li>
         <li><b>🔗 链接</b>：生成带密文和密码提示的网页链接。</li>
-        <li><b>🎵 MIDI</b>：把秘密藏进钢琴曲 .mid 文件里，表面看起来只是一首歌。</li>
     </ul>
 
     <p><b>🐈 4. 解开别人发来的密文</b><br>
@@ -757,17 +756,24 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
     <p><b>🎨 5. 每个 Era 都有自己的颜色</b><br>
     顶部的 ◀ ▶ 可以切换主题。不同 Era 会改变页面背景、按钮颜色、二维码和 Eras 名片的视觉效果。选哪个 Era，就像给这张秘密纸条套上哪张专辑的封面气味。</p>
 
-    <p><b>🔥 6. 定时焚毁</b><br>
-    如果开启「定时焚毁」，密文会带上过期时间。时间到了，对方就算还有密文，也无法再看到原文。适合那些只想被看见一次的话。</p>
+    <div style="margin-top:6px;border-top:3px dashed var(--border);padding-top:6px">
+        <button onclick="toggleAdvanced()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;font-weight:600;cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:6px;font-family:inherit">
+            <span id="advancedArrow" style="display:inline-block;transition:transform 0.4s ease;font-size:0.7rem">▶</span>
+            ✨ 高级玩法
+        </button>
+        <div id="advancedContent" style="overflow:hidden;max-height:0;opacity:0;filter:blur(6px);transition:max-height 1.5s ease,opacity 1.2s ease,filter 1.5s ease;margin-top:4px">
+    
+    <p><b>🎵 6. MIDI 隐写</b><br>
+    在「MIDI」里选择一首钢琴曲，输入文字，然后编码成 .mid 文件。对方收到文件后，用同一个暗号导入解密。建议先缓存 MIDI，这样离线也能用。</p>
 
-    <p><b>💬 7. 对话记录</b><br>
+    <p><b>🔥 7. 定时焚毁</b><br>
+    如果开启「定时焚毁」，密文会带上过期时间（10秒~7天）。时间到了，对方就算还有密文，也无法再看到原文。适合那些只想被看见一次的话。</p>
+
+    <p><b>💬 8. 对话记录</b><br>
     「记录」可以把来回加密的消息保存在本机，像一个手动版密聊。每台设备的每个浏览器都会获得一个独一无二的设备 ID。</p>
 
-    <p><b>🛡️ 8. 高安全模式</b><br>
+    <p><b>🛡️ 9. 高安全模式</b><br>
     点右上角的 Olivia 打开设置，可以开启高安全模式。开启后，需要和对方交换临时身份码。这样消息不只依赖暗号，还会依赖双方的数字身份。即使暗号被别人猜到，没有身份码也解不开。</p>
-
-    <p><b>🎵 9. MIDI 隐写</b><br>
-    在「MIDI」里选择一首钢琴曲，输入文字，然后编码成 .mid 文件。对方收到文件后，用同一个暗号导入解密。建议先缓存 MIDI，这样离线也能用。</p>
 
     <p><b>🐱 10. Olivia 管家的设置</b><br>
     右上角那只猫是 Olivia Benson 。点她可以打开设置：草稿模式、隐身模式、高安全模式、主题偏好、离线缓存都在这里。她不负责解释你为什么半夜三点还在用歌词加密，只负责把门看好。</p>
@@ -781,10 +787,13 @@ textarea[readonly]{background:var(--input-bg);cursor:default;border-style:solid;
         <li>如果你们用高安全模式，双方都要导入对方临时身份码。</li>
         <li>本页面功能在缓存后可全离线使用，也意味着没有任何服务器替你找回东西。暗号忘了，秘密就真的落在门外了。</li>
     </ul>
-
+        
     <p style="text-align:center;font-style:italic;color:var(--dim);margin-top:14px;font-family:var(--font-serif)">
         Long live the walls we crashed through.
     </p>
+        </div>
+    </div>
+
     </div>
         <div class="modal-btns" style="margin-top:10px;display:flex;flex-direction:row;gap:8px">
             <button class="btn btn-outline" onclick="dismissGuideForever()" style="flex:1;font-size:0.75rem">不再提示</button>
@@ -2464,6 +2473,23 @@ function dismissGuideForever(){
     try{localStorage.setItem('guide_dismissed','1')}catch(e){}
     closeGuide();
     const e=document.getElementById('toast');e.textContent='💡 使用说明可随时在右上角 🐱 设置中查看';e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2700);
+}
+let _advancedOpen=false;
+function toggleAdvanced(){
+    _advancedOpen=!_advancedOpen;
+    const content=document.getElementById('advancedContent');
+    const arrow=document.getElementById('advancedArrow');
+    if(_advancedOpen){
+        content.style.maxHeight='2000px';
+        content.style.opacity='1';
+        content.style.filter='blur(0)';
+        arrow.style.transform='rotate(90deg)';
+    }else{
+        content.style.maxHeight='0';
+        content.style.opacity='0';
+        content.style.filter='blur(6px)';
+        arrow.style.transform='rotate(0deg)';
+    }
 }
 document.getElementById('guideModal').addEventListener('click',function(e){if(e.target===this)closeGuide()});
 
