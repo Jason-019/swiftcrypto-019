@@ -1049,6 +1049,35 @@ function ensureJSQR(){
     if(_jsqrLoading)return _jsqrLoading;
     return _jsqrLoading=lazyScript('lib/jsQR.js').then(()=>{_jsqrLoading=null}).catch(e=>{_jsqrLoading=null;console.warn(e)});
 }
+// ─── QR预处理：灰度化+对比度拉伸，提升jsQR识别率 ───
+function preprocessForQR(imageData){
+    const d=imageData.data, len=d.length;
+    const gray=new Uint8Array(len/4);
+    let gMin=255,gMax=0;
+    for(let i=0;i<len;i+=4){
+        const g=Math.round(d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114);
+        gray[i>>2]=g;if(g<gMin)gMin=g;if(g>gMax)gMax=g;
+    }
+    if(gMax<=gMin){gMin=0;gMax=255}
+    const range=gMax-gMin;
+    const out=new ImageData(imageData.width,imageData.height);
+    const od=out.data;
+    for(let i=0;i<len;i+=4){
+        const v=Math.round(((gray[i>>2]-gMin)/range)*255);
+        od[i]=v;od[i+1]=v;od[i+2]=v;od[i+3]=255;
+    }
+    return out;
+}
+// 尝试用jsQR解码，先原始后预处理
+function tryDecodeQR(data,w,h){
+    if(typeof jsQR==='undefined')return null;
+    let code=jsQR(data,w,h);
+    if(code&&code.data)return code.data;
+    // 预处理重试
+    const pp=preprocessForQR({data:new Uint8ClampedArray(data),width:w,height:h});
+    code=jsQR(pp.data,w,h);
+    return (code&&code.data)?code.data:null;
+}
 // html2canvas (45KB) — Era名片截图时加载
 let _h2cLoading=!1;
 function ensureHtml2canvas(){
@@ -1253,22 +1282,20 @@ async function startScan(){
             cv.width=video.videoWidth;cv.height=video.videoHeight;
             ctx.drawImage(video,0,0,cv.width,cv.height);
             const imgData=ctx.getImageData(0,0,cv.width,cv.height);
-            if(typeof jsQR!=='undefined'){
-                const code=jsQR(imgData.data,cv.width,cv.height);
-                if(code&&code.data){
-                    // 兼容新旧格式：新版{"k":"...","t":123}，旧版纯base64
-                    let keyData=code.data,ts=null;
-                    try{const p=JSON.parse(code.data);if(p.k){keyData=p.k;ts=p.t}}catch(e){}
-                    document.getElementById('hsPeerPubKey').value=keyData;
-                    if(ts){
-                        const t=new Date(ts);
-                        document.getElementById('scanStatus').textContent='✅ 识别成功！生成于 '+t.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
-                    }else{
-                        document.getElementById('scanStatus').textContent='✅ 识别成功！';
-                    }
-                    importHSPeerKey();
-                    setTimeout(stopScan,500);
+            const qrData=tryDecodeQR(imgData.data,cv.width,cv.height);
+            if(qrData){
+                // 兼容新旧格式：新版{"k":"...","t":123}，旧版纯base64
+                let keyData=qrData,ts=null;
+                try{const p=JSON.parse(qrData);if(p.k){keyData=p.k;ts=p.t}}catch(e){}
+                document.getElementById('hsPeerPubKey').value=keyData;
+                if(ts){
+                    const t=new Date(ts);
+                    document.getElementById('scanStatus').textContent='✅ 识别成功！生成于 '+t.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+                }else{
+                    document.getElementById('scanStatus').textContent='✅ 识别成功！';
                 }
+                importHSPeerKey();
+                setTimeout(stopScan,500);
             }
         },200);
     }catch(e){
@@ -1595,18 +1622,19 @@ function renderQRCode(){
     if(_qrRenderTimer){clearTimeout(_qrRenderTimer);_qrRenderTimer=null}
     if(typeof QRCode!=='undefined'){
         const qrColor=THEMES[themeIdx].qr||'#7c3aed';
+        const qrDark=darkenForQR(qrColor); // QR码用深色确保识别率
         // 动态尺寸适配屏幕
         const qrSize=Math.min(280,rawDiv.clientWidth||280);
         let hintDropped=false;
-        const genQR=(pl)=>{rawDiv.innerHTML='';new QRCode(rawDiv,{text:pl,width:qrSize,height:qrSize,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M})};
+        const genQR=(pl)=>{rawDiv.innerHTML='';new QRCode(rawDiv,{text:pl,width:qrSize,height:qrSize,colorDark:qrDark,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M})};
         try{genQR(payload)}catch(e){
             console.warn('QR M-level overflow, trying L:',e);
-            try{rawDiv.innerHTML='';new QRCode(rawDiv,{text:payload,width:qrSize,height:qrSize,colorDark:qrColor,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L})}catch(e2){
+            try{rawDiv.innerHTML='';new QRCode(rawDiv,{text:payload,width:qrSize,height:qrSize,colorDark:qrDark,colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L})}catch(e2){
                 console.warn('QR L-level overflow, removing hint');hintDropped=true;
                 genQR(baseUrl+'#c='+encodeURIComponent(b64));
             }
         }
-        // 等img加载后显示图标覆盖层
+        // 等img加载后显示图标覆盖层（图标仍用原主题色）
         const showIcon=()=>{
             const img=rawDiv.querySelector('img');
             if(img&&img.complete){
@@ -1778,16 +1806,11 @@ async function handleDecFileInput(){
         const url=URL.createObjectURL(file);
         await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
         URL.revokeObjectURL(url);
-        // 多尺寸扫QR（原始数据，不二值化——和相机扫描一致）
+        // 多尺寸扫QR（先原始后预处理，提升识别率）
         const tryQR=(w,h)=>{
             const cv=document.createElement('canvas');cv.width=w;cv.height=h;
             const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,w,h);
-            const id=ctx.getImageData(0,0,w,h);
-            if(typeof jsQR!=='undefined'){
-                const code=jsQR(id.data,w,h);
-                if(code&&code.data)return code.data;
-            }
-            return null;
+            return tryDecodeQR(ctx.getImageData(0,0,w,h).data,w,h);
         };
         for(const sz of [img.width,800,640,480,320]){
             const qr=tryQR(sz,Math.round(sz*img.height/img.width));
@@ -1821,13 +1844,11 @@ async function startCipherScan(){
             cv.width=video.videoWidth;cv.height=video.videoHeight;
             ctx.drawImage(video,0,0,cv.width,cv.height);
             const imgData=ctx.getImageData(0,0,cv.width,cv.height);
-            if(typeof jsQR!=='undefined'){
-                const code=jsQR(imgData.data,cv.width,cv.height);
-                if(code&&code.data){
-                    if(parseQRPayload(code.data)){
-                        document.getElementById('scanStatus').textContent='✅ 密文已识别！';
-                        setTimeout(stopCipherScan,500);
-                    }
+            const qrData=tryDecodeQR(imgData.data,cv.width,cv.height);
+            if(qrData){
+                if(parseQRPayload(qrData)){
+                    document.getElementById('scanStatus').textContent='✅ 密文已识别！';
+                    setTimeout(stopCipherScan,500);
                 }
             }
         },200);
@@ -3091,6 +3112,14 @@ function lightenHex(hex,factor){
     const b=Math.round(parseInt(hex.slice(5,7),16)+(255-parseInt(hex.slice(5,7),16))*factor);
     return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');
 }
+// QR码专用深色：同色调压暗40%，确保jsQR稳定识别
+function darkenForQR(hex){
+    if(hex.length===4)hex='#'+hex[1]+hex[1]+hex[2]+hex[2]+hex[3]+hex[3];
+    const r=Math.round(parseInt(hex.slice(1,3),16)*0.6);
+    const g=Math.round(parseInt(hex.slice(3,5),16)*0.6);
+    const b=Math.round(parseInt(hex.slice(5,7),16)*0.6);
+    return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');
+}
 function hexToRgba(hex,alpha){
     const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
     return `rgba(${r},${g},${b},${alpha})`;
@@ -3342,12 +3371,7 @@ function decodeEraGrid(){
             const tryQR=(w,h)=>{
                 const qcv=document.createElement('canvas');qcv.width=w;qcv.height=h;
                 const qctx=qcv.getContext('2d');qctx.drawImage(img,0,0,w,h);
-                const qid=qctx.getImageData(0,0,w,h);
-                if(typeof jsQR!=='undefined'){
-                    const code=jsQR(qid.data,w,h);
-                    if(code&&code.data)return code.data;
-                }
-                return null;
+                return tryDecodeQR(qctx.getImageData(0,0,w,h).data,w,h);
             };
             let qr=null;
             for(const sz of [800,640,480,320]){
@@ -3430,12 +3454,7 @@ function decodeEraGrid(){
                 const tryQR=(w,h)=>{
                     const qcv=document.createElement('canvas');qcv.width=w;qcv.height=h;
                     const qctx=qcv.getContext('2d');qctx.drawImage(img,0,0,w,h);
-                    const qid=qctx.getImageData(0,0,w,h);
-                    if(typeof jsQR!=='undefined'){
-                        const code=jsQR(qid.data,w,h);
-                        if(code&&code.data)return code.data;
-                    }
-                    return null;
+                    return tryDecodeQR(qctx.getImageData(0,0,w,h).data,w,h);
                 };
                 for(const sz of [800,640,480,320]){
                     const qr=tryQR(sz,Math.round(sz*img.height/img.width));

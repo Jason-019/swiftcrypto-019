@@ -31,3 +31,7 @@ _archived/
 Thumbs.db
 svgs/*.png
 web_separated/
+ast_result.txt
+compare_codebase.ps1
+diff_temp.txt
+web/compare_ast.js
